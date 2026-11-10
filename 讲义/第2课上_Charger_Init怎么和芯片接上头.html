@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>充电调试第 2 课（上）</title>
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --text: #1f1e1c; --muted: #6b6862;
+  --border: #dcd8cf; --code-bg: #f3f1ec; --accent: #2f6fd6; --accent-tint: rgba(47,111,214,0.12);
+  --band: rgba(120,115,105,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1a18; --surface: #232220; --text: #ece9e2; --muted: #a39f96;
+    --border: #3c3a36; --code-bg: #2a2926; --accent: #6ea0f0; --accent-tint: rgba(110,160,240,0.16);
+    --band: rgba(255,255,255,0.05);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1a18; --surface: #232220; --text: #ece9e2; --muted: #a39f96;
+  --border: #3c3a36; --code-bg: #2a2926; --accent: #6ea0f0; --accent-tint: rgba(110,160,240,0.16);
+  --band: rgba(255,255,255,0.05);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 16px; line-height: 1.75;
+}
+main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 26px; line-height: 1.35; margin: 0 0 6px; }
+.byline { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+.lead { font-size: 17px; }
+h2 { font-size: 20px; margin: 40px 0 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+p { margin: 10px 0; }
+code { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: 0.9em;
+  background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; overflow-x: auto; line-height: 1.55; font-size: 13.5px; tab-size: 4; }
+pre code { background: none; padding: 0; font-size: inherit; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14.5px; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+th { background: var(--code-bg); font-weight: 600; }
+ol, ul { padding-left: 1.4em; }
+li { margin: 6px 0; }
+figure { margin: 16px 0; }
+figure svg { width: 100%; height: auto; display: block; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; }
+figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+.quiz label { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; cursor: pointer; }
+.quiz input { margin-top: 7px; }
+.next { color: var(--muted); }
+.theme-toggle { position: fixed; top: 12px; right: 12px; font-size: 13px; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; }
+/* svg colours follow the page theme */
+.svg-edge { stroke: var(--muted); }
+.svg-ink { fill: var(--text); }
+.svg-quiet { fill: var(--muted); }
+.svg-accent { stroke: var(--accent); fill: var(--accent-tint); }
+.svg-band { fill: var(--band); stroke: var(--muted); }
+.svg-arrow { fill: var(--muted); }
+.svg-surface { fill: var(--surface); }
+.bits { font-family: Consolas, "SFMono-Regular", Menlo, monospace; }
+.warn { border-left: 3px solid var(--accent); background: var(--accent-tint); padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 12px 0; }
+@media print { .theme-toggle { display: none; } h2 { break-after: avoid; } pre, figure, table { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<button class="theme-toggle" type="button" onclick="toggleTheme()">深色 / 浅色</button>
+<main>
+
+<h1>充电调试第 2 课（上）：Charger_Init() 怎么和芯片接上头</h1>
+<div class="byline">2026-11-10 · ChargePocMouse / EM_HapticMouse · <code>src/my_charger.c</code> 第 56–79 行</div>
+
+<p class="lead"><code>Charger_Init()</code> 跨了两层抽象：先在<strong>单片机引脚层</strong>配好 I2C 的两个脚和 /CE 脚，再在<strong>芯片寄存器层</strong>通过 I2C 读写 BQ21128。本节讲前 3 步，也就是“接上头”；第 4–6 步“配置芯片”放在下半节。</p>
+
+<h2>全局：6 步、两层</h2>
+<table>
+  <thead><tr><th>步</th><th>行号</th><th>做什么</th><th>属于哪层</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>60</td><td>初始化软件 I2C 用的两个引脚</td><td>单片机引脚层</td></tr>
+    <tr><td>2</td><td>61</td><td>/CE 引脚输出低电平</td><td>单片机引脚层</td></tr>
+    <tr><td>3</td><td>63–68</td><td>读型号，确认能和芯片通信</td><td>芯片寄存器层</td></tr>
+    <tr><td>4</td><td>70–74</td><td>设置低温时的电流策略（下半节）</td><td>芯片寄存器层</td></tr>
+    <tr><td>5</td><td>76</td><td>设置充电电流（下半节）</td><td>芯片寄存器层</td></tr>
+    <tr><td>6</td><td>77</td><td>打开充电（下半节）</td><td>芯片寄存器层</td></tr>
+  </tbody>
+</table>
+<p>单片机引脚层查 <code>资料/LPC11U3x2x1x User Manual.pdf</code>（UM10462）；芯片寄存器层查 <code>资料/121002462 承认书.pdf</code> 里附的 BQ21128 手册。</p>
+
+<h2>第 1 步：初始化 I2C 引脚（第 60 行）</h2>
+<pre><code>soft_i2c_init(&amp;handleI2c1);   // handleI2c1：SCL = PIO0_4，SDA = PIO0_5</code></pre>
+<p><strong>“软件 I2C”：</strong>LPC11U 自带硬件 I2C 模块，但这里没用，而是用普通 GPIO 一位一位地拉高、拉低来模拟 I2C 波形，实现在 <code>src/my_i2c.c</code>。</p>
+<p><strong>物理层要先懂一件事：</strong>I2C 总线上的器件<strong>只会把线拉低，从不主动输出高电平</strong>，线上的高电平靠外接的上拉电阻拉上去。BQ21128 手册的引脚表（第 5 页）也要求 SDA、SCL 各通过 10 kΩ 接到逻辑电源。所以 <code>soft_i2c_init</code> 把两个脚设成开漏输出后“松开”（<code>my_i2c.c</code> 第 161、166 行）：不是输出高电平，而是放手，让电阻把线拉高。</p>
+
+<figure>
+<svg viewBox="0 0 760 300" role="img" aria-label="I2C 线上谁都只能拉低，高电平来自上拉电阻" font-size="12.5" font-family="-apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <text x="24" y="34" font-size="15" font-weight="600" class="svg-ink">I2C 线上谁都只能拉低，高电平来自上拉电阻</text>
+  <text x="24" y="56" font-size="11.5" class="svg-quiet">以 SDA 为例，SCL 相同</text>
+  <g fill="none" class="svg-edge" stroke-width="1.25">
+    <path d="M380 80H420"/>
+    <path d="M400 80V100"/>
+    <path d="M400 100l-8 5l16 6l-16 6l16 6l-16 6l16 6l-8 5"/>
+    <path d="M400 140V170"/>
+    <path d="M120 170H680"/>
+    <path d="M200 170V196"/>
+    <path d="M600 170V196"/>
+  </g>
+  <text x="400" y="74" text-anchor="middle" class="svg-ink">上拉电源</text>
+  <text x="420" y="124" font-size="11.5" class="svg-quiet">上拉电阻（手册建议 10 kΩ）</text>
+  <text x="660" y="162" font-size="11.5" font-weight="600" class="svg-ink">SDA</text>
+
+  <rect x="120" y="196" width="160" height="80" rx="8" fill="none" class="svg-edge" stroke-width="1.25"/>
+  <text x="200" y="220" text-anchor="middle" font-weight="600" class="svg-ink">单片机 PIO0_5</text>
+  <text x="200" y="242" text-anchor="middle" font-size="11.5" class="svg-quiet">开漏：只能“拉低”或“放手”</text>
+  <text x="200" y="260" text-anchor="middle" font-size="11.5" class="svg-quiet">没有输出高电平的能力</text>
+
+  <rect x="520" y="196" width="160" height="80" rx="8" fill="none" class="svg-edge" stroke-width="1.25"/>
+  <text x="600" y="220" text-anchor="middle" font-weight="600" class="svg-ink">BQ21128 SDA</text>
+  <text x="600" y="242" text-anchor="middle" font-size="11.5" class="svg-quiet">同样只能拉低</text>
+  <text x="600" y="260" text-anchor="middle" font-size="11.5" class="svg-quiet">（回 ACK 时拉低）</text>
+
+  <text x="400" y="210" text-anchor="middle" font-size="11.5" class="svg-ink">任何一方拉低 → 线为低</text>
+  <text x="400" y="228" text-anchor="middle" font-size="11.5" class="svg-ink">双方都放手 → 电阻拉成高</text>
+</svg>
+<figcaption>开漏总线 · 两个器件共用一根线，靠上拉电阻得到高电平</figcaption>
+</figure>
+
+<p><strong>单片机手册怎么说：</strong>PIO0_4 和 PIO0_5 是<strong>真正的开漏引脚</strong>，硬件上就不能输出高电平（UM10462 表 80，第 89 页：“PIO0_4 (open-drain pin)”）。所以外部上拉电阻是必需的。实测日志里 <code>part 0x13</code> 读对了，说明上拉是有的。</p>
+
+<div class="warn"><strong>这层抽象在这里漏了：</strong><code>soft_i2c_init</code> 是给“任意引脚”写的通用代码，会改 IOCON 的第 3、4 位（上下拉）和第 10 位（开漏）。可 PIO0_4/5 是特殊引脚，这几位在它们身上是<strong>保留位</strong>（表 80：第 7:3 位、第 31:10 位保留；手册修订记录：“Bit 10 changed to reserved for PIO0_4 and PIO0_5”）。手册还建议这两个脚当 GPIO 用时把 I2CMODE（第 9:8 位）设成 <code>01</code>，代码保持的是默认 <code>00</code>。目前通信正常，先记下不急着改。教训：<strong>通用代码遇到特殊引脚时，要回去对照那个引脚自己的寄存器表。</strong></div>
+
+<h2>第 2 步：/CE 输出低电平（第 119–121 行）</h2>
+<pre><code>LPC_IOCON-&gt;PIO0_1 &amp;= ~0x07;       // ① 引脚功能选 GPIO
+LPC_GPIO-&gt;CLR[0] = (0x01 &lt;&lt; 1);   // ② 输出锁存器先写 0
+LPC_GPIO-&gt;DIR[0] |= (0x01 &lt;&lt; 1);  // ③ 再切换成输出</code></pre>
+<table>
+  <thead><tr><th>行</th><th>寄存器</th><th>含义</th><th>单片机手册</th></tr></thead>
+  <tbody>
+    <tr><td>①</td><td>IOCON_PIO0_1 第 2:0 位 FUNC</td><td>0 = 普通 GPIO。<code>&amp;= ~0x07</code> 只清这 3 位，上拉设置（第 4:3 位 MODE，默认 <code>10</code> = 上拉）保持不变</td><td>表 77，第 87 页</td></tr>
+    <tr><td>②</td><td>GPIO CLR</td><td>往第 1 位写 1，把 P0.1 的输出值清成 0；只改这一位，不影响其他脚</td><td>第 166 页</td></tr>
+    <tr><td>③</td><td>GPIO DIR</td><td>第 1 位置 1，P0.1 变成输出</td><td>第 164 页</td></tr>
+  </tbody>
+</table>
+<p><strong>为什么 ② 必须在 ③ 前面：</strong>引脚一旦变成输出，会立刻输出锁存器里的值。如果先切成输出、再清 0，中间可能有一瞬间输出高电平，形成毛刺。先准备好“要输出的值”，再打开输出，是配置 GPIO 输出的通用习惯。</p>
+<p><strong>芯片这边：</strong>BQ21128 手册的引脚表（第 5 页）写道，只有 <strong>EN_CHG 位为 1，并且 /CE 引脚为低电平</strong>时才充电，两个条件缺一不可。手册还要求 /CE “must be pulled HIGH or LOW, do not leave floating”，不能悬空。这一步解决“引脚”那个条件；寄存器那个条件在第 6 步。</p>
+
+<h2>第 3 步：读型号，确认通信（第 63–68 行）</h2>
+<pre><code>if(Charger_Read(REG_PART_INFO, &amp;val))    // 读 0x38；返回非 0 = 失败
+{
+  InfoLog("charger no ACK");
+  return -1;                             // 直接退出，第 4–6 步都不执行
+}
+InfoLog("charger part info 0x%02X (expect 0x13)", val);</code></pre>
+<p><strong><code>0x13</code> 怎么来的</strong>（BQ21128 手册表 6-42，第 58 页）：</p>
+<pre class="bits"><code>0x13 = 00 010 011
+       │   │   └── 第 2:0 位 DEV_REV = 011 = 3（芯片版本）
+       │   └────── 第 5:3 位 PN      = 010 = 2（2 = BQ21128）
+       └────────── 第 7:6 位 保留</code></pre>
+<ol>
+  <li><strong>这里只打印，不判断。</strong>只要 I2C 有应答，代码就继续往下走。而且 <code>0x13</code> 里含版本号，换一批版本不同的芯片，值就会变（比如 <code>0x14</code>）。真要判断“是不是 BQ21128”，只该看 PN 那 3 位：<code>((val &gt;&gt; 3) &amp; 0x07) == 2</code>。</li>
+  <li><strong>失败了 <code>return -1</code>，但没人处理这个返回值。</strong><code>device.c</code> 第 436 行调用 <code>Charger_Init();</code> 时没有接返回值。后果没有听上去那么严重，见思考题。</li>
+</ol>
+
+<h2>思考题</h2>
+<div class="quiz">
+  <label><input type="checkbox"><span>假设上电时 I2C 读型号失败，<code>Charger_Init()</code> 在第 3 步就退出了。这时接上电池，会不会充电？为什么？（提示：第 2 步有没有执行？BQ21128 上电时 EN_CHG 和 ICHG 的默认值是多少？见表 6-16 的 Reset 列、表 6-7 的 POR 值。）</span></label>
+  <label><input type="checkbox"><span>如果把第 2 步的 ② 和 ③ 对调，用万用表能看出区别吗？用示波器呢？</span></label>
+  <label><input type="checkbox"><span>为什么说“松开”SDA 不等于“输出高电平”？如果板上忘了焊上拉电阻，日志会出现哪一行？</span></label>
+</div>
+<p class="next">下半节：第 4–6 步，配置低温策略、充电电流、充电使能。</p>
+
+<h2>参考资料</h2>
+<table>
+  <thead><tr><th>内容</th><th>出处</th></tr></thead>
+  <tbody>
+    <tr><td>PIO0_4/5 是真开漏引脚；保留位；I2CMODE</td><td>UM10462 表 80，第 89 页</td></tr>
+    <tr><td>伪开漏和真开漏的区别</td><td>UM10462 §7.3.6，第 82 页</td></tr>
+    <tr><td>IOCON_PIO0_1：FUNC、MODE（默认上拉）</td><td>UM10462 表 77，第 87 页</td></tr>
+    <tr><td>GPIO DIR / SET / CLR 寄存器</td><td>UM10462 第 164、166 页</td></tr>
+    <tr><td>SDA/SCL 要 10 kΩ 上拉；/CE 低有效、不能悬空</td><td>BQ21128 引脚表，第 5 页</td></tr>
+    <tr><td>型号寄存器 0x38：PN、DEV_REV</td><td>BQ21128 表 6-42，第 58 页</td></tr>
+    <tr><td>EN_CHG 默认值</td><td>BQ21128 表 6-16，第 42 页</td></tr>
+    <tr><td>ICHG 上电默认 320 mA</td><td>BQ21128 表 6-7，第 36 页</td></tr>
+  </tbody>
+</table>
+<p>BQ21128 手册页码为手册印刷页码，比 PDF 阅读器显示的小 2；UM10462 两者一致。</p>
+
+</main>
+<script>
+function toggleTheme() {
+  var root = document.documentElement;
+  var dark = root.getAttribute('data-theme') === 'dark' ||
+    (!root.getAttribute('data-theme') && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme', dark ? 'light' : 'dark');
+}
+</script>
+</body>
+</html>
