@@ -18,6 +18,8 @@
 ".\output\wwdt.o"
 ".\output\iap_cmd.o"
 ".\output\my_tick.o"
+".\output\my_i2c.o"
+".\output\my_charger.o"
 ".\output\my_queue.o"
 ".\output\my_debug.o"
 ".\output\my_electromagnet.o"

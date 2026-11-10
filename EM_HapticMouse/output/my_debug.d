@@ -3,8 +3,16 @@
 .\output\my_debug.o: .\inc\LPC11Uxx.h
 .\output\my_debug.o: .\inc\core_cm0.h
 .\output\my_debug.o: .\inc\LPC11Uxx.h
-.\output\my_debug.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\my_debug.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\my_debug.o: .\inc\core_cmInstr.h
 .\output\my_debug.o: .\inc\core_cmFunc.h
 .\output\my_debug.o: .\inc\system_LPC11Uxx.h
 .\output\my_debug.o: .\inc\my_board.h
+.\output\my_debug.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdio.h
+.\output\my_debug.o: .\inc\usbhw.h
+.\output\my_debug.o: .\inc\Type.h
+.\output\my_debug.o: .\inc\Usb.h
+.\output\my_debug.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\my_debug.o: .\inc\hiduser.h
+.\output\my_debug.o: .\inc\usbcfg.h
+.\output\my_debug.o: .\inc\my_queue.h

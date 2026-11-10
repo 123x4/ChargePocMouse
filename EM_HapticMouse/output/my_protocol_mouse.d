@@ -2,12 +2,12 @@
 .\output\my_protocol_mouse.o: .\inc\my_protocol_mouse.h
 .\output\my_protocol_mouse.o: .\inc\my_protocol_common.h
 .\output\my_protocol_mouse.o: .\inc\my_protocol.h
-.\output\my_protocol_mouse.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-.\output\my_protocol_mouse.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\output\my_protocol_mouse.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\my_protocol_mouse.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\string.h
 .\output\my_protocol_mouse.o: .\inc\usbhw.h
 .\output\my_protocol_mouse.o: .\inc\Type.h
 .\output\my_protocol_mouse.o: .\inc\Usb.h
-.\output\my_protocol_mouse.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\my_protocol_mouse.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\my_protocol_mouse.o: .\inc\hiduser.h
 .\output\my_protocol_mouse.o: .\inc\usbcfg.h
 .\output\my_protocol_mouse.o: .\inc\my_debug.h
@@ -18,6 +18,8 @@
 .\output\my_protocol_mouse.o: .\inc\core_cmFunc.h
 .\output\my_protocol_mouse.o: .\inc\system_LPC11Uxx.h
 .\output\my_protocol_mouse.o: .\inc\my_board.h
+.\output\my_protocol_mouse.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdio.h
+.\output\my_protocol_mouse.o: .\inc\my_queue.h
 .\output\my_protocol_mouse.o: .\inc\IAP_CMD.h
 .\output\my_protocol_mouse.o: .\inc\OSC.h
 .\output\my_protocol_mouse.o: .\inc\my_misc.h
@@ -25,7 +27,7 @@
 .\output\my_protocol_mouse.o: .\inc\button.h
 .\output\my_protocol_mouse.o: .\inc\device.h
 .\output\my_protocol_mouse.o: .\inc\gloab.h
-.\output\my_protocol_mouse.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\my_protocol_mouse.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\my_protocol_mouse.o: .\inc\Led_Effect_H\test.h
 .\output\my_protocol_mouse.o: .\inc\my_tick.h
 .\output\my_protocol_mouse.o: .\inc\my_electromagnet.h

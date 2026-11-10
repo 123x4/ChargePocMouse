@@ -1,13 +1,13 @@
 .\output\led2.o: Led_Effect_Gruop_Code\led2.c
 .\output\led2.o: .\inc\Led_Effect_H\led2.h
 .\output\led2.o: .\inc\device.h
-.\output\led2.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-.\output\led2.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\led2.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\led2.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\led2.o: .\inc\Type.h
 .\output\led2.o: .\inc\gloab.h
 .\output\led2.o: .\inc\usb.h
 .\output\led2.o: .\inc\hiduser.h
-.\output\led2.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\led2.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\led2.o: .\inc\Led_Effect_H\led_effect_group_code.h
 .\output\led2.o: .\inc\Led_Effect_H\external_configuration.h
 .\output\led2.o: .\inc\Led_Effect_H\led1.h

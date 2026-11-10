@@ -1,6 +1,6 @@
 .\output\ti_drv8833.o: src\TI_DRV8833.c
 .\output\ti_drv8833.o: .\inc\TI_DRV8833.h
-.\output\ti_drv8833.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\ti_drv8833.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\ti_drv8833.o: .\inc\my_board.h
 .\output\ti_drv8833.o: .\inc\LPC11Uxx.h
 .\output\ti_drv8833.o: .\inc\core_cm0.h

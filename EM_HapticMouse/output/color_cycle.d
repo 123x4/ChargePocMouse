@@ -3,14 +3,14 @@
 .\output\color_cycle.o: .\inc\gloab.h
 .\output\color_cycle.o: .\inc\usb.h
 .\output\color_cycle.o: .\inc\Type.h
-.\output\color_cycle.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\color_cycle.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\color_cycle.o: .\inc\hiduser.h
-.\output\color_cycle.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\color_cycle.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\color_cycle.o: .\inc\Led_Effect_H\led_effect_group_code.h
 .\output\color_cycle.o: .\inc\Led_Effect_H\external_configuration.h
 .\output\color_cycle.o: .\inc\Led_Effect_H\led1.h
 .\output\color_cycle.o: .\inc\device.h
-.\output\color_cycle.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\color_cycle.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\color_cycle.o: .\inc\LedControl.h
 .\output\color_cycle.o: .\inc\Led_Effect_H\led_effect.h
 .\output\color_cycle.o: .\inc\Led_Effect_H\ram_malloc.h

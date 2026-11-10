@@ -377,11 +377,10 @@ ARM Macro Assembler    Page 6
   254 00000014                 END
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M0 --apcs=interw
-ork --depend=.\output\startup_lpc11uxx.d -o.\output\startup_lpc11uxx.o -IC:\Use
-rs\GT028615\AppData\Local\Keil_v5\ARM\RV31\INC -IC:\Users\GT028615\AppData\Loca
-l\Keil_v5\ARM\CMSIS\Include -IC:\Users\GT028615\AppData\Local\Keil_v5\ARM\INC\N
-XP\LPC11Uxx --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA
- 543" --list=.\list\startup_lpc11uxx.lst src\startup_LPC11Uxx.s
+ork --depend=.\output\startup_lpc11uxx.d -o.\output\startup_lpc11uxx.o -ID:\Kei
+l5\Pack\Keil\LPC1100_DFP\1.4.1\Device\Include\LPC11Uxx --predefine="__MICROLIB 
+SETA 1" --predefine="__UVISION_VERSION SETA 537" --list=.\list\startup_lpc11uxx
+.lst src\startup_LPC11Uxx.s
 
 
 

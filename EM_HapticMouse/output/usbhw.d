@@ -2,13 +2,13 @@
 .\output\usbhw.o: .\inc\LPC11Uxx.h
 .\output\usbhw.o: .\inc\core_cm0.h
 .\output\usbhw.o: .\inc\LPC11Uxx.h
-.\output\usbhw.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\usbhw.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\usbhw.o: .\inc\core_cmInstr.h
 .\output\usbhw.o: .\inc\core_cmFunc.h
 .\output\usbhw.o: .\inc\system_LPC11Uxx.h
 .\output\usbhw.o: .\inc\type.h
 .\output\usbhw.o: .\inc\usb.h
-.\output\usbhw.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\usbhw.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\usbhw.o: .\inc\hiduser.h
 .\output\usbhw.o: .\inc\usbhw.h
 .\output\usbhw.o: .\inc\usbcfg.h
@@ -16,7 +16,7 @@
 .\output\usbhw.o: .\inc\usbuser.h
 .\output\usbhw.o: .\inc\device.h
 .\output\usbhw.o: .\inc\gloab.h
-.\output\usbhw.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\usbhw.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\usbhw.o: .\inc\uart.h
 .\output\usbhw.o: .\inc\Timer.h
 .\output\usbhw.o: .\inc\Led_Effect_H\led1.h
@@ -37,6 +37,8 @@
 .\output\usbhw.o: .\inc\optical_3325.h
 .\output\usbhw.o: .\inc\my_electromagnet.h
 .\output\usbhw.o: .\inc\my_debug.h
+.\output\usbhw.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdio.h
+.\output\usbhw.o: .\inc\my_queue.h
 .\output\usbhw.o: .\inc\my_tick.h
 .\output\usbhw.o: .\inc\my_protocol_common.h
 .\output\usbhw.o: .\inc\my_protocol.h

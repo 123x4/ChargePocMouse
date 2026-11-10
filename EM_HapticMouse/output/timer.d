@@ -2,7 +2,7 @@
 .\output\timer.o: src\../inc/LPC11Uxx.h
 .\output\timer.o: src\../inc/core_cm0.h
 .\output\timer.o: src\../inc/LPC11Uxx.h
-.\output\timer.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\timer.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\timer.o: .\inc\core_cmInstr.h
 .\output\timer.o: .\inc\core_cmFunc.h
 .\output\timer.o: src\../inc/system_LPC11Uxx.h
@@ -10,9 +10,9 @@
 .\output\timer.o: src\../inc/gloab.h
 .\output\timer.o: src\../inc/usb.h
 .\output\timer.o: src\../inc/Type.h
-.\output\timer.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\timer.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\timer.o: src\../inc/hiduser.h
-.\output\timer.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\timer.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\timer.o: .\inc\Led_Effect_H\led1.h
 .\output\timer.o: .\inc\device.h
 .\output\timer.o: .\inc\LedControl.h

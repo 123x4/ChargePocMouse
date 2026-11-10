@@ -3,14 +3,14 @@
 .\output\custom.o: .\inc\gloab.h
 .\output\custom.o: .\inc\usb.h
 .\output\custom.o: .\inc\Type.h
-.\output\custom.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\custom.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\custom.o: .\inc\hiduser.h
-.\output\custom.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\custom.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\custom.o: .\inc\keydef.h
 .\output\custom.o: .\inc\Led_Effect_H\led_effect.h
 .\output\custom.o: .\inc\Led_Effect_H\led1.h
 .\output\custom.o: .\inc\device.h
-.\output\custom.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\custom.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\custom.o: .\inc\LedControl.h
 .\output\custom.o: .\inc\Led_Effect_H\led_effect_group_code.h
 .\output\custom.o: .\inc\Led_Effect_H\external_configuration.h
@@ -35,7 +35,7 @@
 .\output\custom.o: .\inc\core_cmFunc.h
 .\output\custom.o: .\inc\system_LPC11Uxx.h
 .\output\custom.o: .\inc\GPIO.h
-.\output\custom.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\output\custom.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\string.h
 .\output\custom.o: .\inc\button.h
 .\output\custom.o: .\inc\my_board.h
 .\output\custom.o: .\inc\Led_Effect_H\reaction.h

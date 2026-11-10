@@ -1,0 +1,17 @@
+.\output\my_i2c.o: src\my_i2c.c
+.\output\my_i2c.o: .\inc\my_i2c.h
+.\output\my_i2c.o: .\inc\../inc/LPC11Uxx.h
+.\output\my_i2c.o: .\inc\../inc/core_cm0.h
+.\output\my_i2c.o: .\inc\../inc/LPC11Uxx.h
+.\output\my_i2c.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\my_i2c.o: .\inc\core_cmInstr.h
+.\output\my_i2c.o: .\inc\core_cmFunc.h
+.\output\my_i2c.o: .\inc\../inc/system_LPC11Uxx.h
+.\output\my_i2c.o: .\inc\device.h
+.\output\my_i2c.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\my_i2c.o: .\inc\Type.h
+.\output\my_i2c.o: .\inc\gloab.h
+.\output\my_i2c.o: .\inc\usb.h
+.\output\my_i2c.o: .\inc\hiduser.h
+.\output\my_i2c.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\my_i2c.o: .\inc\GPIO.h

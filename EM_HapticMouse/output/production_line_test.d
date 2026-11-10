@@ -3,14 +3,14 @@
 .\output\production_line_test.o: .\inc\gloab.h
 .\output\production_line_test.o: .\inc\usb.h
 .\output\production_line_test.o: .\inc\Type.h
-.\output\production_line_test.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\production_line_test.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\production_line_test.o: .\inc\hiduser.h
-.\output\production_line_test.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\production_line_test.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\production_line_test.o: .\inc\keydef.h
 .\output\production_line_test.o: .\inc\Led_Effect_H\led_effect.h
 .\output\production_line_test.o: .\inc\Led_Effect_H\led1.h
 .\output\production_line_test.o: .\inc\device.h
-.\output\production_line_test.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\production_line_test.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\production_line_test.o: .\inc\LedControl.h
 .\output\production_line_test.o: .\inc\Led_Effect_H\led_effect_group_code.h
 .\output\production_line_test.o: .\inc\Led_Effect_H\external_configuration.h

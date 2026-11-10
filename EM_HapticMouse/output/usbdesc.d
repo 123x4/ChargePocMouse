@@ -1,7 +1,7 @@
 .\output\usbdesc.o: src\usbdesc.c
 .\output\usbdesc.o: .\inc\type.h
 .\output\usbdesc.o: .\inc\usb.h
-.\output\usbdesc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\usbdesc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\usbdesc.o: .\inc\hiduser.h
 .\output\usbdesc.o: .\inc\hid.h
 .\output\usbdesc.o: .\inc\usbcfg.h
@@ -10,8 +10,11 @@
 .\output\usbdesc.o: .\inc\LPC11Uxx.h
 .\output\usbdesc.o: .\inc\core_cm0.h
 .\output\usbdesc.o: .\inc\LPC11Uxx.h
-.\output\usbdesc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\usbdesc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\usbdesc.o: .\inc\core_cmInstr.h
 .\output\usbdesc.o: .\inc\core_cmFunc.h
 .\output\usbdesc.o: .\inc\system_LPC11Uxx.h
 .\output\usbdesc.o: .\inc\my_board.h
+.\output\usbdesc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdio.h
+.\output\usbdesc.o: .\inc\usbhw.h
+.\output\usbdesc.o: .\inc\my_queue.h

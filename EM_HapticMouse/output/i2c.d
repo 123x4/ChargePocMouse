@@ -2,7 +2,7 @@
 .\output\i2c.o: src\../inc/LPC11Uxx.h
 .\output\i2c.o: src\../inc/core_cm0.h
 .\output\i2c.o: src\../inc/LPC11Uxx.h
-.\output\i2c.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\i2c.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\i2c.o: .\inc\core_cmInstr.h
 .\output\i2c.o: .\inc\core_cmFunc.h
 .\output\i2c.o: src\../inc/system_LPC11Uxx.h
