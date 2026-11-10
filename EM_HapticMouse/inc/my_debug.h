@@ -16,7 +16,7 @@
 #define DEBUG_VER  1139
 
 /********************************/
-#define MYDEBUG_ENABLE          0
+#define MYDEBUG_ENABLE          1
 #if MYDEBUG_ENABLE
 
 #define MYDEBUG_UART_PRINTF_MASK      (0x01 << 0)
