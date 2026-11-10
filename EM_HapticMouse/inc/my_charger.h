@@ -1,6 +1,7 @@
 /*******************************************************************************
  * @file    my_charger.h
- * @brief   Charger IC BQ21128 (U2). I2C: PIO0_4 = SCL, PIO0_5 = SDA. /CE: PIO0_1.
+ * @brief   Charger IC BQ21128 (U7 on G2 board, U2 on V0.1). I2C: PIO0_4 = SCL,
+ *          PIO0_5 = SDA. /CE: PIO0_1.
  *          Same idea as the SY6974 reference code: change the charge current
  *          according to the battery temperature zone (TS_STAT).
 *******************************************************************************/
@@ -11,8 +12,15 @@
 
 #define CHARGER_ADDR              0x6A    /* BQ21128 7-bit I2C address */
 
-/*------ settings: change these after confirming with hardware / battery spec ------*/
+/*------ /CE: confirmed from schematic G2 V0.1 ------
+ * Net /CE = BQ21128 pin 14 + MCU pin 3 (PIO0_1) + R50 2.2M to 5V / R51 1M to GND.
+ * The push-pull GPIO overrides the weak divider, so the MCU owns /CE.
+ * Before Charger_CE_Init(): PIO0_1 is input with the default internal pull-up
+ * -> /CE high -> charging disabled until firmware enables it.
+ */
 #define CHARGER_CE_BY_MCU         1       /* 1: MCU drives PIO0_1 (/CE) low = allow charging */
+
+/*------ battery spec: still to be confirmed, values below are conservative ------*/
 #define CHARGER_ICHG_NORMAL_MA    320     /* charge current at 10~45 C. 40 mA step, 40~1520 */
 #define CHARGER_ICHG_COOL_MA      120     /* charge current at 0~10 C */
 #define CHARGER_POLL_MS           10000   /* polling period, must be < 50 s (watchdog) */

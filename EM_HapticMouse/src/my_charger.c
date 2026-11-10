@@ -106,6 +106,9 @@ void Charger_PollingTask(void)
 static void Charger_CE_Init(void)
 {
 #if CHARGER_CE_BY_MCU
+  /* PIO0_1 is also the ISP entry pin (sampled at reset). Keep the default
+   * internal pull-up and do not add a strong pull-down on the /CE net,
+   * otherwise the MCU boots into ISP mode instead of this firmware. */
   LPC_IOCON->PIO0_1 &= ~0x07;       /* FUNC = 0: GPIO */
   LPC_GPIO->CLR[0] = (0x01 << 1);   /* output value low */
   LPC_GPIO->DIR[0] |= (0x01 << 1);  /* PIO0_1 as output -> /CE low */
