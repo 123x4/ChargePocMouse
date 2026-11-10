@@ -83,6 +83,8 @@ void Charger_PollingTask(void)
 {
   uint8_t stat1 = 0;
   uint8_t fault = 0;
+  uint8_t part  = 0;
+  uint8_t ctrl0 = 0;
 
   POLLING_INTERVAL_MS(CHARGER_POLL_MS);
 
@@ -96,6 +98,11 @@ void Charger_PollingTask(void)
     InfoLog("charger read status fail");
     return;
   }
+  /* raw values too, so they can be decoded against the datasheet later */
+  Charger_Read(REG_PART_INFO, &part);
+  Charger_Read(REG_CHG_CTRL0, &ctrl0);
+  InfoLog("part 0x%02X, 0x16=0x%02X, 0x1E=0x%02X, 0x1F=0x%02X",
+          part, ctrl0, stat1, fault);
   InfoLog("CHG_STAT %u, VBUS_STAT %u, TS_STAT %u",
           (stat1 >> 3) & 0x03, stat1 & 0x07, fault & 0x07);
 
