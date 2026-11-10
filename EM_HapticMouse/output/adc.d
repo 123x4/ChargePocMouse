@@ -1,0 +1,10 @@
+.\output\adc.o: src\ADC.c
+.\output\adc.o: src\../inc/LPC11Uxx.h
+.\output\adc.o: src\../inc/core_cm0.h
+.\output\adc.o: src\../inc/LPC11Uxx.h
+.\output\adc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\adc.o: .\inc\core_cmInstr.h
+.\output\adc.o: .\inc\core_cmFunc.h
+.\output\adc.o: src\../inc/system_LPC11Uxx.h
+.\output\adc.o: src\../inc/OSC.h
+.\output\adc.o: src\../inc/ADC.h

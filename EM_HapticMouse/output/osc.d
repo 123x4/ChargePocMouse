@@ -1,0 +1,9 @@
+.\output\osc.o: src\OSC.c
+.\output\osc.o: src\../inc/LPC11Uxx.h
+.\output\osc.o: src\../inc/core_cm0.h
+.\output\osc.o: src\../inc/LPC11Uxx.h
+.\output\osc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\osc.o: .\inc\core_cmInstr.h
+.\output\osc.o: .\inc\core_cmFunc.h
+.\output\osc.o: src\../inc/system_LPC11Uxx.h
+.\output\osc.o: src\../inc/OSC.h

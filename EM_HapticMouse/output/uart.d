@@ -1,0 +1,11 @@
+.\output\uart.o: src\UART.c
+.\output\uart.o: src\../inc/LPC11Uxx.h
+.\output\uart.o: src\../inc/core_cm0.h
+.\output\uart.o: src\../inc/LPC11Uxx.h
+.\output\uart.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\uart.o: .\inc\core_cmInstr.h
+.\output\uart.o: .\inc\core_cmFunc.h
+.\output\uart.o: src\../inc/system_LPC11Uxx.h
+.\output\uart.o: src\../inc/OSC.h
+.\output\uart.o: src\../inc/UART.h
+.\output\uart.o: .\inc\type.h

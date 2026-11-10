@@ -1,0 +1,9 @@
+.\output\paw3950.o: src\PAW3950.c
+.\output\paw3950.o: .\inc\my_board.h
+.\output\paw3950.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\paw3950.o: .\inc\LPC11Uxx.h
+.\output\paw3950.o: .\inc\core_cm0.h
+.\output\paw3950.o: .\inc\LPC11Uxx.h
+.\output\paw3950.o: .\inc\core_cmInstr.h
+.\output\paw3950.o: .\inc\core_cmFunc.h
+.\output\paw3950.o: .\inc\system_LPC11Uxx.h

@@ -1,0 +1,10 @@
+.\output\main.o: src\Main.c
+.\output\main.o: src\../inc/Main.h
+.\output\main.o: src\../inc/device.h
+.\output\main.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\main.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\main.o: src\../inc/Type.h
+.\output\main.o: src\../inc/gloab.h
+.\output\main.o: src\../inc/usb.h
+.\output\main.o: src\../inc/hiduser.h
+.\output\main.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h

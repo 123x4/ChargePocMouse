@@ -1,0 +1,12 @@
+.\output\my_waveform.o: src\my_waveform.c
+.\output\my_waveform.o: .\inc\my_waveform.h
+.\output\my_waveform.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\my_waveform.o: .\inc\my_board.h
+.\output\my_waveform.o: .\inc\LPC11Uxx.h
+.\output\my_waveform.o: .\inc\core_cm0.h
+.\output\my_waveform.o: .\inc\LPC11Uxx.h
+.\output\my_waveform.o: .\inc\core_cmInstr.h
+.\output\my_waveform.o: .\inc\core_cmFunc.h
+.\output\my_waveform.o: .\inc\system_LPC11Uxx.h
+.\output\my_waveform.o: .\inc\my_pwm.h
+.\output\my_waveform.o: .\inc\my_debug.h
