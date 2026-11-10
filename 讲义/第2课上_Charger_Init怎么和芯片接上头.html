@@ -130,7 +130,7 @@ figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
 
 <p><strong>单片机手册怎么说：</strong>PIO0_4 和 PIO0_5 是<strong>真正的开漏引脚</strong>，硬件上就不能输出高电平（UM10462 表 80，第 89 页：“PIO0_4 (open-drain pin)”）。所以外部上拉电阻是必需的。实测日志里 <code>part 0x13</code> 读对了，说明上拉是有的。</p>
 
-<div class="warn"><strong>这层抽象在这里漏了：</strong><code>soft_i2c_init</code> 是给“任意引脚”写的通用代码，会改 IOCON 的第 3、4 位（上下拉）和第 10 位（开漏）。可 PIO0_4/5 是特殊引脚，这几位在它们身上是<strong>保留位</strong>（表 80：第 7:3 位、第 31:10 位保留；手册修订记录：“Bit 10 changed to reserved for PIO0_4 and PIO0_5”）。手册还建议这两个脚当 GPIO 用时把 I2CMODE（第 9:8 位）设成 <code>01</code>，代码保持的是默认 <code>00</code>。目前通信正常，先记下不急着改。教训：<strong>通用代码遇到特殊引脚时，要回去对照那个引脚自己的寄存器表。</strong></div>
+<div class="warn"><strong>这层抽象在这里漏了：</strong><code>soft_i2c_init</code> 是给“任意引脚”写的通用代码，会改 IOCON 的第 3、4 位（上下拉）和第 10 位（开漏）。可 PIO0_4/5 是特殊引脚，这几位在它们身上是<strong>保留位</strong>（表 80：第 7:3 位、第 31:10 位保留；手册修订记录：“Bit 10 changed to reserved for PIO0_4 and PIO0_5”）。（I2CMODE 第 9:8 位保持默认 <code>00</code> 是允许的：手册 §7.3.8 说当 GPIO 用时选 <code>00</code> 或 <code>01</code> 都行，<code>00</code> 带 50 ns 输入滤波。）目前通信正常，先记下不急着改。教训：<strong>通用代码遇到特殊引脚时，要回去对照那个引脚自己的寄存器表。</strong></div>
 
 <h2>第 2 步：/CE 输出低电平（第 119–121 行）</h2>
 <pre><code>LPC_IOCON-&gt;PIO0_1 &amp;= ~0x07;       // ① 引脚功能选 GPIO
