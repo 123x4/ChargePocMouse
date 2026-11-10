@@ -575,6 +575,16 @@
               <FilePath>.\src\my_tick.c</FilePath>
             </File>
             <File>
+              <FileName>my_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\my_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>my_charger.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\my_charger.c</FilePath>
+            </File>
+            <File>
               <FileName>my_queue.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\my_queue.c</FilePath>
