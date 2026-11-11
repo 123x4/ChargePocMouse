@@ -113,13 +113,6 @@ void Charger_PollingTask(void)
 static void Charger_CE_Init(void)
 {
 #if CHARGER_CE_BY_MCU
-  /* PIO0_1 is also the ISP entry pin. The boot ROM samples it within 3 ms
-   * after reset, with the reset-default IOCON (internal pull-up), before this
-   * code runs - so the MODE set here does not affect it (UM10462 p.390).
-   * Hardware note: do not add a strong pull-down on the /CE net (R51 is 1M),
-   * or the MCU enters ISP instead of running this firmware; PIO0_3 is pulled
-   * high by R3, so that would be USB ISP.
-   * Production images write NO_ISP at 0x2FC, which disables this check. */
   LPC_IOCON->PIO0_1 &= ~0x07;       /* FUNC = 0: GPIO */
   LPC_GPIO->CLR[0] = (0x01 << 1);   /* output value low */
   LPC_GPIO->DIR[0] |= (0x01 << 1);  /* PIO0_1 as output -> /CE low */
