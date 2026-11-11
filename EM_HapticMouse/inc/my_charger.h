@@ -20,9 +20,18 @@
  */
 #define CHARGER_CE_BY_MCU         1       /* 1: MCU drives PIO0_1 (/CE) low = allow charging */
 
-/*------ battery spec: still to be confirmed, values below are conservative ------*/
-#define CHARGER_ICHG_NORMAL_MA    320     /* charge current at 10~45 C. 40 mA step, 40~1520 */
-#define CHARGER_ICHG_COOL_MA      120     /* charge current at 0~10 C */
+/*------ battery: Ganfeng 522528 450 mAh, 3.87 V nominal (资料/195000882 电池规格书.pdf) ------
+ * Spec 4.2.1 : charge voltage limit 4.45 V (0~45 C), 4.1 V at 45~55 C.
+ * Spec 4.2.10: max charge current 90 mA at 0~10 C, 225 mA at 10~15 C,
+ *              450 mA at 15~45 C but 225 mA above 4.25 V, 225 mA at 45~55 C.
+ * BQ21128 default zones: COOL 0~10, PRECOOL 10~15, NORMAL 15~35,
+ *              PREWARM 35~45, WARM 45~60 C.
+ * Choice: one charge current for all allowed zones, below every limit;
+ * the chip itself cuts it in COOL and stops in WARM (see Charger_ApplyConfig),
+ * so the limits hold even if the MCU stops polling.
+ */
+#define CHARGER_VREG_MV           4450    /* charge voltage, 10 mV step, 3500~4800 */
+#define CHARGER_ICHG_MA           200     /* 40 mA step: <= 225 mA; COOL: 40% = 80 mA <= 90 mA */
 #define CHARGER_POLL_MS           10000   /* polling period, must be < 50 s (watchdog) */
 
 int32_t Charger_Init(void);
