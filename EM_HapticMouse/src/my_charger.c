@@ -123,6 +123,10 @@ static void Charger_CE_Init(void)
   LPC_IOCON->PIO0_1 &= ~0x07;       /* FUNC = 0: GPIO */
   LPC_GPIO->CLR[0] = (0x01 << 1);   /* output value low */
   LPC_GPIO->DIR[0] |= (0x01 << 1);  /* PIO0_1 as output -> /CE low */
+  /* MODE = 00: pull-up off. Only after DIR: until then the pull-up is what
+   * holds /CE high. Now the output drives the pin, and the pull-up would
+   * only draw current from VDD while /CE is low. */
+  LPC_IOCON->PIO0_1 &= ~(0x03 << 3);
 #endif
 }
 
