@@ -1,0 +1,774 @@
+<title>霍尔芯片时序动画</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow reading column; each 关 is a "bench" panel styled like a logic-analyzer capture, with its own step player. */
+:root{
+  --bg:#f2f4f3; --panel:#ffffff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e6eae9;
+  --accent:#0d7a70; --accent-soft:#d7eeeb;
+  --sck:#b97400; --mosi:#1d68c9; --miso:#b42f68;
+  --left:#d06a14; --right:#7a4fd0; --tx:#1d68c9;
+  --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1; --hl:#fff1c2;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+    --accent:#3cc6b5; --accent-soft:#16312e;
+    --sck:#f2b33d; --mosi:#5ea4ff; --miso:#ff6fa6;
+    --left:#ff9a4a; --right:#b293ff; --tx:#5ea4ff;
+    --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; --hl:#3a3216;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e;
+  --sck:#f2b33d; --mosi:#5ea4ff; --miso:#ff6fa6;
+  --left:#ff9a4a; --right:#b293ff; --tx:#5ea4ff;
+  --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; --hl:#3a3216;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.75 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:820px;margin:0 auto;padding-block:28px 80px}
+h1{font-size:1.75rem;line-height:1.3;margin:0 0 6px;text-wrap:balance}
+h2{font-size:1.3rem;line-height:1.4;margin:0 0 4px;text-wrap:balance}
+h2 .no{font-family:var(--font-mono);color:var(--accent);margin-right:8px}
+p{margin:8px 0}
+.lede{color:var(--muted);margin:0 0 18px}
+code,.mono,.code,.decode,svg .m{font-family:var(--font-mono);font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+code,.mono{font-size:.88em}
+code{background:var(--grid);padding:1px 5px;border-radius:4px}
+nav.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+nav.chips a{font-size:.88rem;padding:3px 11px;border:1px solid var(--line);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--panel)}
+nav.chips a:hover{border-color:var(--accent);color:var(--accent)}
+.state{background:var(--accent-soft);border-radius:10px;padding:12px 16px;margin:16px 0}
+.state b{display:block}
+section.ch{margin-top:44px;scroll-margin-top:12px}
+.why{color:var(--muted);margin:2px 0 12px}
+.bench{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block}
+svg text{font-family:var(--font-body)}
+svg .m{font-family:var(--font-mono)}
+.caption{min-height:4.6em;border-left:3px solid var(--accent);padding:6px 12px;background:var(--bg);border-radius:0 8px 8px 0}
+.caption .k{font-family:var(--font-mono);font-size:.8rem;color:var(--accent);display:block}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctrl button,.tabs button,.pick button{font:inherit;font-size:.9rem;padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.ctrl button:hover,.tabs button:hover,.pick button:hover{border-color:var(--accent)}
+.ctrl button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ctrl select{font:inherit;font-size:.9rem;padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.ctrl .cnt{font-family:var(--font-mono);font-size:.82rem;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.tabs,.pick{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button[aria-pressed="true"],.pick button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
+.code{font-family:var(--font-mono);font-size:12.5px;line-height:1.6;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 0;overflow-x:auto;min-width:0}
+.code div{white-space:pre;padding:0 12px 0 0;display:flex}
+.code .ln{width:3.4em;text-align:right;color:var(--muted);padding-right:12px;flex:none;user-select:none}
+.code div.on{background:var(--hl)}
+.code div.on .ln{color:var(--fg);font-weight:600}
+.code .cm{color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.two>*{min-width:0}
+@media (max-width:680px){.two{grid-template-columns:1fr}}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:var(--grid);font-weight:500}
+td.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.note{font-size:.9rem;color:var(--muted)}
+.okc{color:var(--ok)} .badc{color:var(--bad)}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:.9rem;cursor:pointer}
+.decode{font-family:var(--font-mono);font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;white-space:pre-wrap;min-height:3em}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tl{cursor:pointer}
+.tl:hover rect{stroke:var(--accent);stroke-width:2}
+.manual{background:var(--grid);border-radius:10px;padding:10px 14px;margin-top:12px;font-size:.92rem}
+.manual .mt{display:block;font-weight:700;margin-bottom:4px}
+.manual .mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.manual .mg>div{min-width:0}
+.manual b:first-child{display:block;color:var(--accent);font-size:.85rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<main>
+<h1>MCU 怎么和霍尔芯片说话</h1>
+<p class="lede">鼠标板子上的 LPC11U35 通过三根线控制两颗 H6（GTRY164）霍尔芯片。下面从一根线讲起，分 7 关拼出完整过程，最后对应到 <code>app/button.c</code> 里的真实代码。</p>
+
+<div class="state"><b>建议这样看</b>按顺序一关一关来，每关点"下一步"慢慢走，看懂了再进下一关。某一关看不懂就停在那里，把看不懂的那一步截图发给我。<br>电脑上建议把两本手册的 PDF（都在仓库 <code>资料/</code> 目录）开在旁边，看到"📖 翻开手册对照"就翻到对应页看一眼。<b>动画讲原理，手册是依据</b>，两边对上了才算真懂。</div>
+
+<nav class="chips" aria-label="章节">
+  <a href="#c1">1 高和低</a><a href="#c2">2 打拍子传数据</a><a href="#c3">3 两颗芯片串起来</a>
+  <a href="#c4">4 长按 = 命令</a><a href="#c5">5 借用 SCK 脚</a><a href="#c6">6 完整时序</a><a href="#c7">7 上电全过程和量什么</a>
+</nav>
+
+<!-- 1 -->
+<section class="ch" id="c1">
+<h2><span class="no">1</span>一根线只有两种状态：高和低</h2>
+<p class="why">后面所有内容都建立在这一点上，所以先看清楚"波形图"到底在画什么。</p>
+<div class="bench">
+  <div class="scroll"><svg id="s1" viewBox="0 0 640 210" style="min-width:520px;width:100%"></svg></div>
+  <div class="caption" id="cap1"></div>
+  <div class="ctrl" id="ctl1"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg"><div><b>H6 手册 GTRY164</b>§5.2 电气参数，<b>PDF 第 5 页</b>：VIH ≥ 0.8×VDD、VIL ≤ 0.2×VDD。芯片供电是 3.3V，所以线上 ≥2.64V 它才认作"1"，≤0.66V 才认作"0"。这就是第 1 关"高和低"的精确定义。</div><div><b>MCU 手册 UM10462</b>第 9 章 GPIO。<code>DrvGPIOOutput()</code>（src/GPIO.c）只写了三个寄存器：表 161 <b>DIR1</b>（PDF 第 164 页，设成输出）、表 169 <b>SET1</b> 和表 171 <b>CLR1</b>（PDF 第 166 页，拉高 / 拉低）。看表里的说明：往 SET1 某一位写 1，那个脚就变高。</div></div></div>
+</section>
+
+<!-- 2 -->
+<section class="ch" id="c2">
+<h2><span class="no">2</span>SPI：用"打拍子"一位一位地传数据</h2>
+<p class="why">一根线一次只能表示 1 位（0 或 1）。要传 8 位，就需要另一根线告诉对方"现在读下一位"。这根线就是 SCK。</p>
+<div class="bench">
+  <div class="scroll"><svg id="s2" viewBox="0 0 640 300" style="min-width:540px;width:100%"></svg></div>
+  <div class="caption" id="cap2"></div>
+  <div class="ctrl" id="ctl2"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg"><div><b>H6 手册 GTRY164</b>§7 开头，<b>PDF 第 8 页</b>：只支持"上升沿输出数据、下降沿采样数据"，并且要求 SCK 频率高于 1MHz（否则芯片会把普通时钟当成命令）。对照第 2 关里"↑放数据、↓芯片读"的两步。</div><div><b>MCU 手册 UM10462</b>第 13 章 SSP。表 260 <b>CR0</b>（PDF 第 278 页）：看 CPOL、CPHA 两位，代码写的 CR0 = 0x0287 → CPOL=0、CPHA=1、8 位。图 34（PDF 第 285 页）就是这种模式的波形，和第 2 关的动画是一回事。表 264 <b>CPSR</b>（PDF 第 280 页）：时钟 = 48MHz ÷ (CPSR 8 × (SCR 2+1)) = 2MHz。</div></div></div>
+</section>
+
+<!-- 3 -->
+<section class="ch" id="c3">
+<h2><span class="no">3</span>两颗芯片串成一串：数据是"挤"进去、"挤"出来的</h2>
+<p class="why">板子上两颗芯片串在一起（菊花链）。这一关解释读回的 4 个字节为什么是"前 2 个右键、后 2 个左键"。</p>
+<div class="bench">
+  <div class="legend"><span><i style="background:var(--left)"></i>左键芯片里的数据</span><span><i style="background:var(--right)"></i>右键芯片里的数据</span><span><i style="background:var(--tx)"></i>MCU 新送进去的数据</span></div>
+  <div class="scroll"><svg id="s3" viewBox="0 0 660 270" style="min-width:600px;width:100%"></svg></div>
+  <div class="caption" id="cap3"></div>
+  <div class="ctrl" id="ctl3"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg"><div><b>H6 手册 GTRY164</b>§11 典型应用，<b>PDF 第 25 页</b>：芯片一个接一个串联的接法图，对照第 3 关的方块图。§7.2 图 4，<b>PDF 第 8 页</b>：读出的 16 位里最高两位是 CRC1、CRC0，后面是 D13–D0；第 9 页写了两个校验位的公式。</div></div></div>
+</section>
+
+<!-- 4 -->
+<section class="ch" id="c4">
+<h2><span class="no">4</span>没有片选线，芯片怎么知道该干什么：看 SCK"按住"多久</h2>
+<p class="why">普通 SPI 还有一根片选线，用来告诉芯片"一帧开始了、结束了"。这块板子没有片选线，H6 的办法是：<b>把 SCK 拉高并保持一段时间，保持多久就代表哪条命令</b>。芯片里相当于有一块秒表。</p>
+<div class="bench">
+  <div class="pick" id="pick4" role="group" aria-label="选择 SCK 保持高电平的时间"></div>
+  <div class="scroll"><svg id="s4" viewBox="0 0 640 250" style="min-width:540px;width:100%"></svg></div>
+  <div class="caption" id="cap4"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg"><div><b>H6 手册 GTRY164</b>§7.8 时序表，<b>PDF 第 12 页</b>：这一页就是"秒表档位表"，td1 = 5us、td6 = 39us、td10 = 128us，每一档都是 ±5%。第 4 关的色块就是照这张表画的。<br>⚠ 注意：§7.3、§7.5、§7.6 的正文里有几处 td 编号写错了（从 H5 手册抄过来没改），<b>以第 12 页的表和各节的图为准</b>。</div></div></div>
+</section>
+
+<!-- 5 -->
+<section class="ch" id="c5">
+<h2><span class="no">5</span>为什么代码要先把 SCK 脚"借"过来</h2>
+<p class="why">MCU 里负责 SPI 的硬件叫 SSP1。它只会按 2MHz 打快拍子，每拍高电平只有 0.25us，没法"按住"几十微秒。所以代码先把这个引脚从 SSP1 手里借过来，当成普通开关（GPIO）手动控制，用完再还回去。这就是 <code>Hall_CLK_Command_SET()</code> 做的全部事情。</p>
+<div class="bench">
+  <div class="two">
+    <div class="scroll"><svg id="s5" viewBox="0 0 360 300" style="min-width:300px;width:100%"></svg></div>
+    <div class="code" id="code5"></div>
+  </div>
+  <div class="caption" id="cap5"></div>
+  <div class="ctrl" id="ctl5"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg"><div><b>MCU 手册 UM10462</b>表 115 <b>PIO1_15 寄存器</b>，<b>PDF 第 116 页</b>：FUNC 位（bit2:0）为 0x0 时这个脚是普通 PIO1_15，为 0x3 时是 SCK1。代码里 <code>reg |= 0x00</code> 和 <code>reg |= 0x03</code> 就是在拨这个开关。<br>第 15 章 16 位定时器，<b>PDF 第 333 页起</b>：<code>CT16B1_DelayUs()</code> 把预分频 PR 设为 47，48MHz ÷ (47+1) = 1MHz，所以定时器每 1us 加 1。</div></div></div>
+</section>
+
+<!-- 6 -->
+<section class="ch" id="c6">
+<h2><span class="no">6</span>完整时序：三条命令从头走到尾</h2>
+<p class="why">把前五关拼起来。选一个场景，一步一步看：代码走到哪一行、三根线上出现什么波形、芯片格子里的内容怎么变。波形是放慢、压缩画的，真实时长标在图上。</p>
+<div class="bench">
+  <div class="tabs" id="tabs6" role="group" aria-label="选择场景"></div>
+  <div id="opt6"></div>
+  <div class="code" id="code6"></div>
+  <div class="scroll"><svg id="w6" viewBox="0 0 640 170" style="min-width:580px;width:100%"></svg></div>
+  <div class="legend"><span><i style="background:var(--left)"></i>左键芯片的数据</span><span><i style="background:var(--right)"></i>右键芯片的数据</span><span><i style="background:var(--tx)"></i>MCU 送进去的数据</span></div>
+  <div class="scroll"><svg id="s6" viewBox="0 0 660 200" style="min-width:600px;width:100%"></svg></div>
+  <div class="decode" id="dec6"></div>
+  <div class="caption" id="cap6"></div>
+  <div class="ctrl" id="ctl6"></div>
+</div>
+<div class="manual" id="man6"></div>
+</section>
+
+<!-- 7 -->
+<section class="ch" id="c7">
+<h2><span class="no">7</span>上电全过程，以及逻辑分析仪上量什么</h2>
+<p class="why">前六关讲的是"一条命令"。这一关把它们放回上电之后的真实顺序里。点时间线上的色块，会跳到第 6 关的对应场景。</p>
+<div class="bench">
+  <div class="scroll"><svg id="s7" viewBox="0 0 660 150" style="min-width:600px;width:100%"></svg></div>
+  <p class="note">次数和顺序来自当前代码：<code>Hall_osc_calibrate()</code> 固定校准 30 次，<code>sensor_reg_init_array</code> 有 25 项，主循环每 1ms 调用一次 <code>hall_get_sample()</code>。</p>
+</div>
+
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg"><div><b>H6 手册 GTRY164</b>§9.1 图 11，<b>PDF 第 19 页</b>：上电后先频率校准，读回 0x7C–0x84 才算通过，最多 128 次，通过后等 20ms，再写寄存器。时间线上"校准 → 写寄存器"的顺序就来自这张流程图。（当前代码固定校准 30 次、不检查结果，H6 移植第 2 步会改成按这张图来。）</div></div></div>
+<h3 style="margin-top:26px">逻辑分析仪上要量的是哪一段</h3>
+<div class="bench">
+  <div class="scroll"><svg id="s7b" viewBox="0 0 640 210" style="min-width:560px;width:100%"></svg></div>
+  <p>你量的高电平宽度，就是第 5 关的第 ② 步（<code>DrvGPIOOutput(1,15,1)</code>，拉高）到第 ④ 步（<code>DrvGPIOOutput(1,15,0)</code>，拉低）之间真实经过的时间。</p>
+  <p>为什么要量：以 5us 的命令为例，代码里写的是 <code>DELAY_OUT(5)</code>，它等于 5−1 = 4；<code>CT16B1_DelayUs(4)</code> 内部又只数到 4−2 = 2。所以<b>定时器真正只等了约 2us，剩下约 3us 指望由"调用函数本身花的时间"补上</b>。这 3us 是写代码的人估计的，从来没人量过。5us 命令的允许误差只有 ±0.25us，开销差 1us 就会超出范围。</p>
+  <div class="scroll"><table>
+    <tr><th>命令（当前固件）</th><th>代码里设的</th><th>定时器实际计时</th><th>靠开销补的</th><th>手册允许范围</th><th>你的实测</th></tr>
+    <tr><td>频率校准</td><td class="n">128us</td><td class="n">125us</td><td class="n">≈3us</td><td class="n">121.6 – 134.4us</td><td></td></tr>
+    <tr><td>写寄存器（H5）</td><td class="n">24us</td><td class="n">21us</td><td class="n">≈3us</td><td class="n">22.8 – 25.2us</td><td></td></tr>
+    <tr><td>读采样</td><td class="n">5us</td><td class="n">2us</td><td class="n">≈3us</td><td class="n">4.75 – 5.25us</td><td></td></tr>
+  </table></div>
+  <p class="note">板子上现在跑的还是 H5 设置（<code>USE_HALL_SENSOR</code> = 5），所以写寄存器是 24us；切到 H6 之后会变成 39us。量出"开销到底是多少"以后，切换 H6 时就能把这个偏差直接补进去。</p>
+</div>
+
+<h3 style="margin-top:26px">H5 换 H6，到底换了什么</h3>
+<div class="bench">
+  <p>第 1–5 关讲的机制，H5 和 H6 <b>完全一样</b>：一样的三根线，一样的串联方式，一样"按住 SCK 表示命令"。变的只有两样：</p>
+  <div class="scroll"><table>
+    <tr><th></th><th>H5</th><th>H6</th></tr>
+    <tr><td>秒表的档位（命令时长）</td><td>写寄存器 24us</td><td>写寄存器 <b>39us</b>；校准后要多等 <b>&gt;50us</b></td></tr>
+    <tr><td>格子里的内容格式</td><td>写寄存器的校验位只算数据</td><td>校验位要把<b>地址也算进去</b>；寄存器地址全部重排</td></tr>
+  </table></div>
+  <p>所以移植要改的，就是"档位"（<code>button.h</code> 里的时序宏）和"内容"（<code>button.c</code> 里的校验位和寄存器表）。第 1 步已经让档位能按芯片型号自动切换了。</p>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(tag, attrs, parent, text){
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+const hex = (v, n) => "0x" + v.toString(16).toUpperCase().padStart(n, "0");
+const bin = (v, n) => v.toString(2).padStart(n, "0");
+const SRC = { L:"var(--left)", R:"var(--right)", T:"var(--tx)", N:"var(--muted)" };
+
+/* ---------- generic step player ---------- */
+function Player(ctlId, capId, frames, render){
+  const ctl = document.getElementById(ctlId), cap = document.getElementById(capId);
+  ctl.innerHTML = "";
+  const mk = (txt, cls, aria) => { const b = document.createElement("button"); b.type = "button"; b.textContent = txt; if (cls) b.className = cls; if (aria) b.setAttribute("aria-label", aria); ctl.appendChild(b); return b; };
+  const bPrev = mk("◀ 上一步", "", "上一步");
+  const bNext = mk("下一步 ▶", "primary", "下一步");
+  const bPlay = mk("自动播放", "", "自动播放");
+  const bReset = mk("从头开始", "", "从头开始");
+  const sel = document.createElement("select"); sel.setAttribute("aria-label", "播放速度");
+  [["慢", 2200], ["中", 1300], ["快", 600]].forEach(([t, v], i) => { const o = document.createElement("option"); o.textContent = t; o.value = v; if (i === 0) o.selected = true; sel.appendChild(o); });
+  ctl.appendChild(sel);
+  const cnt = document.createElement("span"); cnt.className = "cnt"; ctl.appendChild(cnt);
+  let i = 0, timer = null;
+  function show(){
+    const f = frames[i];
+    render(f, i);
+    cap.innerHTML = (f.tag ? '<span class="k">' + f.tag + "</span>" : "") + f.cap;
+    cnt.textContent = (i + 1) + " / " + frames.length;
+    bPrev.disabled = i === 0; bNext.disabled = i === frames.length - 1;
+  }
+  function stop(){ if (timer){ clearTimeout(timer); timer = null; } bPlay.textContent = "自动播放"; }
+  function tick(){
+    if (i >= frames.length - 1){ stop(); return; }
+    i++; show();
+    const base = +sel.value;
+    timer = setTimeout(tick, frames[i].fast ? Math.max(180, base / 5) : base);
+  }
+  bPrev.onclick = () => { stop(); if (i > 0){ i--; show(); } };
+  bNext.onclick = () => { stop(); if (i < frames.length - 1){ i++; show(); } };
+  bReset.onclick = () => { stop(); i = 0; show(); };
+  bPlay.onclick = () => { if (timer){ stop(); return; } if (i >= frames.length - 1) i = 0; bPlay.textContent = "暂停"; show(); timer = setTimeout(tick, +sel.value); };
+  show();
+  return { stop };
+}
+
+/* ---------- waveform helper: draws a digital channel from [{x, v}] change points ---------- */
+function channel(svg, y, h, pts, xEnd, color, label){
+  el("text", { x: 8, y: y + h * 0.65, fill: color, "font-size": 12, class: "m" }, svg, label);
+  let d = "", prevV = null;
+  pts.forEach(p => {
+    const yy = p.v ? y : y + h;
+    if (prevV === null) d += "M" + p.x + "," + yy;
+    else { d += " L" + p.x + "," + (prevV ? y : y + h) + " L" + p.x + "," + yy; }
+    prevV = p.v;
+  });
+  if (prevV !== null) d += " L" + xEnd + "," + (prevV ? y : y + h);
+  el("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+}
+function codePanel(id, lines){
+  const box = document.getElementById(id); box.innerHTML = "";
+  const rows = {};
+  lines.forEach(([n, t]) => {
+    const d = document.createElement("div");
+    const ln = document.createElement("span"); ln.className = "ln"; ln.textContent = n || "";
+    const tx = document.createElement("span");
+    const ci = t.indexOf("//");
+    if (ci >= 0){ tx.appendChild(document.createTextNode(t.slice(0, ci))); const c = document.createElement("span"); c.className = "cm"; c.textContent = t.slice(ci); tx.appendChild(c); }
+    else tx.textContent = t;
+    d.appendChild(ln); d.appendChild(tx); box.appendChild(d);
+    if (n) rows[n] = d;
+  });
+  return function highlight(list){
+    Object.values(rows).forEach(r => r.classList.remove("on"));
+    (list || []).forEach(n => rows[n] && rows[n].classList.add("on"));
+    const first = (list || []).map(n => rows[n]).find(Boolean);
+    if (first){ const top = first.offsetTop - box.offsetTop - 30; box.scrollTo ? box.scrollTo({ top: Math.max(0, top) }) : null; }
+  };
+}
+
+/* ======================= 1. high / low ======================= */
+(function(){
+  const svg = document.getElementById("s1");
+  const seq = [0, 1, 1, 0, 1, 0, 0, 1];
+  const frames = [{ n: 0, cap: "这是 MCU 的一个引脚，接着一根线。左边的灯表示这根线现在的电压，下面的图把电压随时间的变化画出来，这就是<b>波形图</b>。现在线上是 0V，叫<b>低电平</b>，记作 0。" , tag:"开始" }];
+  seq.forEach((v, k) => frames.push({ n: k + 1, tag: "第 " + (k + 1) + " 格时间",
+    cap: v ? "代码让引脚输出高：线上变成 <b>3.3V</b>，叫<b>高电平</b>，记作 1。波形往上跳了一格。在这个工程里，这句代码就是 <code>DrvGPIOOutput(1,15,1)</code>。"
+           : "代码让引脚输出低：线上回到 <b>0V</b>，记作 0。对应代码 <code>DrvGPIOOutput(1,15,0)</code>。" }));
+  frames.push({ n: seq.length, tag: "小结", cap: "波形图的横轴是<b>时间</b>，纵轴是<b>电压</b>。上面一条线 = 3.3V = 1，下面一条线 = 0V = 0。后面所有图都按这个读法：<b>从左往右看，就是时间往前走</b>。逻辑分析仪做的事情，就是把真实引脚上的这种图画给你看。" });
+  function render(f){
+    clear(svg);
+    const n = f.n, v = n === 0 ? 0 : seq[Math.min(n, seq.length) - 1];
+    el("rect", { x: 20, y: 20, width: 120, height: 70, rx: 8, fill: "var(--bg)", stroke: "var(--line)" }, svg);
+    el("text", { x: 80, y: 46, "text-anchor": "middle", fill: "var(--fg)", "font-size": 13 }, svg, "MCU 引脚");
+    el("text", { x: 80, y: 70, "text-anchor": "middle", fill: "var(--muted)", "font-size": 12, class: "m" }, svg, "PIO1_15");
+    el("line", { x1: 140, y1: 55, x2: 300, y2: 55, stroke: v ? "var(--sck)" : "var(--line)", "stroke-width": 4 }, svg);
+    el("circle", { cx: 330, cy: 55, r: 26, fill: v ? "var(--sck)" : "var(--bg)", stroke: "var(--sck)", "stroke-width": 2 }, svg);
+    el("text", { x: 375, y: 50, fill: "var(--fg)", "font-size": 15, "font-weight": 700 }, svg, v ? "高电平 = 1" : "低电平 = 0");
+    el("text", { x: 375, y: 72, fill: "var(--muted)", "font-size": 13, class: "m" }, svg, v ? "3.3V" : "0V");
+    const x0 = 70, w = 66, yH = 125, yL = 175;
+    el("text", { x: 20, y: yH + 4, fill: "var(--muted)", "font-size": 11, class: "m" }, svg, "3.3V");
+    el("text", { x: 26, y: yL + 4, fill: "var(--muted)", "font-size": 11, class: "m" }, svg, "0V");
+    el("line", { x1: x0, y1: yL + 18, x2: 620, y2: yL + 18, stroke: "var(--line)" }, svg);
+    el("text", { x: 600, y: yL + 32, fill: "var(--muted)", "font-size": 11, "text-anchor": "end" }, svg, "时间 →");
+    for (let k = 0; k <= seq.length; k++) el("line", { x1: x0 + k * w, y1: yH - 8, x2: x0 + k * w, y2: yL + 18, stroke: "var(--grid)" }, svg);
+    const pts = [{ x: x0, v: 0 }];
+    for (let k = 0; k < n; k++) pts.push({ x: x0 + k * w, v: seq[k] });
+    channel(svg, yH, yL - yH, pts.slice(1).length ? pts : [{ x: x0, v: 0 }], x0 + Math.max(n, 0.15) * w, "var(--sck)", "");
+    if (n > 0) el("line", { x1: x0 + n * w, y1: yH - 10, x2: x0 + n * w, y2: yL + 18, stroke: "var(--accent)", "stroke-dasharray": "3 3" }, svg);
+  }
+  Player("ctl1", "cap1", frames, render);
+})();
+
+/* ======================= 2. SPI one byte ======================= */
+(function(){
+  const svg = document.getElementById("s2");
+  const BYTE = 0xF3, bits = [...bin(BYTE, 8)].map(Number);
+  const frames = [{ k: -1, ph: "idle", cells: Array(8).fill(null), tag: "准备",
+    cap: "现在要把 1 个字节 <b class='m'>0xF3</b>（二进制 <span class='m'>11110011</span>）送进芯片。用两根线：<b style='color:var(--sck)'>SCK</b> 是 MCU 打的拍子，<b style='color:var(--mosi)'>MOSI</b> 上放数据。芯片里有一排格子，用来接收这些位。从最高位（bit7）开始送。" }];
+  let cells = Array(8).fill(null);
+  bits.forEach((b, k) => {
+    frames.push({ k, ph: "rise", cells: cells.slice(), tag: "第 " + (k + 1) + " 拍 · SCK 上升沿",
+      cap: "SCK 从 0 跳到 1。按 H6 手册的约定，<b>上升沿时 MCU 把下一位放到 MOSI 上</b>：这一位是 bit" + (7 - k) + " = <b>" + b + "</b>。" });
+    cells = [{ b, s: "T" }].concat(cells.slice(0, 7));
+    frames.push({ k, ph: "fall", cells: cells.slice(), tag: "第 " + (k + 1) + " 拍 · SCK 下降沿",
+      cap: "SCK 从 1 落回 0。<b>下降沿时芯片看一眼 MOSI</b>，读到 " + b + "。芯片把所有格子往右挪一格，新读到的这一位放进最左边的格子。" });
+  });
+  frames.push({ k: 8, ph: "end", cells: cells.slice(), tag: "完成",
+    cap: "打了 8 拍，8 位全部进了芯片，格子里从右到左正好是 bit7…bit0，也就是 0xF3。<b>这就是 SPI：SCK 每打一拍，传 1 位</b>。真实的 SCK 是 2MHz，每拍只有 0.5us，一拍里高电平只占 0.25us。" });
+  function render(f){
+    clear(svg);
+    const x0 = 70, cw = 62, yS = 30, yM = 100, h = 34;
+    const xEnd = f.ph === "idle" ? x0 : f.ph === "end" ? x0 + 8 * cw : x0 + f.k * cw + (f.ph === "rise" ? 4 : cw / 2 + 4);
+    const sck = [{ x: 20, v: 0 }], mosi = [{ x: 20, v: 0 }];
+    for (let k = 0; k < 8; k++){ sck.push({ x: x0 + k * cw, v: 1 }); sck.push({ x: x0 + k * cw + cw / 2, v: 0 }); mosi.push({ x: x0 + k * cw, v: bits[k] }); }
+    const clipId = "cl2";
+    const defs = el("defs", {}, svg); const cp = el("clipPath", { id: clipId }, defs); el("rect", { x: 0, y: 0, width: Math.max(xEnd, 21), height: 170 }, cp);
+    const g = el("g", { "clip-path": "url(#" + clipId + ")" }, svg);
+    for (let k = 0; k < 8; k++){
+      el("rect", { x: x0 + k * cw, y: yM - 4, width: cw, height: h + 8, fill: k % 2 ? "transparent" : "var(--grid)" }, g);
+      el("text", { x: x0 + k * cw + cw / 2, y: yM + h + 20, "text-anchor": "middle", fill: "var(--mosi)", "font-size": 12, class: "m" }, g, "bit" + (7 - k) + "=" + bits[k]);
+    }
+    channel(g, yS, h, sck, x0 + 8 * cw + 20, "var(--sck)", "");
+    channel(g, yM, h, mosi, x0 + 8 * cw + 20, "var(--mosi)", "");
+    el("text", { x: 8, y: yS + 22, fill: "var(--sck)", "font-size": 12, class: "m" }, svg, "SCK");
+    el("text", { x: 8, y: yM + 22, fill: "var(--mosi)", "font-size": 12, class: "m" }, svg, "MOSI");
+    if (f.ph === "rise" || f.ph === "fall"){
+      const ex = x0 + f.k * cw + (f.ph === "rise" ? 0 : cw / 2);
+      el("line", { x1: ex, y1: yS - 10, x2: ex, y2: yM + h + 6, stroke: "var(--accent)", "stroke-width": 2, "stroke-dasharray": "4 3" }, svg);
+      el("text", { x: ex + 4, y: yS - 14, fill: "var(--accent)", "font-size": 12 }, svg, f.ph === "rise" ? "↑ 上升沿：放数据" : "↓ 下降沿：芯片读");
+    }
+    const cy = 215, cx0 = 200, cs = 34;
+    el("text", { x: 70, y: cy + 22, fill: "var(--fg)", "font-size": 13 }, svg, "芯片里的格子 →");
+    for (let k = 0; k < 8; k++){
+      const c = f.cells[k];
+      el("rect", { x: cx0 + k * cs, y: cy, width: cs - 4, height: cs - 4, rx: 4, fill: c ? SRC[c.s] : "var(--bg)", stroke: "var(--line)", "fill-opacity": c ? 0.85 : 1 }, svg);
+      if (c) el("text", { x: cx0 + k * cs + (cs - 4) / 2, y: cy + 21, "text-anchor": "middle", fill: "var(--panel)", "font-size": 14, "font-weight": 700, class: "m" }, svg, c.b);
+    }
+    el("text", { x: cx0, y: cy + cs + 14, fill: "var(--muted)", "font-size": 11 }, svg, "新来的从这里进");
+    el("text", { x: cx0 + 8 * cs - 4, y: cy + cs + 14, fill: "var(--muted)", "font-size": 11, "text-anchor": "end" }, svg, "最早进来的在这里");
+  }
+  Player("ctl2", "cap2", frames, render);
+})();
+
+/* ======================= shared: daisy chain ======================= */
+function sampleFrame(v){ let c0 = 0, c1 = 0; for (let i = 0; i < 14; i++) if ((v >> i) & 1){ if (i % 2 === 0) c0 ^= 1; else c1 ^= 1; } return (c1 << 15) | (c0 << 14) | v; }
+function loadChain(h1, h2, s1, s2){ const c = []; for (let k = 0; k < 16; k++) c.push({ b: (h1 >> k) & 1, s: s1 }); for (let k = 0; k < 16; k++) c.push({ b: (h2 >> k) & 1, s: s2 }); return c; }
+function chainVal(c, off){ let v = 0; for (let k = 0; k < 16; k++) v |= c[off + k].b << k; return v; }
+function txBits(tx){ const out = []; tx.forEach(b => { for (let k = 7; k >= 0; k--) out.push((b >> k) & 1); }); return out; }
+function drawChain(svg, c, opts){
+  opts = opts || {};
+  const cs = 16, y = opts.y || 70, xH1 = 92, xH2 = 92 + 16 * cs + 30;
+  el("rect", { x: 6, y: y - 34, width: 62, height: 128, rx: 8, fill: "var(--bg)", stroke: "var(--line)" }, svg);
+  el("text", { x: 37, y: y - 14, "text-anchor": "middle", fill: "var(--fg)", "font-size": 13, "font-weight": 700 }, svg, "MCU");
+  el("text", { x: 37, y: y + 13, "text-anchor": "middle", fill: "var(--mosi)", "font-size": 10, class: "m" }, svg, "MOSI→");
+  el("text", { x: 37, y: y + 78, "text-anchor": "middle", fill: "var(--miso)", "font-size": 10, class: "m" }, svg, "←MISO");
+  [[xH1, "H1 左键芯片", 0], [xH2, "H2 右键芯片", 16]].forEach(([x, name, off]) => {
+    el("rect", { x: x - 6, y: y - 30, width: 16 * cs + 10, height: 62, rx: 8, fill: "none", stroke: "var(--line)" }, svg);
+    el("text", { x: x, y: y - 14, fill: "var(--fg)", "font-size": 12 }, svg, name);
+    const v = chainVal(c, off);
+    el("text", { x: x + 16 * cs - 2, y: y - 14, "text-anchor": "end", fill: "var(--muted)", "font-size": 11, class: "m" }, svg, "格子内容 " + hex(v, 4));
+    for (let k = 0; k < 16; k++){
+      const cell = c[off + k];
+      el("rect", { x: x + k * cs, y: y - 4, width: cs - 2, height: cs + 2, rx: 2, fill: SRC[cell.s], "fill-opacity": 0.88 }, svg);
+      el("text", { x: x + k * cs + (cs - 2) / 2, y: y + 10, "text-anchor": "middle", fill: "var(--panel)", "font-size": 11, "font-weight": 700, class: "m" }, svg, cell.b);
+    }
+    el("text", { x: x, y: y + 28, fill: "var(--muted)", "font-size": 9, class: "m" }, svg, "bit0");
+    el("text", { x: x + 16 * cs - 2, y: y + 28, fill: "var(--muted)", "font-size": 9, "text-anchor": "end", class: "m" }, svg, "bit15");
+  });
+  const a = { stroke: "var(--muted)", "stroke-width": 1.5, fill: "none", "marker-end": "url(#arr)" };
+  const defs = el("defs", {}, svg); const mk = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto" }, defs); el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--muted)" }, mk);
+  el("path", Object.assign({ d: "M68," + (y + 5) + " L" + (xH1 - 8) + "," + (y + 5) }, a), svg);
+  el("path", Object.assign({ d: "M" + (xH1 + 16 * cs + 4) + "," + (y + 5) + " L" + (xH2 - 8) + "," + (y + 5) }, a), svg);
+  el("path", Object.assign({ d: "M" + (xH2 + 16 * cs + 4) + "," + (y + 5) + " L" + (xH2 + 16 * cs + 18) + "," + (y + 5) + " L" + (xH2 + 16 * cs + 18) + "," + (y + 70) + " L68," + (y + 70) }, a), svg);
+  el("text", { x: xH1 + 16 * cs + 12, y: y - 2, "text-anchor": "middle", fill: "var(--muted)", "font-size": 9, class: "m" }, svg, "SDO→SDI");
+  if (opts.regs){
+    opts.regs.forEach((r, i) => {
+      const x = i === 0 ? xH1 : xH2;
+      el("text", { x: x, y: y + 48, fill: r.flash ? "var(--accent)" : "var(--muted)", "font-size": 11, class: "m", "font-weight": r.flash ? 700 : 400 }, svg, r.text);
+    });
+  }
+}
+function rxRow(svg, rx, nbits, y){
+  el("text", { x: 6, y: y + 14, fill: "var(--fg)", "font-size": 12 }, svg, "MCU 收到：");
+  for (let b = 0; b < 4; b++){
+    const x = 92 + b * 140;
+    const got = Math.max(0, Math.min(8, nbits - b * 8));
+    let s = ""; for (let k = 0; k < 8; k++) s += k < got ? rx[b * 8 + k] : "·";
+    el("rect", { x: x, y: y, width: 130, height: 22, rx: 4, fill: "var(--bg)", stroke: "var(--line)" }, svg);
+    el("text", { x: x + 6, y: y + 15, fill: b < 2 ? "var(--right)" : "var(--left)", "font-size": 10, class: "m" }, svg, "rx[" + b + "] " + s + (got === 8 ? " " + hex(parseInt(s, 2), 2) : ""));
+  }
+  el("text", { x: 92, y: y + 38, fill: "var(--right)", "font-size": 10 }, svg, "rx[0..1] 来自右键芯片");
+  el("text", { x: 372, y: y + 38, fill: "var(--left)", "font-size": 10 }, svg, "rx[2..3] 来自左键芯片");
+}
+
+/* ======================= 3. daisy chain ======================= */
+(function(){
+  const svg = document.getElementById("s3");
+  const L = sampleFrame(7210), R = sampleFrame(8650);
+  let c = loadChain(L, R, "L", "R");
+  const tb = txBits([0, 0, 0, 0]);
+  const rx = [];
+  const frames = [{ c: c.map(x => ({ ...x })), n: 0, tag: "开始",
+    cap: "两颗芯片串着：MCU 的 MOSI 进 <b style='color:var(--left)'>左键芯片 H1</b>，H1 的出口接 <b style='color:var(--right)'>右键芯片 H2</b> 的入口，H2 的出口回到 MCU 的 MISO。每颗芯片有 16 个格子。现在格子里已经装好了各自的测量结果（橙色、紫色）。" }];
+  for (let k = 0; k < 32; k++){
+    const out = c[31].b;
+    for (let i = 31; i > 0; i--) c[i] = c[i - 1];
+    c[0] = { b: tb[k], s: "T" };
+    rx.push(out);
+    let cap;
+    if (k === 0) cap = "第 1 拍：所有格子同时往右挪一格。H2 最右边那一格（右键数据的 bit15）被挤出来，从 MISO 回到 MCU；MCU 从 MOSI 送进来的一位（蓝色）进了 H1 最左边的格子。";
+    else if (k === 15) cap = "第 16 拍：右键芯片的 16 位已经全部被挤回 MCU，变成 rx[0] 和 rx[1]。同时，左键数据整体挪进了 H2。";
+    else if (k === 31) cap = "第 32 拍：左键的 16 位也出来了，变成 rx[2] 和 rx[3]。MCU 送进去的蓝色数据占满了两颗芯片。";
+    else cap = "第 " + (k + 1) + " 拍：整体右移一格，最右边的一位回到 MCU（这一位是 " + out + "）。";
+    frames.push({ c: c.map(x => ({ ...x })), n: k + 1, tag: "第 " + (k + 1) + " / 32 拍", cap, fast: !(k === 0 || k === 15 || k === 31) });
+  }
+  frames.push({ c: c.map(x => ({ ...x })), n: 32, tag: "结论",
+    cap: "所以读回的 4 个字节是：<b style='color:var(--right)'>rx[0..1] = 右键</b>（离 MCU 的接收端近，先出来），<b style='color:var(--left)'>rx[2..3] = 左键</b>。这正是代码里 <code>Hall_ReadReg()</code> 写 <code>*rightValue = hall_spi_rx[1]</code>、<code>*leftValue = hall_spi_rx[3]</code> 的原因。<br>还要注意：<b>读和写是同时发生的</b>。MCU 每收一位，也送出一位。所以“读”的时候送出去的内容也会进芯片，校准时手册要求送全 0，就是这个原因。" });
+  function render(f){ clear(svg); drawChain(svg, f.c, { y: 60 }); rxRow(svg, rx, f.n, 190); }
+  Player("ctl3", "cap3", frames, render);
+})();
+
+/* ======================= 4. stopwatch ======================= */
+(function(){
+  const svg = document.getElementById("s4"), cap = document.getElementById("cap4"), pick = document.getElementById("pick4");
+  const zones = [
+    { lo: 4.75, hi: 5.25, name: "HAL_CONVERT", t: "td1 5us", d: "把最新测量值装进格子，准备被读走（读采样）" },
+    { lo: 11.4, hi: 12.6, name: "中断模式", t: "td3 12us", d: "本项目不用" },
+    { lo: 17.1, hi: 18.9, name: "W_PWM_REG", t: "td4 18us", d: "执行刚送进来的 LED 亮度设置（本板没接 LED）" },
+    { lo: 26.6, hi: 29.4, name: "SLEEP", t: "td7 28us", d: "进入休眠" },
+    { lo: 37.05, hi: 40.95, name: "WR_REG", t: "td6 39us", d: "执行刚送进来的读/写寄存器帧" },
+    { lo: 121.6, hi: 134.4, name: "FREQ_Calibrate", t: "td10 128us", d: "频率校准，把结果装进格子" },
+    { lo: 1280, hi: 3000, name: "软复位", t: "td11 >1280us", d: "芯片重启" }
+  ];
+  const opts = [[0.25, "普通时钟 0.25us"], [5, "5us"], [39, "39us"], [128, "128us"], [28, "28us"], [24, "24us（H5 的写寄存器）"]];
+  const X = us => 60 + (Math.log10(us) - Math.log10(0.1)) / (Math.log10(3000) - Math.log10(0.1)) * 560;
+  let raf = null;
+  function draw(us, done){
+    clear(svg);
+    el("text", { x: 20, y: 22, fill: "var(--fg)", "font-size": 13 }, svg, "芯片里的秒表：SCK 高电平保持了多久？（横轴是对数刻度）");
+    el("line", { x1: 60, y1: 120, x2: 620, y2: 120, stroke: "var(--line)", "stroke-width": 2 }, svg);
+    [0.1, 1, 10, 100, 1000].forEach(t => { el("line", { x1: X(t), y1: 114, x2: X(t), y2: 126, stroke: "var(--muted)" }, svg); el("text", { x: X(t), y: 142, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11, class: "m" }, svg, t + "us"); });
+    el("rect", { x: X(0.1), y: 86, width: X(0.5) - X(0.1), height: 24, fill: "var(--grid)" }, svg);
+    el("text", { x: X(0.1) + 4, y: 102, fill: "var(--muted)", "font-size": 10 }, svg, "普通时钟");
+    zones.forEach((z, i) => {
+      const hit = done && us >= z.lo && us <= z.hi;
+      el("rect", { x: X(z.lo), y: 86, width: Math.max(4, X(z.hi) - X(z.lo)), height: 24, fill: hit ? "var(--accent)" : "var(--accent-soft)", stroke: "var(--accent)" }, svg);
+      el("text", { x: X(z.lo), y: i % 2 ? 168 : 182, fill: hit ? "var(--accent)" : "var(--muted)", "font-size": 10, "font-weight": hit ? 700 : 400 }, svg, z.name);
+    });
+    el("line", { x1: X(Math.max(us, 0.1)), y1: 74, x2: X(Math.max(us, 0.1)), y2: 130, stroke: "var(--sck)", "stroke-width": 3 }, svg);
+    el("text", { x: X(Math.max(us, 0.1)), y: 68, "text-anchor": "middle", fill: "var(--sck)", "font-size": 14, "font-weight": 700, class: "m" }, svg, (us < 1 ? us.toFixed(2) : us.toFixed(1)) + "us");
+    const pw = 160 * Math.min(1, us / 128) + 4;
+    el("text", { x: 20, y: 222, fill: "var(--sck)", "font-size": 12, class: "m" }, svg, "SCK");
+    el("path", { d: "M60,236 L120,236 L120,206 L" + (120 + pw) + ",206" + (done ? " L" + (120 + pw) + ",236 L620,236" : ""), fill: "none", stroke: "var(--sck)", "stroke-width": 2 }, svg);
+  }
+  function run(us, label){
+    if (raf) cancelAnimationFrame(raf);
+    [...pick.children].forEach(b => b.setAttribute("aria-pressed", b.dataset.us == us ? "true" : "false"));
+    const dur = reduce ? 0 : 1800, t0 = performance.now();
+    cap.innerHTML = "<span class='k'>SCK 拉高中……</span>芯片的秒表在走。";
+    function step(now){
+      const p = dur ? Math.min(1, (now - t0) / dur) : 1;
+      const cur = Math.pow(10, Math.log10(0.1) + p * (Math.log10(us) - Math.log10(0.1)));
+      draw(cur, p >= 1);
+      if (p < 1){ raf = requestAnimationFrame(step); return; }
+      const z = zones.find(z => us >= z.lo && us <= z.hi);
+      if (us < 1) cap.innerHTML = "<span class='k'>结果：普通时钟</span>只有 0.25us，秒表还没走到任何命令的档位，芯片就把它当成普通的一拍：<b>格子挪一格</b>。正常传数据时 SCK 一直是这样的短脉冲。";
+      else if (z) cap.innerHTML = "<span class='k'>结果：" + z.t + " → " + z.name + "</span>落在 " + z.lo + "–" + z.hi + "us 这一档，芯片执行：<b>" + z.d + "</b>。这一档允许的误差是 ±5%，所以代码里的延时必须准。";
+      else cap.innerHTML = "<span class='k'>结果：" + us + "us 不在 H6 的任何档位里</span>H6 不认识这个长度，什么也不做（或者行为不确定）。<b>这就是只把型号开关从 5 改成 6 却不改时序的后果</b>：H5 的 24us 写寄存器命令，H6 根本不认识。";
+    }
+    raf = requestAnimationFrame(step);
+  }
+  opts.forEach(([us, t]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.dataset.us = us; b.onclick = () => run(us); pick.appendChild(b); });
+  draw(0.1, false);
+  cap.innerHTML = "<span class='k'>点上面的按钮</span>选一个 SCK 保持高电平的时间，看芯片把它判断成什么命令。";
+})();
+
+/* ======================= 5. borrowing the pin ======================= */
+(function(){
+  const svg = document.getElementById("s5");
+  const hl = codePanel("code5", [
+    [801, "void Hall_CLK_Command_SET(unsigned short high_delay, unsigned short low_delay)"], [802, "{"],
+    [806, "\tNVIC_DisableIRQ(USB_IRQn);"],
+    [808, "\treg = LPC_IOCON->PIO1_15;"], [810, "\treg &= ~0x07;"], [811, "\treg |= 0x00;          // FUNC = 0：普通 GPIO"], [812, "\tLPC_IOCON->PIO1_15 = reg;"],
+    [813, "\tDrvGPIOOutput(1,15,1) ;  // ② 拉高"],
+    [816, "\tCT16B1_DelayUs(high_delay);"],
+    [818, "\tDrvGPIOOutput(1,15,0) ;  // ④ 拉低"],
+    [821, "\tCT16B1_DelayUs(low_delay);"],
+    [822, "\treg = LPC_IOCON->PIO1_15;"], [823, "\treg &= ~0x07;"], [824, "\treg |= 0x03;          // FUNC = 3：还给 SSP1 当 SCK"], [825, "\tLPC_IOCON->PIO1_15 = reg;"],
+    [827, "\tNVIC_EnableIRQ(USB_IRQn);"], [0, "\t...（省略）"], [0, "}"]
+  ]);
+  const F = [
+    { lines: [801], sw: "SSP1", lvl: [], clk: 0, tag: "进入函数前", cap: "以 H6 写寄存器为例：<code>high_delay</code> 是 39us 档，<code>low_delay</code> 是之后的等待。现在 PIO1_15 归 <b>SSP1</b>（SPI 硬件）管，SCK 是低电平。" },
+    { lines: [806], sw: "SSP1", lvl: [], clk: 0, tag: "第 806 行", cap: "先关掉 USB 中断。中断会让 CPU 临时去干别的事，如果恰好发生在下面“按住”的过程中，脉冲就会被拉长，芯片就可能判断错命令。" },
+    { lines: [808, 810, 811, 812], sw: "GPIO", lvl: [], clk: 0, tag: "第 808–812 行 · ①", cap: "改引脚的“功能选择”：<code>LPC_IOCON-&gt;PIO1_15</code> 的低 3 位叫 FUNC，写 0 表示这个脚变成普通 GPIO。<b>开关从 SSP1 拨到了 GPIO</b>，现在代码可以直接控制它的高低。" },
+    { lines: [813], sw: "GPIO", lvl: [1], clk: 0, tag: "第 813 行 · ② 上升沿", cap: "<code>DrvGPIOOutput(1,15,1)</code>：把 SCK 拉高。<b>芯片的秒表从这一刻开始走</b>。逻辑分析仪上，这就是你要量的那段高电平的起点。" },
+    { lines: [816], sw: "GPIO", lvl: [1], clk: 1, tag: "第 816 行 · ③ 按住", cap: "<code>CT16B1_DelayUs(high_delay)</code>：CPU 什么都不做，原地等定时器数完。这段时间 SCK 一直是高电平，芯片的秒表一直在走。" },
+    { lines: [818], sw: "GPIO", lvl: [1, 0], clk: 2, tag: "第 818 行 · ④ 下降沿", cap: "<code>DrvGPIOOutput(1,15,0)</code>：拉低。<b>芯片的秒表停下</b>，读数落在 39us 档，判定为 WR_REG 命令。<b>② 到 ④ 之间真实经过的时间，就是你用逻辑分析仪要量的高电平宽度。</b>" },
+    { lines: [821], sw: "GPIO", lvl: [1, 0], clk: 2, tag: "第 821 行 · ⑤ 等芯片干活", cap: "<code>CT16B1_DelayUs(low_delay)</code>：保持低电平再等一会儿，给芯片时间执行命令。手册里写的“等待时间”（比如 &gt;3us、&gt;50us）就是这一段。" },
+    { lines: [822, 823, 824, 825], sw: "SSP1", lvl: [1, 0], clk: 2, tag: "第 822–825 行 · ⑥", cap: "FUNC 写回 3，<b>开关拨回 SSP1</b>。接下来 <code>SSP_Send_Receive()</code> 就可以让 SPI 硬件打快拍子收发数据了。" },
+    { lines: [827], sw: "SSP1", lvl: [1, 0], clk: 2, tag: "第 827 行", cap: "恢复 USB 中断，函数结束。整个函数做的事就一句话：<b>借用 SCK 脚，按住指定的时间，再还回去</b>。" }
+  ];
+  function render(f){
+    clear(svg); hl(f.lines);
+    el("rect", { x: 10, y: 20, width: 100, height: 40, rx: 6, fill: f.sw === "SSP1" ? "var(--accent-soft)" : "var(--bg)", stroke: f.sw === "SSP1" ? "var(--accent)" : "var(--line)" }, svg);
+    el("text", { x: 60, y: 45, "text-anchor": "middle", fill: "var(--fg)", "font-size": 12 }, svg, "SSP1（SPI 硬件）");
+    el("rect", { x: 10, y: 90, width: 100, height: 40, rx: 6, fill: f.sw === "GPIO" ? "var(--accent-soft)" : "var(--bg)", stroke: f.sw === "GPIO" ? "var(--accent)" : "var(--line)" }, svg);
+    el("text", { x: 60, y: 115, "text-anchor": "middle", fill: "var(--fg)", "font-size": 12 }, svg, "GPIO（代码手动）");
+    el("line", { x1: 110, y1: 40, x2: 150, y2: 40, stroke: "var(--line)", "stroke-width": 2 }, svg);
+    el("line", { x1: 110, y1: 110, x2: 150, y2: 110, stroke: "var(--line)", "stroke-width": 2 }, svg);
+    el("circle", { cx: 150, cy: 40, r: 4, fill: "var(--muted)" }, svg); el("circle", { cx: 150, cy: 110, r: 4, fill: "var(--muted)" }, svg);
+    el("line", { x1: 220, y1: 75, x2: 152, y2: f.sw === "SSP1" ? 42 : 108, stroke: "var(--accent)", "stroke-width": 4, "stroke-linecap": "round", style: "transition:all .4s" }, svg);
+    el("circle", { cx: 220, cy: 75, r: 5, fill: "var(--accent)" }, svg);
+    el("line", { x1: 220, y1: 75, x2: 270, y2: 75, stroke: "var(--sck)", "stroke-width": 3 }, svg);
+    el("text", { x: 275, y: 72, fill: "var(--fg)", "font-size": 12 }, svg, "PIO1_15");
+    el("text", { x: 275, y: 88, fill: "var(--sck)", "font-size": 11, class: "m" }, svg, "= SCK");
+    el("text", { x: 160, y: 152, fill: "var(--muted)", "font-size": 11 }, svg, "IOCON 的 FUNC 位决定开关拨到哪边");
+    const y = 210, h = 40;
+    el("text", { x: 10, y: y + 26, fill: "var(--sck)", "font-size": 12, class: "m" }, svg, "SCK");
+    let d = "M50," + (y + h);
+    if (f.lvl.length){ d += " L90," + (y + h) + " L90," + y; const w = f.clk === 0 ? 8 : f.clk === 1 ? 110 : 160; d += " L" + (90 + w) + "," + y; if (f.lvl.length > 1) d += " L" + (90 + w) + "," + (y + h) + " L340," + (y + h); }
+    else d += " L340," + (y + h);
+    el("path", { d, fill: "none", stroke: "var(--sck)", "stroke-width": 2.5 }, svg);
+    if (f.lvl.length > 1){
+      el("line", { x1: 90, y1: y - 12, x2: 250, y2: y - 12, stroke: "var(--accent)", "stroke-width": 1.5 }, svg);
+      el("line", { x1: 90, y1: y - 18, x2: 90, y2: y - 6, stroke: "var(--accent)" }, svg); el("line", { x1: 250, y1: y - 18, x2: 250, y2: y - 6, stroke: "var(--accent)" }, svg);
+      el("text", { x: 170, y: y - 20, "text-anchor": "middle", fill: "var(--accent)", "font-size": 11 }, svg, "② 到 ④：要量的宽度");
+    }
+    if (f.clk === 1) el("text", { x: 150, y: y + 20, "text-anchor": "middle", fill: "var(--sck)", "font-size": 11 }, svg, "秒表在走……");
+  }
+  Player("ctl5", "cap5", F, render);
+})();
+
+/* ======================= 6. full sequences ======================= */
+(function(){
+  const tabs = document.getElementById("tabs6"), opt = document.getElementById("opt6"), wsvg = document.getElementById("w6"), csvg = document.getElementById("s6"), dec = document.getElementById("dec6");
+  const CODES = {
+    read: [[859, "void hall_get_sample(void)"], [860, "{"], [861, "\tHall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);"], [862, ""], [863, "\tSSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);"], [864, "}"]],
+    write: [[931, "void Hall_write_register(void)"], [932, "{"], [933, "\tSSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);"], [934, ""], [935, "\tHall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);"], [936, "}"]],
+    cal: [[866, "void HALL_Read_Instru_cnt(void)"], [867, "{"], [868, "\tHall_CLK_Command_SET(HALL_TD_FREQ_CAL, HALL_TD_FREQ_WAIT);"], [869, ""], [870, "\tSSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);"], [871, "}"]]
+  };
+  const MAN = {
+    read: "<span class='mt'>📖 翻开手册对照</span><div class='mg'><div><b>H6 手册 GTRY164</b>§7.2 图 4，<b>PDF 第 8–9 页</b>：先 td1（5us）脉冲，等 td2，再打 16×N 个时钟读出数据。这张图和上面的波形一一对应。第 9 页还写了：读到 0xC000 或 0x3FFF 表示芯片异常。</div><div><b>MCU 手册 UM10462</b>表 262 <b>DR</b>、表 263 <b>SR</b>（PDF 第 279–280 页）：<code>SSP_Send_Receive()</code> 每发一个字节就往 DR 写一次，再等 SR 显示收完，从 DR 读回一个字节。一写一读，正好对应第 3 关“读和写同时发生”。</div></div>",
+    write: "<span class='mt'>📖 翻开手册对照</span><div class='mg'><div><b>H6 手册 GTRY164</b>§7.4 图 6，<b>PDF 第 9–10 页</b>：先移入 16×N 位，再发 td6（39us），然后等 td5。图下面就是 CRCWR 公式：A5…A0 和 D7…D0 一起异或。H5 手册同一位置的公式只有 D7…D0，<b>这就是移植第 3 步要改的地方</b>。</div><div><b>MCU 手册 UM10462</b>表 262、263（PDF 第 279–280 页）：同读采样，<code>SSP_Send_Receive()</code> 负责把这 4 个字节移出去。</div></div>",
+    cal: "<span class='mt'>📖 翻开手册对照</span><div class='mg'><div><b>H6 手册 GTRY164</b>§7.6 图 9，<b>PDF 第 10–11 页</b>：td10（128us）→ 等 td12（&gt;50us）→ 读 16 位，低 8 位有效。图里 SDI 画的全是 0（V1.7 改版专门改的）。合格范围和重试次数在 §9.1 图 11，<b>PDF 第 19 页</b>。</div><div><b>MCU 手册 UM10462</b>第 15 章（PDF 第 333 页起）：128us 靠 CT16B1 定时器数出来，这一档容差 ±6.4us，比 5us 那档宽松得多。</div></div>"
+  };
+  const LV = 7210, RV = 8650;
+  let player = null, badCrc = false, cur = "read";
+  function parity(v){ let p = 0; while (v){ p ^= v & 1; v >>= 1; } return p; }
+  function build(kind){
+    const segs = []; let x = 40;
+    const add = (type, w, extra) => { const s = Object.assign({ type, x0: x, x1: x + w }, extra || {}); segs.push(s); x += w; return s; };
+    const frames = [];
+    let c, tx, regs = null, rxBits = [];
+    const snap = (o) => frames.push(Object.assign({ c: c.map(e => ({ ...e })), rx: rxBits.slice(), regs: regs ? regs.map(r => ({ ...r })) : null }, o));
+    const clocks = (line, txb) => {
+      const bits = txBits(txb); const s = add("clk", 32 * 8 + 3 * 6, { bits, out: [] });
+      for (let k = 0; k < 32; k++){
+        const out = c[31].b; s.out.push(out);
+        for (let i = 31; i > 0; i--) c[i] = c[i - 1];
+        c[0] = { b: bits[k], s: "T" }; rxBits.push(out);
+        const xk = s.x0 + k * 8 + Math.floor(k / 8) * 6 + 8;
+        const cap = k === 0 ? "SPI 硬件开始打拍子：共 32 拍、4 个字节。每一拍 MCU 送出一位（MOSI），同时收回一位（MISO），芯片格子整体右移一格。"
+          : k === 31 ? "32 拍打完。" + (kind === "write" ? "这一帧现在完整地躺在两颗芯片的格子里，但<b>芯片还没执行</b>，它在等命令。" : "两颗芯片的数据都回到了 MCU 的 hall_spi_rx[0..3]。")
+          : k % 8 === 7 ? "第 " + (k + 1) + " 拍：凑够了 1 个字节，rx[" + ((k + 1) / 8 - 1) + "] 收完。" : "第 " + (k + 1) + " 拍";
+        snap({ line: [line], x: xk, tag: "第 " + line + " 行 · 第 " + (k + 1) + " / 32 拍", cap, fast: !(k === 0 || k === 31 || k % 8 === 7) });
+      }
+    };
+    if (kind === "read"){
+      c = loadChain(0, 0, "N", "N"); tx = [0, 0, 0, 0];
+      snap({ line: [], x: 40, tag: "开始", cap: "主循环每 1ms 调用一次 <code>hall_get_sample()</code>。此刻两颗芯片一直在测磁场，但测量结果还在芯片内部，没放进格子。" });
+      const p = add("pulse", 70, { us: "5us", lbl: "HAL_CONVERT" });
+      snap({ line: [861], x: p.x0 + 4, tag: "第 861 行 · SCK 拉高", cap: "进入 <code>Hall_CLK_Command_SET()</code>（第 5 关），借用 SCK 脚并拉高。芯片秒表开始计时。" });
+      c = loadChain(sampleFrame(LV), sampleFrame(RV), "L", "R");
+      snap({ line: [861], x: p.x1, tag: "第 861 行 · 拉低：5us", cap: "按住 5us 后拉低。秒表落在 5us 档 → <b>HAL_CONVERT</b>：每颗芯片把最新测量值连同 2 位校验位装进自己的 16 个格子（橙色、紫色出现了）。" });
+      const w = add("wait", 46, { us: "等 >4us" });
+      snap({ line: [861], x: w.x1, tag: "第 861 行 · 等待", cap: "保持低电平等一会儿（手册要求 &gt;4us），然后把 SCK 脚还给 SSP1。" });
+      clocks(863, tx);
+      add("idle", 20);
+      const rr = (rxBits.slice(0, 16).join("")), ll = rxBits.slice(16).join("");
+      const decode = (bits, name) => { const v = parseInt(bits, 2), d = v & 0x3FFF, ok = sampleFrame(d) === v; return name + "：" + hex(v, 4) + " = 校验位 " + bits.slice(0, 2) + " + 数据 " + d + (ok ? "　校验通过 ✓" : "　校验失败 ✗"); };
+      snap({ line: [], x: x, tag: "解码", cap: "my_misc.c 拿到这 4 个字节：先按手册公式检查 2 位校验位，再取低 14 位当原始值（0–16383）。按键算法就用这两个数判断左右键有没有按下。每 1ms 重复一次。", dec: decode(rr, "右键 rx[0..1]") + "\n" + decode(ll, "左键 rx[2..3]") });
+    }
+    if (kind === "write"){
+      c = loadChain(0x0000, 0x0000, "N", "N");
+      const crc = parity(0x33) ^ parity(0x80), head = 0x80 | ((badCrc ? crc ^ 1 : crc) << 6) | 0x33;
+      tx = [head, 0x80, head, 0x80];
+      regs = [{ text: "寄存器 0x33 = 0x00" }, { text: "寄存器 0x33 = 0x00" }];
+      snap({ line: [], x: 40, tag: "准备帧", cap: "例子：把寄存器 0x33 写成 0x80（打开连续采样，H6 初始化表里的最后一项）。帧格式：bit15=1（写），bit14=校验位，bit13–8=地址，bit7–0=数据。", dec: "地址 0x33 = " + bin(0x33, 6) + "（1 的个数 " + (bin(0x33, 6).split("1").length - 1) + "，奇偶 " + parity(0x33) + "）\n数据 0x80 = " + bin(0x80, 8) + "（奇偶 " + parity(0x80) + "）\nH6 校验位 = 地址奇偶 ^ 数据奇偶 = " + crc + (badCrc ? "　← 这里故意写成了 " + (crc ^ 1) : "") + "\n高字节 = 1 | 校验位 | 地址 = " + bin(head, 8) + " = " + hex(head, 2) + "\n两颗芯片各发一份：tx = " + tx.map(b => hex(b, 2)).join(" ") });
+      clocks(933, tx);
+      const p = add("pulse", 150, { us: "39us", lbl: "WR_REG", brk: true });
+      snap({ line: [935], x: p.x0 + 4, tag: "第 935 行 · SCK 拉高", cap: "帧已经送到位，现在才下命令：借用 SCK 并拉高，芯片秒表开始走。<b>注意顺序：写寄存器是“先送数据、后下命令”，和读采样正好相反。</b>" });
+      const ok = !badCrc;
+      regs = ok ? [{ text: "寄存器 0x33 = 0x80 ✓", flash: true }, { text: "寄存器 0x33 = 0x80 ✓", flash: true }] : [{ text: "校验位不对，丢弃 ✗", flash: true }, { text: "校验位不对，丢弃 ✗", flash: true }];
+      snap({ line: [935], x: p.x1, tag: "第 935 行 · 拉低：39us", cap: ok ? "秒表落在 39us 档 → <b>WR_REG</b>：每颗芯片检查自己格子里那一帧的校验位，正确，于是把 0x80 写进寄存器 0x33。" : "秒表落在 39us 档 → WR_REG。但芯片算出的校验位和帧里的对不上，<b>直接丢弃，而且不报任何错</b>。寄存器 0x33 还是原来的值。这就是 H6 移植第 3 步要改校验位算法、并且必须写完读回核对的原因。" });
+      const w = add("wait", 46, { us: "等 >3us" });
+      snap({ line: [935], x: w.x1, tag: "第 935 行 · 等待", cap: "等芯片写完（&gt;3us），把 SCK 还给 SSP1。一次写寄存器结束。初始化时这个过程要对表里的每一项重复一次。" });
+      add("idle", 20);
+    }
+    if (kind === "cal"){
+      c = loadChain(0, 0, "N", "N"); tx = [0, 0, 0, 0];
+      snap({ line: [], x: 40, tag: "开始", cap: "上电后第一件事：频率校准。两颗芯片各有一个内部时钟，校准让它们和 MCU 的节拍对齐。" });
+      const p = add("pulse", 170, { us: "128us", lbl: "FREQ_Calibrate", brk: true });
+      snap({ line: [868], x: p.x0 + 4, tag: "第 868 行 · SCK 拉高", cap: "借用 SCK，按住 128us。芯片用这段已知长度的时间来校准自己的时钟。" });
+      c = loadChain(0x007F, 0x0080, "L", "R");
+      snap({ line: [868], x: p.x1, tag: "第 868 行 · 拉低：128us", cap: "秒表落在 128us 档 → <b>FREQ_Calibrate</b>：每颗芯片把校准结果（计数值）装进格子，低 8 位有效。" });
+      const w = add("wait", 70, { us: "等 >50us", brk: true });
+      snap({ line: [868], x: w.x1, tag: "第 868 行 · 等待 >50us", cap: "H6 要求这里至少等 50us（H5 只要 2us）。这是 H5 和 H6 的区别之一。" });
+      clocks(870, tx);
+      add("idle", 20);
+      const r = parseInt(rxBits.slice(8, 16).join(""), 2), l = parseInt(rxBits.slice(24, 32).join(""), 2);
+      const ok = v => v >= 0x7C && v <= 0x84;
+      snap({ line: [], x: x, tag: "检查结果", cap: "看 rx[1]（右键）和 rx[3]（左键）。手册规定两个都在 0x7C–0x84 之间才算校准成功；不成功就再来一次，最多 128 次。注意这一次 MCU 送出去的是全 0，这是 H6 手册的要求（第 3 关讲过：读的同时也在写）。", dec: "右键 rx[1] = " + hex(r, 2) + (ok(r) ? "　在 0x7C–0x84 内 ✓" : " ✗") + "\n左键 rx[3] = " + hex(l, 2) + (ok(l) ? "　在 0x7C–0x84 内 ✓" : " ✗") });
+    }
+    return { frames, segs, xEnd: x };
+  }
+  function drawWave(model, xProg){
+    clear(wsvg);
+    const W = Math.max(640, model.xEnd + 10); wsvg.setAttribute("viewBox", "0 0 " + W + " 170"); wsvg.style.minWidth = Math.min(W, 900) + "px";
+    const rows = [["SCK", "var(--sck)", 22], ["MOSI", "var(--mosi)", 72], ["MISO", "var(--miso)", 122]], h = 26;
+    const sck = [{ x: 20, v: 0 }], mosi = [{ x: 20, v: 0 }], miso = [{ x: 20, v: 0 }];
+    model.segs.forEach(s => {
+      if (s.type === "pulse"){ sck.push({ x: s.x0, v: 1 }); sck.push({ x: s.x1, v: 0 }); }
+      if (s.type === "clk"){
+        for (let k = 0; k < 32; k++){
+          const xk = s.x0 + k * 8 + Math.floor(k / 8) * 6;
+          sck.push({ x: xk, v: 1 }); sck.push({ x: xk + 4, v: 0 });
+          mosi.push({ x: xk, v: s.bits[k] }); miso.push({ x: xk, v: s.out[k] });
+        }
+        mosi.push({ x: s.x1, v: 0 }); miso.push({ x: s.x1, v: 0 });
+      }
+    });
+    const defs = el("defs", {}, wsvg); const cp = el("clipPath", { id: "cl6" }, defs); el("rect", { x: 0, y: 0, width: Math.max(xProg, 21), height: 170 }, cp);
+    model.segs.forEach(s => {
+      if (s.type === "pulse" || s.type === "wait"){
+        el("rect", { x: s.x0, y: 8, width: s.x1 - s.x0, height: 148, fill: s.type === "pulse" ? "var(--accent-soft)" : "var(--grid)", opacity: 0.7 }, wsvg);
+        el("text", { x: (s.x0 + s.x1) / 2, y: 166, "text-anchor": "middle", fill: s.type === "pulse" ? "var(--accent)" : "var(--muted)", "font-size": 10, class: "m" }, wsvg, s.us + (s.lbl ? " " + s.lbl : ""));
+        if (s.brk){ const mx = (s.x0 + s.x1) / 2; el("text", { x: mx, y: 64, "text-anchor": "middle", fill: "var(--muted)", "font-size": 12 }, wsvg, "≈ 压缩显示 ≈"); }
+      }
+      if (s.type === "clk") el("text", { x: (s.x0 + s.x1) / 2, y: 166, "text-anchor": "middle", fill: "var(--muted)", "font-size": 10 }, wsvg, "32 拍 × 0.5us = 16us（放大显示）");
+    });
+    rows.forEach(([n, col, y]) => el("text", { x: 2, y: y + 18, fill: col, "font-size": 11, class: "m" }, wsvg, n));
+    const g = el("g", { "clip-path": "url(#cl6)" }, wsvg);
+    channel(g, 22, h, sck, model.xEnd, "var(--sck)", "");
+    channel(g, 72, h, mosi, model.xEnd, "var(--mosi)", "");
+    channel(g, 122, h, miso, model.xEnd, "var(--miso)", "");
+    el("line", { x1: xProg, y1: 6, x2: xProg, y2: 156, stroke: "var(--accent)", "stroke-width": 1.5, "stroke-dasharray": "3 3" }, wsvg);
+  }
+  function start(kind){
+    cur = kind;
+    if (player) player.stop();
+    [...tabs.children].forEach(b => b.setAttribute("aria-pressed", b.dataset.k === kind ? "true" : "false"));
+    opt.innerHTML = "";
+    if (kind === "write"){
+      const lab = document.createElement("label"); lab.className = "chk";
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "badcrc"; cb.checked = badCrc;
+      cb.onchange = () => { badCrc = cb.checked; start("write"); };
+      lab.appendChild(cb); lab.appendChild(document.createTextNode("故意把校验位算错（模拟用 H5 的算法给 H6 写寄存器）"));
+      opt.appendChild(lab);
+    }
+    document.getElementById("man6").innerHTML = MAN[kind];
+    const hl = codePanel("code6", CODES[kind]);
+    const model = build(kind);
+    player = Player("ctl6", "cap6", model.frames, f => {
+      hl(f.line); drawWave(model, f.x);
+      clear(csvg); drawChain(csvg, f.c, { y: 44, regs: f.regs }); rxRow(csvg, f.rx.map(String), f.rx.length, 150);
+      dec.textContent = f.dec || "（这一步没有需要计算的内容）";
+    });
+  }
+  [["read", "读采样（每 1ms）"], ["write", "写寄存器（初始化时）"], ["cal", "频率校准（上电第一件事）"]].forEach(([k, t]) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.dataset.k = k; b.onclick = () => start(k); tabs.appendChild(b);
+  });
+  window.__goScenario = k => { start(k); document.getElementById("c6").scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); };
+  start("read");
+})();
+
+/* ======================= 7. timeline + measure ======================= */
+(function(){
+  const svg = document.getElementById("s7");
+  const segs = [
+    { w: 92, t: "上电", s: "InitGPIO 给霍尔芯片供电", c: "var(--grid)" },
+    { w: 120, t: "等 500ms", s: "device.c 里的延时", c: "var(--grid)" },
+    { w: 120, t: "频率校准 ×30", s: "128us 脉冲", c: "var(--accent-soft)", go: "cal" },
+    { w: 120, t: "写寄存器 ×25", s: "24us 脉冲（H5）", c: "var(--accent-soft)", go: "write" },
+    { w: 186, t: "每 1ms 读采样", s: "5us 脉冲，一直重复", c: "var(--accent-soft)", go: "read" }
+  ];
+  let x = 10;
+  segs.forEach(s => {
+    const g = el("g", s.go ? { class: "tl", tabindex: 0, role: "button", "aria-label": "跳到第 6 关：" + s.t } : {}, svg);
+    el("rect", { x, y: 30, width: s.w - 6, height: 56, rx: 6, fill: s.c, stroke: "var(--line)" }, g);
+    el("text", { x: x + 8, y: 54, fill: "var(--fg)", "font-size": 13, "font-weight": 500 }, g, s.t);
+    el("text", { x: x + 8, y: 74, fill: "var(--muted)", "font-size": 10.5 }, g, s.s);
+    if (s.go){ g.addEventListener("click", () => window.__goScenario(s.go)); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); window.__goScenario(s.go); } }); }
+    x += s.w;
+  });
+  el("line", { x1: 10, y1: 104, x2: 640, y2: 104, stroke: "var(--muted)" }, svg);
+  el("text", { x: 640, y: 122, "text-anchor": "end", fill: "var(--muted)", "font-size": 11 }, svg, "时间 →（不按比例）");
+  el("text", { x: 10, y: 20, fill: "var(--muted)", "font-size": 11 }, svg, "HallSensor_INIT() 负责中间两段；PAW3950_Init() 在它之后执行，那之后 Keil 在线调试会断开");
+
+  const s2 = document.getElementById("s7b");
+  const y = 70, h = 50;
+  el("text", { x: 10, y: 24, fill: "var(--fg)", "font-size": 13 }, s2, "逻辑分析仪 CH0 接 SCK，看到的一次读采样大概是这样：");
+  el("text", { x: 10, y: y + 30, fill: "var(--sck)", "font-size": 12, class: "m" }, s2, "CH0");
+  let d = "M50," + (y + h) + " L120," + (y + h) + " L120," + y + " L250," + y + " L250," + (y + h) + " L320," + (y + h);
+  for (let k = 0; k < 32; k++){ const xk = 320 + k * 9 + Math.floor(k / 8) * 4; d += " L" + xk + "," + (y + h) + " L" + xk + "," + y + " L" + (xk + 4.5) + "," + y + " L" + (xk + 4.5) + "," + (y + h); }
+  d += " L630," + (y + h);
+  el("path", { d, fill: "none", stroke: "var(--sck)", "stroke-width": 2 }, s2);
+  el("line", { x1: 120, y1: y - 16, x2: 250, y2: y - 16, stroke: "var(--accent)", "stroke-width": 2 }, s2);
+  el("line", { x1: 120, y1: y - 24, x2: 120, y2: y - 8, stroke: "var(--accent)", "stroke-width": 2 }, s2);
+  el("line", { x1: 250, y1: y - 24, x2: 250, y2: y - 8, stroke: "var(--accent)", "stroke-width": 2 }, s2);
+  el("text", { x: 185, y: y - 28, "text-anchor": "middle", fill: "var(--accent)", "font-size": 12, "font-weight": 700 }, s2, "量这一段：高电平宽度");
+  el("line", { x1: 250, y1: y + h + 14, x2: 320, y2: y + h + 14, stroke: "var(--muted)" }, s2);
+  el("text", { x: 285, y: y + h + 30, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 }, s2, "顺便量：等待");
+  el("text", { x: 120, y: y + h + 30, fill: "var(--muted)", "font-size": 11 }, s2, "② 拉高");
+  el("text", { x: 250, y: y + h + 46, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 }, s2, "④ 拉低");
+  el("text", { x: 470, y: y + h + 30, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 }, s2, "32 个短脉冲 = SPI 收发 4 字节");
+  el("text", { x: 10, y: 200, fill: "var(--muted)", "font-size": 11 }, s2, "怎么认：长脉冲在前、短脉冲在后 = 读采样或校准；短脉冲在前、长脉冲在后 = 写寄存器。");
+})();
+})();
+</script>
