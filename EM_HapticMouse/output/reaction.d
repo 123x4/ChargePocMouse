@@ -2,13 +2,13 @@
 .\output\reaction.o: .\inc\Led_Effect_H\reaction.h
 .\output\reaction.o: .\inc\Led_Effect_H\led2.h
 .\output\reaction.o: .\inc\device.h
-.\output\reaction.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-.\output\reaction.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\reaction.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\reaction.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\reaction.o: .\inc\Type.h
 .\output\reaction.o: .\inc\gloab.h
 .\output\reaction.o: .\inc\usb.h
 .\output\reaction.o: .\inc\hiduser.h
-.\output\reaction.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\reaction.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\reaction.o: .\inc\Led_Effect_H\led_effect_group_code.h
 .\output\reaction.o: .\inc\Led_Effect_H\external_configuration.h
 .\output\reaction.o: .\inc\Led_Effect_H\led1.h

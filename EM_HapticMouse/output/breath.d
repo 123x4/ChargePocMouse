@@ -2,13 +2,13 @@
 .\output\breath.o: .\inc\Led_Effect_H\breathe.h
 .\output\breath.o: .\inc\Led_Effect_H\led2.h
 .\output\breath.o: .\inc\device.h
-.\output\breath.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-.\output\breath.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\breath.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\breath.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\breath.o: .\inc\Type.h
 .\output\breath.o: .\inc\gloab.h
 .\output\breath.o: .\inc\usb.h
 .\output\breath.o: .\inc\hiduser.h
-.\output\breath.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\breath.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\breath.o: .\inc\Led_Effect_H\led_effect_group_code.h
 .\output\breath.o: .\inc\Led_Effect_H\external_configuration.h
 .\output\breath.o: .\inc\Led_Effect_H\led1.h

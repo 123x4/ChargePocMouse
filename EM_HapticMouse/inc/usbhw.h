@@ -36,13 +36,13 @@ extern "C" {
 #endif
 
 
-typedef struct _EP_LIST
+typedef struct EP_LIST_TAG
 {
 	U32 buf_ptr;
 	U32 buf_length;
 } EP_LIST;
 
-typedef struct _LPC11Uxx_USBHW_SETTING_
+typedef struct LPC11Uxx_USBHW_SETTING_TAG
 {
 	/* The BufferUsed flag is to deal with double buffer situation, This is a bit mask 
 	flag for non-zero EPs. If BufferUsed bit is set, buffer 0 is used, switch to buffer 1. 
@@ -184,7 +184,7 @@ void wnDrv_Usbhw_Suspend(void);
 void wnApi_Events_Suspend_Handler(void);
 BOOLEAN wnApi_Events_Resume_Handler(void);
 INTERFACE volatile U8 rSuspendFlag;
-INTERFACE volatile U8 rSuspendFlag;
+extern volatile U8 rSuspendFlag;
 INTERFACE uint8_t suspendFlag;
 INTERFACE uint8_t resuspendFlag;
 INTERFACE volatile U8 SuspendFlag;

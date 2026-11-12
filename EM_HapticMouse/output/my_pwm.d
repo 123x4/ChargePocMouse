@@ -1,6 +1,6 @@
 .\output\my_pwm.o: src\my_pwm.c
 .\output\my_pwm.o: .\inc\my_pwm.h
-.\output\my_pwm.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\my_pwm.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\my_pwm.o: .\inc\my_board.h
 .\output\my_pwm.o: .\inc\LPC11Uxx.h
 .\output\my_pwm.o: .\inc\core_cm0.h

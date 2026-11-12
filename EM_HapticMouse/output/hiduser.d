@@ -1,7 +1,7 @@
 .\output\hiduser.o: src\hiduser.c
 .\output\hiduser.o: .\inc\type.h
 .\output\hiduser.o: .\inc\usb.h
-.\output\hiduser.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\hiduser.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\hiduser.o: .\inc\hiduser.h
 .\output\hiduser.o: .\inc\hid.h
 .\output\hiduser.o: .\inc\usbcfg.h

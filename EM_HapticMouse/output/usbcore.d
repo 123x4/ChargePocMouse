@@ -1,7 +1,7 @@
 .\output\usbcore.o: src\usbcore.c
 .\output\usbcore.o: .\inc\usb.h
 .\output\usbcore.o: .\inc\Type.h
-.\output\usbcore.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\usbcore.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\usbcore.o: .\inc\hiduser.h
 .\output\usbcore.o: .\inc\usbcfg.h
 .\output\usbcore.o: .\inc\usbhw.h
@@ -11,7 +11,7 @@
 .\output\usbcore.o: .\inc\LPC11Uxx.h
 .\output\usbcore.o: .\inc\core_cm0.h
 .\output\usbcore.o: .\inc\LPC11Uxx.h
-.\output\usbcore.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\usbcore.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\usbcore.o: .\inc\core_cmInstr.h
 .\output\usbcore.o: .\inc\core_cmFunc.h
 .\output\usbcore.o: .\inc\system_LPC11Uxx.h
@@ -22,5 +22,5 @@
 .\output\usbcore.o: .\inc\spi.h
 .\output\usbcore.o: .\inc\../inc/led.h
 .\output\usbcore.o: .\inc\../inc/gloab.h
-.\output\usbcore.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\usbcore.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\usbcore.o: .\inc\device.h

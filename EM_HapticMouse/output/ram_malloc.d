@@ -3,9 +3,9 @@
 .\output\ram_malloc.o: .\inc\gloab.h
 .\output\ram_malloc.o: .\inc\usb.h
 .\output\ram_malloc.o: .\inc\Type.h
-.\output\ram_malloc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\ram_malloc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\ram_malloc.o: .\inc\hiduser.h
-.\output\ram_malloc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\ram_malloc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\ram_malloc.o: .\inc\Led_Effect_H\test.h
 .\output\ram_malloc.o: .\inc\operation_flash.h
 .\output\ram_malloc.o: .\inc\gtech_flash.h
@@ -14,7 +14,7 @@
 .\output\ram_malloc.o: .\inc\Led_Effect_H\led_effect.h
 .\output\ram_malloc.o: .\inc\Led_Effect_H\led1.h
 .\output\ram_malloc.o: .\inc\device.h
-.\output\ram_malloc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\ram_malloc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\ram_malloc.o: .\inc\LedControl.h
 .\output\ram_malloc.o: .\inc\Led_Effect_H\led_effect_group_code.h
 .\output\ram_malloc.o: .\inc\Led_Effect_H\external_configuration.h

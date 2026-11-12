@@ -3,13 +3,13 @@
 .\output\pc_communicate.o: .\inc\gloab.h
 .\output\pc_communicate.o: .\inc\usb.h
 .\output\pc_communicate.o: .\inc\Type.h
-.\output\pc_communicate.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\pc_communicate.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\pc_communicate.o: .\inc\hiduser.h
-.\output\pc_communicate.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\pc_communicate.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\pc_communicate.o: .\inc\Led_Effect_H\test.h
 .\output\pc_communicate.o: .\inc\optical_3389.h
 .\output\pc_communicate.o: .\inc\device.h
-.\output\pc_communicate.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\pc_communicate.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\pc_communicate.o: .\inc\spi.h
 .\output\pc_communicate.o: .\inc\../inc/led.h
 .\output\pc_communicate.o: .\inc\Led_Effect_H\led_effect.h
@@ -26,7 +26,7 @@
 .\output\pc_communicate.o: .\inc\operation_flash.h
 .\output\pc_communicate.o: .\inc\Led_Effect_H\led2.h
 .\output\pc_communicate.o: .\inc\Led_Effect_H\Production_line_test.h
-.\output\pc_communicate.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\output\pc_communicate.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\string.h
 .\output\pc_communicate.o: .\inc\Timer.h
 .\output\pc_communicate.o: .\inc\gpio.h
 .\output\pc_communicate.o: .\inc\my_electromagnet.h

@@ -2,12 +2,12 @@
 .\output\optical_3325.o: .\inc\gloab.h
 .\output\optical_3325.o: .\inc\usb.h
 .\output\optical_3325.o: .\inc\Type.h
-.\output\optical_3325.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\optical_3325.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\optical_3325.o: .\inc\hiduser.h
-.\output\optical_3325.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\optical_3325.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\optical_3325.o: .\inc\optical_3325.h
 .\output\optical_3325.o: .\inc\device.h
-.\output\optical_3325.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\optical_3325.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\optical_3325.o: .\inc\timer.h
 .\output\optical_3325.o: .\inc\Led_Effect_H\led1.h
 .\output\optical_3325.o: .\inc\LedControl.h

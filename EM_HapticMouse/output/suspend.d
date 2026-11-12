@@ -3,12 +3,12 @@
 .\output\suspend.o: .\inc\gloab.h
 .\output\suspend.o: .\inc\usb.h
 .\output\suspend.o: .\inc\Type.h
-.\output\suspend.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\suspend.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\suspend.o: .\inc\hiduser.h
-.\output\suspend.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\suspend.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\suspend.o: .\inc\Led_Effect_H\led1.h
 .\output\suspend.o: .\inc\device.h
-.\output\suspend.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\suspend.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\suspend.o: .\inc\LedControl.h
 .\output\suspend.o: .\inc\Led_Effect_H\custom.h
 .\output\suspend.o: .\inc\keydef.h

@@ -1,6 +1,6 @@
 .\output\my_adc.o: src\my_adc.c
 .\output\my_adc.o: .\inc\my_adc.h
-.\output\my_adc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\my_adc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\my_adc.o: .\inc\my_board.h
 .\output\my_adc.o: .\inc\LPC11Uxx.h
 .\output\my_adc.o: .\inc\core_cm0.h
@@ -13,9 +13,9 @@
 .\output\my_adc.o: .\inc\gloab.h
 .\output\my_adc.o: .\inc\usb.h
 .\output\my_adc.o: .\inc\Type.h
-.\output\my_adc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\my_adc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\my_adc.o: .\inc\hiduser.h
-.\output\my_adc.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\my_adc.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\my_adc.o: .\inc\Led_Effect_H\led1.h
 .\output\my_adc.o: .\inc\device.h
 .\output\my_adc.o: .\inc\LedControl.h

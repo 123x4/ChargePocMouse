@@ -1,12 +1,12 @@
 .\output\device.o: src\device.c
 .\output\device.o: .\inc\device.h
-.\output\device.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-.\output\device.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\device.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\device.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\device.o: .\inc\Type.h
 .\output\device.o: .\inc\gloab.h
 .\output\device.o: .\inc\usb.h
 .\output\device.o: .\inc\hiduser.h
-.\output\device.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\device.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\device.o: src\../inc/GPIO.h
 .\output\device.o: .\inc\usbcore.h
 .\output\device.o: .\inc\usbcfg.h
@@ -62,6 +62,6 @@
 .\output\device.o: .\inc\my_misc.h
 .\output\device.o: .\inc\my_hallkey_func.h
 .\output\device.o: .\inc\my_protocol_mouse.h
-.\output\device.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\output\device.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\string.h
 .\output\device.o: .\inc\PAW3950.h
 .\output\device.o: .\inc\my_adc.h

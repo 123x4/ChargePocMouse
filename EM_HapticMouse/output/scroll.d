@@ -1,14 +1,14 @@
 .\output\scroll.o: app\scroll.c
 .\output\scroll.o: app\../inc/scroll.h
-.\output\scroll.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\scroll.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\scroll.o: app\../inc/../inc/GPIO.h
 .\output\scroll.o: app\../inc/../inc/device.h
-.\output\scroll.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\scroll.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\scroll.o: app\../inc/../inc/Type.h
 .\output\scroll.o: app\../inc/../inc/gloab.h
 .\output\scroll.o: app\../inc/../inc/usb.h
 .\output\scroll.o: app\../inc/../inc/hiduser.h
-.\output\scroll.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\scroll.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\scroll.o: .\inc\my_board.h
 .\output\scroll.o: .\inc\LPC11Uxx.h
 .\output\scroll.o: .\inc\core_cm0.h

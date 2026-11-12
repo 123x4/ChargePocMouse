@@ -3,7 +3,7 @@
 .\output\wndrv_pmu.o: src\../inc/LPC11Uxx.h
 .\output\wndrv_pmu.o: src\../inc/core_cm0.h
 .\output\wndrv_pmu.o: src\../inc/LPC11Uxx.h
-.\output\wndrv_pmu.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\wndrv_pmu.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\wndrv_pmu.o: .\inc\core_cmInstr.h
 .\output\wndrv_pmu.o: .\inc\core_cmFunc.h
 .\output\wndrv_pmu.o: src\../inc/system_LPC11Uxx.h
@@ -11,10 +11,10 @@
 .\output\wndrv_pmu.o: .\inc\Type.h
 .\output\wndrv_pmu.o: .\inc\button.h
 .\output\wndrv_pmu.o: .\inc\device.h
-.\output\wndrv_pmu.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\wndrv_pmu.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\wndrv_pmu.o: .\inc\gloab.h
 .\output\wndrv_pmu.o: .\inc\usb.h
 .\output\wndrv_pmu.o: .\inc\hiduser.h
-.\output\wndrv_pmu.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\wndrv_pmu.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\wndrv_pmu.o: .\inc\Led_Effect_H\test.h
 .\output\wndrv_pmu.o: .\inc\my_board.h

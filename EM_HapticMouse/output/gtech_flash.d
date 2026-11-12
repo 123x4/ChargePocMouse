@@ -2,7 +2,7 @@
 .\output\gtech_flash.o: src\../inc/LPC11Uxx.h
 .\output\gtech_flash.o: src\../inc/core_cm0.h
 .\output\gtech_flash.o: src\../inc/LPC11Uxx.h
-.\output\gtech_flash.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\output\gtech_flash.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdint.h
 .\output\gtech_flash.o: .\inc\core_cmInstr.h
 .\output\gtech_flash.o: .\inc\core_cmFunc.h
 .\output\gtech_flash.o: src\../inc/system_LPC11Uxx.h
@@ -11,9 +11,9 @@
 .\output\gtech_flash.o: .\inc\gloab.h
 .\output\gtech_flash.o: .\inc\usb.h
 .\output\gtech_flash.o: .\inc\Type.h
-.\output\gtech_flash.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\output\gtech_flash.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdbool.h
 .\output\gtech_flash.o: .\inc\hiduser.h
-.\output\gtech_flash.o: C:\Users\GT028615\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\output\gtech_flash.o: D:\Keil5\Core\ARM\ARMCC\Bin\..\include\stdlib.h
 .\output\gtech_flash.o: .\inc\Led_Effect_H\test.h
 .\output\gtech_flash.o: .\inc\OSC.h
 .\output\gtech_flash.o: .\inc\eeprom.h
