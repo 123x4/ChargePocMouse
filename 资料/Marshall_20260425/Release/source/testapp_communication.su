@@ -1,0 +1,16 @@
+../source/testapp_communication.c:1398:6:Clear_buffer	0	static
+../source/testapp_communication.c:733:6:TestAPP_Report_SegmentData	16	static
+../source/testapp_communication.c:810:6:TestAPP_Report_SegmentAnalog	16	static
+../source/testapp_communication.c:1079:6:TestAPP_Report_BaselineTop	16	static
+../source/testapp_communication.c:1161:6:TestAPP_Report_BaselineBottom	16	static
+../source/testapp_communication.c:1244:6:TestAPP_Report_Gain	16	static
+../source/testapp_communication.c:1321:6:TestAPP_Report_SelfCheck	16	static
+../source/testapp_communication.c:1412:9:TestApp_Check_Buffer_CRC	0	static
+../source/testapp_communication.c:649:6:TestAPP_Report_RawData	16	static
+../source/testapp_communication.c:604:6:TestAPP_CheckReportType	8	static
+../source/testapp_communication.c:892:6:TestAPP_Report_Triggerdata	16	static
+../source/testapp_communication.c:1432:6:Report_CRC_Error	16	static
+../source/testapp_communication.c:1447:6:InitParameter_FOR_TestMode	0	static
+../source/testapp_communication.c:980:6:TestAPP_Set_Triggerdata	16	static
+../source/testapp_communication.c:563:6:TestAPP_COMMUNICATION	8	static
+../source/testapp_communication.c:44:14:USB_DeviceHidCustomReportOutCallBack	8	static

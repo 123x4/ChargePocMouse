@@ -1,0 +1,13 @@
+{
+  "common": {
+    "tuning_mode": "Performance",
+    "base_option": "-O3 ",
+    "extra_flags": "",
+    "program_termination_time": 1440,
+    "sample_termination_enabled": false,
+    "gdb_breakpoint_start": "",
+    "gdb_breakpoint_end": "",
+    "option_avoid_list": "",
+    "optimization_target": "min"
+  }
+}

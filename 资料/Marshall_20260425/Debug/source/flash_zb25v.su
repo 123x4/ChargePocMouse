@@ -1,0 +1,14 @@
+../source/flash_zb25v.c:47:13:SpiWriteByte	16	static
+../source/flash_zb25v.c:75:16:SpiReadByte	16	static
+../source/flash_zb25v.c:101:10:FlashZB25V_ReadID	8	static
+../source/flash_zb25v.c:133:6:FlashZB25V_PowerON_check_ID	16	static
+../source/flash_zb25v.c:159:10:FlashZB25V_Read_Data	16	static
+../source/flash_zb25v.c:247:6:FlashZB25V_Write_ENABLE	8	static
+../source/flash_zb25v.c:263:6:FlashZB25V_Write_Disable	8	static
+../source/flash_zb25v.c:279:6:FlashZB25V_SectorErase	8	static
+../source/flash_zb25v.c:311:9:FlashZB25V_SR1_Read	8	static
+../source/flash_zb25v.c:332:6:FlashZB25V_CheckBusy	8	static
+../source/flash_zb25v.c:185:10:FlashZB25V_Sector_Erase	16	static
+../source/flash_zb25v.c:204:6:FlashZB25V_Write_Data	16	static
+../source/flash_zb25v.c:347:6:FlashZB25V_Init	8	static
+../source/flash_zb25v.c:364:6:FlashZB25V_SaveAPPData	16	static

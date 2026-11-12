@@ -1,0 +1,87 @@
+USER_SECTIONS   .bootloader
+USER_SECTIONS   .loader
+;USER_SECTIONS	.rom_flash
+USER_SECTIONS   .section_sram
+USER_SECTIONS   .rom_flash_resv
+
+; FLASH start address; affects copy operations performed by .bootloader and .loader, see loader.c source code for details;
+HEAD 0x80000000
+{
+    BOOTLOADER 0x80000000 0x100; FLASH start address; adx file (.loader)
+    {
+        ADDR __flash_start; FLASH start address
+        ; .bootloader code placed at chip's FLASH start address - executed first after power-up, 
+        ; responsible for copying .loader code from FLASH to ILM-0x100 position and jumping to execute .loader, source code in loader.c;
+        * KEEP (.bootloader)
+    }
+}
+
+LDSECTION +0 ALIGN 8
+{
+	; .loader code executes at ILM-0x200 position, responsible for copying __text and __data from FLASH to ILM start address and DLM start address respectively, 
+	; then jumps to execute _start, source code in loader.c and start.s;
+    LOADER 0x0002FE00 0x200;0.5KB .loader code in ILM
+    {
+        LOADADDR NEXT __loader_lmastart; relative to FLASH start address - .loader code's load address (LMA) - stored in .bin file
+        ADDR NEXT __loader_start; .loader's execution address (VMA) in ILM
+        * KEEP (.loader); adx file (.loader)
+        LOADADDR __loader_lmaend; relative to FLASH start address - end load address (LMA) - stored in .bin file
+    }
+}
+
+; The following configuration uses ILM start address as initial execution position, 
+; placing all application-related code (code section) in ILM for execution, and data sections (including read-only data) in DLM
+MEM +0 ALIGN 256
+{
+	; ILM start address and length, used as RAM for code execution
+    ILM 0x00000000 0x0002FE00;191.5KB instruction code in ILM
+    {
+    	; relative to FLASH start address - load address (LMA) for all application-related code - stored in .bin file
+        LOADADDR NEXT __text_lmastart
+        ADDR NEXT __text_start; execution address (VMA) for all application-related code in ILM
+        * (+ISR,+RO-CODE); all application-related code output (ISR sections, code sections) - adx files (.init + .text)
+        LOADADDR __text_lmaend
+    }
+}
+
+;ROM 0x80030000
+;{
+;	FLASH 0x80030000 0x20000;128KB code in flash
+;	{
+;		* (.rom_flash)
+;	}
+;}
+
+DATA +0 ALIGN 8
+{
+	; DLM start address and length, used as RAM for storing data and STACK
+    DLM 0x00200000 0x00010000;64KB
+    {
+    	; relative to FLASH start address - load address (LMA) for all application-related data - stored in .bin file
+        LOADADDR NEXT __data_lmastart
+        ADDR NEXT __data_start; execution address (VMA) for all application-related data in DLM
+		* (+RO-DATA,+RW,+ZI);all application-related data output (data sections)¡ª¡ªadx files(.rodata + .eh_frame + .data + .sbss)
+        STACK = 0x00210000; DLM end position, STACK is decrementing
+    }
+}
+
+SRAM +0 ALIGN 8
+{
+    SEC 0x00210000 0x8000;32KB
+    {
+    	;Users need to add corresponding Copy .section_sram* from LMA to VMA code in the c_startup function;
+		LOADADDR NEXT __sram_lmastart
+		ADDR NEXT __sram_start
+		*(.section_sram)
+		LOADADDR __sram_lmaend
+    }
+}
+
+
+ROM_RESV 0x80050000
+{
+	FLASH_RESV 0x80050000 0xB0000;704KB reserve in flash
+	{
+		* (.rom_flash_resv)
+	}
+}

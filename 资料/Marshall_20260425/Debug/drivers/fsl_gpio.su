@@ -1,0 +1,3 @@
+../drivers/fsl_gpio.c:42:13:GPIO_EnablePortClock	8	static
+../drivers/fsl_gpio.c:60:6:GPIO_PortInit	8	static
+../drivers/fsl_gpio.c:97:6:GPIO_PinInit	24	static

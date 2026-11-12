@@ -1,0 +1,11 @@
+../component/timer/fsl_adapter_mrt.c:54:6:MRT0_IRQHandler	8	static
+../component/timer/fsl_adapter_mrt.c:64:20:HAL_TimerInit	32	static
+../component/timer/fsl_adapter_mrt.c:99:6:HAL_TimerDeinit	8	static
+../component/timer/fsl_adapter_mrt.c:107:6:HAL_TimerEnable	8	static
+../component/timer/fsl_adapter_mrt.c:116:6:HAL_TimerDisable	8	static
+../component/timer/fsl_adapter_mrt.c:127:6:HAL_TimerInstallCallback	8	static
+../component/timer/fsl_adapter_mrt.c:135:10:HAL_TimerGetMaxTimeout	24	static
+../component/timer/fsl_adapter_mrt.c:148:10:HAL_TimerGetCurrentTimerCount	8	static
+../component/timer/fsl_adapter_mrt.c:157:20:HAL_TimerUpdateTimeout	8	static
+../component/timer/fsl_adapter_mrt.c:172:6:HAL_TimerExitLowpower	8	static
+../component/timer/fsl_adapter_mrt.c:177:6:HAL_TimerEnterLowpower	8	static

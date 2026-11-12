@@ -1,0 +1,70 @@
+USER_SECTIONS	.ram_ilm
+USER_SECTIONS	.section_sram
+USER_SECTIONS	.flash_ep_ilm
+USER_SECTIONS   .ilm_data
+
+FLASH 0x80010000
+{
+	EXEC 0x80010000 0x00078000
+	{
+		* EXCLUDE_FILE(
+			./src/tu_driver/*
+			./src/demo/keyboard.o
+			./src/driver/source/gtry_timer_drv.o
+			./src/bsp/gtry_trap.o
+			./src/demo/flash_driver/gtry6xx_flash_lib.o
+			./src/h6/*.o
+		) (+RO-CODE)
+	}
+}
+
+DATA +0 ALIGN 8;
+{
+	;DLM start address and length, used to save data in RAM
+	DLM 0x00200000 0x00010000
+	{
+		;Relative to FLASH start position, all application-related data start loading address (LMA) â€?stored in the start address in the .bin file
+		LOADADDR NEXT __data_lmastart
+		;All application-related data stored in DLM starts at this address â€?execution address (VMA)
+		ADDR NEXT __data_start
+		;All application-related code compiled output (data sections) â€?adx files (.eh_frame + .data + .sbss)
+		* (+RO-DATA,+RW,+ZI)
+	}
+}
+
+RAM +0 ALIGN 8
+{
+	;In ILM space, specify the SECTION area.
+	;Users can separately restrict functions and variables that need to run in ILM using __attribute__((section(".ram_ilm")))
+	ILM 0x0 0x00030000
+	{
+		;Users need to add corresponding Copy .ramrun* from LMA to VMA code in the c_startup function;
+		LOADADDR NEXT __ramrun_lmastart
+		ADDR NEXT __ramrun_start
+		* (+ISR)
+		* (.ram_ilm)
+		* (.ilm_data)
+		* (.flash_ep_ilm)
+		./src/tu_driver/* (+RO-CODE)
+		./src/demo/keyboard.o (+RO-CODE)
+		./src/driver/source/gtry_timer_drv.o (+RO-CODE)
+		./src/bsp/gtry_trap.o (+RO-CODE)
+		./src/h6/*.o (+RO-CODE)
+		LOADADDR __ramrun_lmaend			
+		;SRAM end position, STACK is decrementing
+		; Try to leave ~0x4000 bytes available for Stack
+		STACK = 0x00030000
+	}
+}
+
+SRAM0 +0 ALIGN 8
+{
+	SEC0 0x00210000 0x8000
+	{
+		;Users need to add corresponding Copy .section_sram* from LMA to VMA code in the c_startup function;
+		LOADADDR NEXT __sram_lmastart
+		ADDR NEXT __sram_start
+		*(.section_sram)
+		LOADADDR __sram_lmaend
+	}
+}

@@ -1,0 +1,10 @@
+../usb/device/class/hid/usb_device_hid.c:106:21:USB_DeviceHidInterruptIn	8	static
+../usb/device/class/hid/usb_device_hid.c:145:21:USB_DeviceHidInterruptOut	8	static
+../usb/device/class/hid/usb_device_hid.c:276:21:USB_DeviceHidEndpointsDeinit	16	static
+../usb/device/class/hid/usb_device_hid.c:181:21:USB_DeviceHidEndpointsInit	56	static
+../usb/device/class/hid/usb_device_hid.c:309:14:USB_DeviceHidEvent	48	static
+../usb/device/class/hid/usb_device_hid.c:595:14:USB_DeviceHidInit	24	static
+../usb/device/class/hid/usb_device_hid.c:639:14:USB_DeviceHidDeinit	8	static
+../usb/device/class/hid/usb_device_hid.c:678:14:USB_DeviceHidSend	16	static
+../usb/device/class/hid/usb_device_hid.c:708:14:TEST_USB_DeviceHidSend	8	static
+../usb/device/class/hid/usb_device_hid.c:748:14:USB_DeviceHidRecv	16	static

@@ -1,0 +1,6 @@
+../drivers/fsl_common.c:127:7:SDK_Malloc	16	static
+../drivers/fsl_common.c:168:6:SDK_Free	8	static
+../drivers/fsl_common.c:272:6:SDK_DelayAtLeastUs	8	static
+../drivers/fsl_common.c:314:6:hall_mcu_delay_us	0	static
+../drivers/fsl_common.c:324:6:hall_mcu_delay_ms	16	static
+../drivers/fsl_common.c:334:6:wwdt_feed	0	static

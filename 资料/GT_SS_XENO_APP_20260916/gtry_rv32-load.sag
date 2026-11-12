@@ -1,0 +1,57 @@
+;USER_SECTIONS	.rom_flash
+USER_SECTIONS	.section_sram
+USER_SECTIONS	.rom_flash_resv
+
+FLASH_LMA 0x80000000
+{
+	ILM_EXEC 0x00000000 0x00030000 ; ILM code size = 192KB
+	{
+		;All compiled output of code related to application functions (code sections and read-only data sections) ！ adx files (.init + .text)
+        * (+ISR,+RO-CODE); all application-related code output (ISR sections, code sections) - adx files (.init + .text)
+	}
+}
+
+;ROM_LMA 0x80030000
+;{
+;	FLASH 0x80030000 0x20000;128KB code in flash
+;	{
+;		* (.rom_flash)
+;	}
+;}
+
+DATA +0 ALIGN 8
+{
+	;DLM start address and length, used to save data and STACK in RAM
+	DLM 0x00200000 0x00010000;64KB data in DLM
+	{
+		;Relative to FLASH start position, all application-related data start loading address (LMA) ！ stored in the start address in the .bin file
+		LOADADDR NEXT __data_lmastart
+		;All application-related data stored in DLM starts at this address ！ execution address (VMA)
+		ADDR NEXT __data_start
+		;All application-related code compiled output (data sections) ！ adx files (.rodata + .eh_frame + .data + .sbss)
+		* (+RO-DATA,+RW,+ZI);all application-related data output (data sections)！！adx files(.rodata + .eh_frame + .data + .sbss)
+		;DLM end position, STACK is decrementing
+		STACK = 0x00210000
+	}
+}
+
+SRAM +0 ALIGN 8
+{
+	SEC 0x00210000 0x8000;32KB data in SRAM
+	{
+		;Users need to add corresponding Copy .section_sram* from LMA to VMA code in the c_startup function;
+		LOADADDR NEXT __sram_lmastart
+		ADDR NEXT __sram_start
+		* (.section_sram)
+		LOADADDR __sram_lmaend	
+	}
+}
+
+ROM_RESV 0x80050000
+{
+	FLASH_RESV 0x80050000 0xB0000;704KB reserve in flash
+	{
+		* (.rom_flash_resv)
+	}
+}
+

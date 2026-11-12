@@ -1,0 +1,17 @@
+../drivers/fsl_ctimer.c:492:13:CTIMER_GenericIRQHandler	24	static
+../drivers/fsl_ctimer.c:71:17:CTIMER_GetInstance	8	static
+../drivers/fsl_ctimer.c:98:6:CTIMER_Init	16	static
+../drivers/fsl_ctimer.c:127:6:CTIMER_Deinit	8	static
+../drivers/fsl_ctimer.c:153:6:CTIMER_GetDefaultConfig	8	static
+../drivers/fsl_ctimer.c:190:10:CTIMER_SetupPwm	32	static
+../drivers/fsl_ctimer.c:280:10:CTIMER_SetupPwmPeriod	24	static
+../drivers/fsl_ctimer.c:347:6:CTIMER_UpdatePwmDutycycle	4	static
+../drivers/fsl_ctimer.c:380:6:CTIMER_SetupMatch	24	static
+../drivers/fsl_ctimer.c:433:10:CTIMER_GetOutputMatchStatus	0	static
+../drivers/fsl_ctimer.c:448:6:CTIMER_SetupCapture	24	static
+../drivers/fsl_ctimer.c:480:6:CTIMER_RegisterCallBack	16	static
+../drivers/fsl_ctimer.c:536:6:CTIMER0_DriverIRQHandler	8	static
+../drivers/fsl_ctimer.c:545:6:CTIMER1_DriverIRQHandler	8	static
+../drivers/fsl_ctimer.c:554:6:CTIMER2_DriverIRQHandler	8	static
+../drivers/fsl_ctimer.c:563:6:CTIMER3_DriverIRQHandler	8	static
+../drivers/fsl_ctimer.c:572:6:CTIMER4_DriverIRQHandler	8	static

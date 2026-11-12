@@ -1,0 +1,27 @@
+{
+	"FlashBurn.FlashDriver": [
+		"e:\\Ruiyi\\A_SS\\Xeno\\test_vs_code\\package\\flash\\bin\\GTRY_SPI_burn.exe"
+	],
+	"FlashBurn.FlashImage": [
+		"e:\\Ruiyi\\A_SS\\Xeno\\ss_-xeno_-r5\\Xeno_USB_CV_CC\\TEST\\ESD_EE_test_0702\\Debug\\output\\ESD_EE_test_0702.bin"
+	],
+	"FlashBurn.Host": [
+		""
+	],
+	"FlashBurn.BurnPort": [
+		""
+	],
+	"FlashBurn.Unlock": false,
+	"FlashBurn.LockAfterProgramming": false,
+	"FlashBurn.Verification": false,
+	"FlashBurn.EraseAll": false,
+	"FlashBurn.ProgrammingStartAddress": [
+		"0x0"
+	],
+	"FlashBurn.FlashControllerAddress": [
+		""
+	],
+	"FlashBurn.MiscArguments": [
+		""
+	]
+}

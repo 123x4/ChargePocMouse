@@ -1,0 +1,2 @@
+set $milmb=0x1L
+set $mdlmb=0x200001L

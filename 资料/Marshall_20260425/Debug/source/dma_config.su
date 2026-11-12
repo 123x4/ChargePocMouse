@@ -1,0 +1,6 @@
+../source/dma_config.c:178:13:SPI5_MasterUserCallback	0	static
+../source/dma_config.c:207:6:DMA_CONFIG	72	static
+../source/dma_config.c:372:6:DMA_StartTransfer_Once	24	static
+../source/dma_config.c:409:6:DMA_StartTransfer_OnceFor_RawData	24	static
+../source/dma_config.c:463:6:DMA_StartTransfer_Once_TESTAPP	24	static
+../source/dma_config.c:513:6:DMA_StartTransfer_Suspend	32	static

@@ -1,0 +1,14 @@
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:937:17:USB_DeviceLpc3511IpTokenUpdate	4	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:435:13:USB_DeviceLpc3511IpSetDefaultState	0	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:360:21:USB_DeviceLpc3511IpEndpointPrime	32	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:1553:21:USB_DeviceLpc3511IpGetActualBufferAndPrime	40	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:1739:21:USB_DeviceLpc3511IpTransaction	32	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:878:13:USB_DeviceLpc3511IpDoPreviousTransactionMemcpy	16	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:1346:14:USB_DeviceLpc3511IpInit	16	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:1517:14:USB_DeviceLpc3511IpDeinit	0	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:1852:14:USB_DeviceLpc3511IpSend	16	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:1886:14:USB_DeviceLpc3511IpRecv	8	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:1894:14:USB_DeviceLpc3511IpCancel	48	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:614:21:USB_DeviceLpc3511IpEndpointDeinit	32	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:2066:14:USB_DeviceLpc3511IpControl	32	static
+../usb/device/source/lpcip3511/usb_device_lpcip3511.c:2303:6:USB_DeviceLpcIp3511IsrFunction	72	static
