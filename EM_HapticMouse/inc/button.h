@@ -61,6 +61,24 @@
 #define  TD12_DELAY_US    						(DELAY_OUT(55)) 		//>50
 #endif
 
+/* 按"用途"命名的时序宏，屏蔽 H5/H6 的 TD 编号差异。
+ * 脉冲类（手册 ±5%）需要实测；等待类（手册 ">"）留了余量。 */
+#if (6 == USE_HALL_SENSOR)
+#define HALL_TD_CONVERT       TD1_DELAY_US      /* 5us ±5%   读采样 */
+#define HALL_TD_CONVERT_WAIT  (DELAY_OUT(8))    /* >4us      读采样后等待 */
+#define HALL_TD_WR_REG        TD6_DELAY_US      /* 39us ±5%  读/写寄存器 */
+#define HALL_TD_WR_WAIT       (DELAY_OUT(10))   /* >3us      读写后等待 */
+#define HALL_TD_FREQ_CAL      TD10_DELAY_US     /* 128us ±5% 频率校准 */
+#define HALL_TD_FREQ_WAIT     (DELAY_OUT(60))   /* >50us     校准后等待 */
+#else
+#define HALL_TD_CONVERT       TD1_DELAY_US
+#define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US
+#define HALL_TD_WR_REG        TD4_DELAY_US
+#define HALL_TD_WR_WAIT       TD5_DELAY_US
+#define HALL_TD_FREQ_CAL      TD7_DELAY_US
+#define HALL_TD_FREQ_WAIT     TD10_DELAY_US
+#endif
+
 #define CRC_ERROR 0xffff
 /*Macros defining button position for all buttons of Touch Mouse RDK */ 
 //#define DPI_BUTTON_POSITION					(13u) //Port0    (1) /* Port0*/

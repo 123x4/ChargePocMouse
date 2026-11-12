@@ -858,14 +858,14 @@ void Hall_CLK_Command_SET(unsigned short high_delay, unsigned short low_delay)
 
 void hall_get_sample(void)
 {
-	Hall_CLK_Command_SET(TD1_DELAY_US, TD2_CONTIUNS_DELAY_US);
+	Hall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);
 
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
 
 void HALL_Read_Instru_cnt(void)
 {
-	Hall_CLK_Command_SET(TD7_DELAY_US, TD10_DELAY_US);
+	Hall_CLK_Command_SET(HALL_TD_FREQ_CAL, HALL_TD_FREQ_WAIT);
 
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
@@ -910,7 +910,7 @@ void Hall_read_register(void)
 {
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 
-	Hall_CLK_Command_SET(TD4_DELAY_US,TD5_DELAY_US);
+	Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);
 	
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
@@ -932,7 +932,7 @@ void Hall_write_register(void)
 {
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 
-	Hall_CLK_Command_SET(TD4_DELAY_US,TD5_DELAY_US);
+	Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);
 }
 
 void ana_hall2_phy_set_mode(unsigned char length)
