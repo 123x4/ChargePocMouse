@@ -1,0 +1,881 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>H6 移植讲义</title>
+<style>
+/* 布局：宽屏左侧固定目录 + 右侧单栏正文；窄屏目录收到顶部，正文单栏 */
+:root {
+  --bg: #f5f7f4;
+  --surface: #ffffff;
+  --sunken: #e9ede8;
+  --fg: #1b2420;
+  --muted: #5a6862;
+  --line: #cfd7d1;
+  --accent: #0e6b58;
+  --accent-soft: #dcefe8;
+  --warn: #8f4e00;
+  --warn-soft: #fbeed6;
+  --bad: #a3271f;
+  --bad-soft: #f9e2df;
+  --code-fg: #17302a;
+  --font-body: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-head: "Space Grotesk", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, "SF Mono", Menlo, "Microsoft YaHei", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131816; --surface: #1b2220; --sunken: #232c29; --fg: #e2e9e5; --muted: #9aaaa3;
+    --line: #34413c; --accent: #5fcfb2; --accent-soft: #17352d; --warn: #f0b765; --warn-soft: #3a2c12;
+    --bad: #f2918a; --bad-soft: #3d1d1a; --code-fg: #d6e6df; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131816; --surface: #1b2220; --sunken: #232c29; --fg: #e2e9e5; --muted: #9aaaa3;
+  --line: #34413c; --accent: #5fcfb2; --accent-soft: #17352d; --warn: #f0b765; --warn-soft: #3a2c12;
+  --bad: #f2918a; --bad-soft: #3d1d1a; --code-fg: #d6e6df; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 80px;
+}
+.page { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+main { min-width: 0; max-width: 46rem; }
+
+/* 目录 */
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; font-size: 14px; line-height: 1.5; max-height: calc(100vh - 40px); overflow-y: auto; }
+nav.toc .progress { font-family: var(--font-mono); font-size: 13px; color: var(--muted); padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+nav.toc .progress b { color: var(--accent); font-size: 20px; font-weight: 600; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+nav.toc a { display: flex; gap: 8px; align-items: baseline; padding: 4px 8px; border-radius: 4px; color: var(--fg); text-decoration: none; }
+nav.toc a:hover { background: var(--sunken); }
+nav.toc a .n { font-family: var(--font-mono); font-size: 12px; color: var(--muted); min-width: 1.6em; }
+nav.toc a.done .n { color: var(--accent); }
+nav.toc a.done .n::after { content: " ✓"; }
+nav.toc .group { margin-top: 12px; padding: 0 8px 2px; font-size: 12px; letter-spacing: .08em; color: var(--muted); }
+
+/* 标题与正文 */
+header.top { margin-bottom: 32px; }
+header.top h1 { font-family: var(--font-head); font-size: clamp(28px, 5vw, 38px); line-height: 1.2; margin: 0 0 12px; text-wrap: balance; letter-spacing: -.01em; }
+header.top dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 16px; margin: 0; font-size: 14px; color: var(--muted); }
+header.top dt { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; padding-top: 2px; }
+header.top dd { margin: 0; color: var(--fg); }
+
+section { padding-top: 12px; margin-top: 44px; border-top: 1px solid var(--line); scroll-margin-top: 16px; }
+h2 { font-family: var(--font-head); font-size: 24px; line-height: 1.3; margin: 12px 0 16px; text-wrap: balance; }
+h2 .step { display: block; font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .1em; color: var(--accent); margin-bottom: 4px; }
+h3 { font-size: 17px; margin: 28px 0 8px; }
+h4 { font-size: 13px; letter-spacing: .08em; color: var(--muted); margin: 24px 0 6px; font-weight: 600; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 1.4em; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+strong { font-weight: 650; }
+code { font-family: var(--font-mono); font-size: .86em; background: var(--sunken); color: var(--code-fg); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+
+/* 代码块 */
+.code { position: relative; margin: 0 0 16px; background: var(--sunken); border-radius: 6px; }
+.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--code-fg); tab-size: 4; }
+.code pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.code button { position: absolute; top: 6px; right: 6px; font: 12px var(--font-body); color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+.code button:hover { color: var(--accent); border-color: var(--accent); }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 表格 */
+.scroll { overflow-x: auto; margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.55; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 600; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--fg); padding: 6px 12px 6px 0; white-space: nowrap; }
+td { border-bottom: 1px solid var(--line); padding: 7px 12px 7px 0; vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+
+/* 提示块 */
+.note { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; margin: 0 0 16px; color: var(--muted); font-size: 15px; }
+.warn { background: var(--warn-soft); border-radius: 6px; padding: 12px 16px; margin: 0 0 16px; }
+.warn > b:first-child { color: var(--warn); }
+.pass { background: var(--accent-soft); border-radius: 6px; padding: 12px 16px; margin: 20px 0 16px; }
+.pass h4 { margin: 0 0 4px; color: var(--accent); }
+.pass p:last-of-type { margin-bottom: 8px; }
+.pass label, .checks label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.pass label { font-weight: 600; padding-top: 8px; border-top: 1px solid var(--line); }
+input[type="checkbox"] { width: 18px; height: 18px; margin: 5px 0 0; accent-color: var(--accent); flex: none; }
+.checks { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.checks li { margin: 0; }
+.commit { font-size: 14px; color: var(--muted); }
+.rules { counter-reset: r; list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.rules li { counter-increment: r; display: grid; grid-template-columns: 2em 1fr; margin: 0; }
+.rules li::before { content: counter(r); font-family: var(--font-mono); color: var(--accent); font-weight: 600; }
+
+/* 时序图 */
+figure { margin: 0 0 16px; }
+figure .scroll { margin: 0; }
+figure svg { display: block; min-width: 640px; width: 100%; height: auto; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.tg-axis { stroke: var(--line); stroke-width: 1; fill: none; }
+.tg-tick { fill: var(--muted); font: 11px var(--font-mono); }
+.tg-name { fill: var(--fg); font: 12px var(--font-mono); }
+.tg-val { fill: var(--muted); font: 12px var(--font-mono); }
+.tg-used { fill: var(--accent); }
+.tg-idle { fill: var(--line); }
+.tg-val.used { fill: var(--fg); }
+
+/* 记录表 */
+#log input[type="text"] { width: 100%; min-width: 9rem; font: 14px var(--font-mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; }
+#log td { vertical-align: middle; }
+.saved { font-size: 13px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .page { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  nav.toc { position: static; max-height: none; border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+  nav.toc ol { flex-direction: row; flex-wrap: wrap; }
+  nav.toc .group { display: none; }
+}
+</style>
+
+<div class="page">
+
+<nav class="toc" aria-label="目录">
+  <div class="progress">已通过 <b id="doneCount">0</b> / 8 步</div>
+  <ol>
+    <li class="group">开始之前</li>
+    <li><a href="#rules"><span class="n">—</span>使用规则</a></li>
+    <li><a href="#bg"><span class="n">—</span>背景知识</a></li>
+    <li><a href="#diff"><span class="n">—</span>H5 与 H6 的差异</a></li>
+    <li><a href="#prep"><span class="n">—</span>准备工作</a></li>
+    <li class="group">八个步骤</li>
+    <li><a href="#s1" data-step="1"><span class="n">1</span>时序宏按用途命名</a></li>
+    <li><a href="#s2" data-step="2"><span class="n">2</span>切到 H6，量脉宽</a></li>
+    <li><a href="#s3" data-step="3"><span class="n">3</span>频率校准</a></li>
+    <li><a href="#s4" data-step="4"><span class="n">4</span>校验位与写读</a></li>
+    <li><a href="#s5" data-step="5"><span class="n">5</span>初始化寄存器表</a></li>
+    <li><a href="#s6" data-step="6"><span class="n">6</span>读原始值</a></li>
+    <li><a href="#s7" data-step="7"><span class="n">7</span>按键与增益</a></li>
+    <li><a href="#s8" data-step="8"><span class="n">8</span>回归测试</a></li>
+    <li class="group">附录</li>
+    <li><a href="#log"><span class="n">—</span>记录表</a></li>
+    <li><a href="#ask"><span class="n">—</span>要问同事的问题</a></li>
+    <li><a href="#refs"><span class="n">—</span>参考资料对照</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="top">
+  <h1>H5 → H6 霍尔芯片移植讲义</h1>
+  <dl>
+    <dt>工程</dt><dd><code>EM_HapticMouse</code>，LPC11U35，板型 <code>GT_LINA_T1A_H5_PWM</code></dd>
+    <dt>目标</dt><dd>霍尔驱动从 H5（GTRY154）改为 H6（GTRY164）</dd>
+    <dt>前提</dt><dd>手上只有 H6 的板子，没有 H5 的板子</dd>
+  </dl>
+</header>
+
+<div class="warn"><b>代码未经验证。</b>讲义里的代码是对照芯片手册和 XENO 工程写的，没有编译过，也没有上板验证过。每个数值后面都标了来源，遇到和实测不符的地方，以实测和手册为准。</div>
+
+<!-- ================= 规则 ================= -->
+<section id="rules">
+<h2>怎么用这份讲义</h2>
+<ol class="rules">
+  <li><div><strong>一次只改一件事，改完就验证。</strong>时序错、校验位错、寄存器值错，现象都是“读出来不对”。一口气全改完再烧录，你将无法分辨是哪一个错。</div></li>
+  <li><div><strong>上一步没通过，不做下一步。</strong>每一步末尾都有通过标准，是具体的数值，不是“看起来正常”。</div></li>
+  <li><div><strong>每通过一步，提交一次，并填记录表。</strong>出问题时能退回到上一个确定正常的状态。</div></li>
+</ol>
+<p>没有 H5 板子带来两个后果，讲义已经按此调整：</p>
+<ul>
+  <li>你没有“已知正常”的硬件可以回退。所以第 1 步用“编译结果逐字节相同”来证明重构没改坏，而不是上板测试。</li>
+  <li>你没有 H5 的原始值作为手感基准。<a href="#prep">准备工作</a>里列了替代办法。</li>
+</ul>
+<p class="note">页面上的勾选和记录表内容保存在这台电脑的浏览器里，换电脑或清除浏览器数据后不会保留。重要的实测值请同时记到别处。</p>
+</section>
+
+<!-- ================= 背景 ================= -->
+<section id="bg">
+<h2>背景知识</h2>
+
+<h3>这颗芯片是什么</h3>
+<ul>
+  <li>H5 = GTRY154，H6 = GTRY164，都是 G.TECH 的霍尔传感器，封装和引脚相同。</li>
+  <li>它检测按键下方磁铁的远近，输出一个 14 位数值（0–16383）。没有磁场时约为 8192，磁铁靠近时数值向一边偏。</li>
+  <li>手册（datasheet）在 <code>资料/</code> 目录，文件名以 <code>GTRY164</code>（H6）和 <code>GTRY154</code>（H5）开头。</li>
+</ul>
+
+<h3>这块板子怎么接的</h3>
+<p>两颗芯片串成一条链（菊花链），共用三根线接到 MCU 的 SSP1，没有片选线。</p>
+<div class="scroll"><table>
+  <tr><th>信号</th><th>MCU 引脚</th><th>出处</th></tr>
+  <tr><td>SCK</td><td>PIO1_15</td><td><code>src/SPI.c:227</code></td></tr>
+  <tr><td>MOSI（芯片的 SDI）</td><td>PIO0_21</td><td><code>src/SPI.c:216</code></td></tr>
+  <tr><td>MISO（芯片的 SDO）</td><td>PIO0_22</td><td><code>src/SPI.c:221</code></td></tr>
+</table></div>
+<ul>
+  <li>SPI 配置是 CPOL=0、CPHA=1、8 位，时钟 48MHz ÷ (8 × 3) = <strong>2MHz</strong>（<code>src/SPI.c:238-239</code>，旁边注释写的 8MHz 是错的）。手册要求高于 1MHz，满足。</li>
+  <li>一次传输 4 个字节：<code>hall_spi_rx[0..1]</code> 是<strong>右键</strong>，<code>hall_spi_rx[2..3]</code> 是<strong>左键</strong>。</li>
+</ul>
+
+<h3>“TD 时间”是什么</h3>
+<p>因为没有片选，MCU 通过<strong>把 SCK 拉高一段特定时长</strong>来告诉芯片要做什么。时长不同，命令不同。这个时长就是手册 7.8 节的 td。</p>
+
+<figure>
+  <div class="scroll">
+  <svg viewBox="0 0 760 236" role="img" aria-label="H6 各命令的 SCK 高电平时长，按比例绘制">
+    <!-- 比例：4px = 1us，起点 x=150 -->
+    <line class="tg-axis" x1="150" y1="200" x2="710" y2="200"/>
+    <g class="tg-tick" text-anchor="middle">
+      <line class="tg-axis" x1="150" y1="200" x2="150" y2="205"/><text x="150" y="220">0</text>
+      <line class="tg-axis" x1="230" y1="200" x2="230" y2="205"/><text x="230" y="220">20</text>
+      <line class="tg-axis" x1="310" y1="200" x2="310" y2="205"/><text x="310" y="220">40</text>
+      <line class="tg-axis" x1="390" y1="200" x2="390" y2="205"/><text x="390" y="220">60</text>
+      <line class="tg-axis" x1="470" y1="200" x2="470" y2="205"/><text x="470" y="220">80</text>
+      <line class="tg-axis" x1="550" y1="200" x2="550" y2="205"/><text x="550" y="220">100</text>
+      <line class="tg-axis" x1="630" y1="200" x2="630" y2="205"/><text x="630" y="220">120</text>
+      <line class="tg-axis" x1="710" y1="200" x2="710" y2="205"/><text x="710" y="220">140 us</text>
+    </g>
+    <g>
+      <text class="tg-name" x="0" y="24">HAL_CONVERT</text>
+      <rect class="tg-used" x="150" y="12" width="20" height="16"/>
+      <text class="tg-val used" x="178" y="24">td1 = 5us　读采样</text>
+
+      <text class="tg-name" x="0" y="56">Interrupt_EN</text>
+      <rect class="tg-idle" x="150" y="44" width="48" height="16"/>
+      <text class="tg-val" x="206" y="56">td3 = 12us　不用</text>
+
+      <text class="tg-name" x="0" y="88">W_PWM_REG</text>
+      <rect class="tg-idle" x="150" y="76" width="72" height="16"/>
+      <text class="tg-val" x="230" y="88">td4 = 18us　写 LED 的 PWM</text>
+
+      <text class="tg-name" x="0" y="120">SLEEP</text>
+      <rect class="tg-idle" x="150" y="108" width="112" height="16"/>
+      <text class="tg-val" x="270" y="120">td7 = 28us　不用</text>
+
+      <text class="tg-name" x="0" y="152">WR_REG</text>
+      <rect class="tg-used" x="150" y="140" width="156" height="16"/>
+      <text class="tg-val used" x="314" y="152">td6 = 39us　读写寄存器</text>
+
+      <text class="tg-name" x="0" y="184">FREQ_Calibrate</text>
+      <rect class="tg-used" x="150" y="172" width="512" height="16"/>
+      <text class="tg-val used" x="668" y="184">td10 = 128us</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>H6 各命令的 SCK 高电平时长，按比例绘制。深色是本次移植用到的三条。软复位 td11 大于 1280us，超出图幅未画。</figcaption>
+</figure>
+
+<div class="scroll"><table>
+  <tr><th>命令</th><th>SCK 拉高时长</th><th>之后的等待</th><th>作用</th></tr>
+  <tr><td>HAL_CONVERT</td><td>td1 = 5us ±5%</td><td>td2：连续模式 &gt;4us，单次模式 &gt;24us</td><td>读采样</td></tr>
+  <tr><td>Interrupt_Mode_EN</td><td>td3 = 12us ±5%</td><td>—</td><td>进中断模式（不用）</td></tr>
+  <tr><td>W_PWM_REG</td><td>td4 = 18us ±5%</td><td>td5 &gt;3us</td><td>写 LED 的 PWM</td></tr>
+  <tr><td>WR_REG</td><td>td6 = 39us ±5%</td><td>td5 &gt;3us</td><td>结束一次读/写寄存器</td></tr>
+  <tr><td>SLEEP</td><td>td7 = 28us ±5%</td><td>—</td><td>休眠（不用）</td></tr>
+  <tr><td>FREQ_Calibrate</td><td>td10 = 128us ±5%</td><td>td12 &gt;50us</td><td>频率校准</td></tr>
+  <tr><td>Soft_RST</td><td>td11 &gt;1280us</td><td>td9 &gt;50us</td><td>软复位</td></tr>
+</table></div>
+<p>±5% 的意思是：39us 的命令，实际脉宽必须落在 37.05–40.95us。所以同事说“TD 时间要自己量”。</p>
+
+<h3>四种帧格式</h3>
+<p>对应手册 7.2–7.6 节的时序图。</p>
+
+<h4>读采样</h4>
+<p>先发 5us 脉冲，等 td2，再打 16 个时钟，每颗芯片吐出 16 位。</p>
+<div class="code"><pre><code>bit15  bit14  bit13 ............ bit0
+CRC1   CRC0   D13 ............... D0
+CRC0 = D0^D2^D4^D6^D8^D10^D12
+CRC1 = D1^D3^D5^D7^D9^D11^D13</code></pre></div>
+<p>读到 <code>0xC000</code> 或 <code>0x3FFF</code> 表示芯片状态异常，需要复位。</p>
+
+<h4>写寄存器</h4>
+<p>先移入 16 位，再发 39us 脉冲。</p>
+<div class="code"><pre><code>bit15  bit14   bit13..bit8   bit7..bit0
+1      CRCWR   地址 A5..A0   数据 D7..D0
+CRCWR = A5^A4^A3^A2^A1^A0 ^ D7^D6^D5^D4^D3^D2^D1^D0</code></pre></div>
+<p>CRCWR 算错，芯片直接丢弃这次写入，不报错。</p>
+
+<h4>读寄存器</h4>
+<p>先移入 16 位（bit15 = 0，地址同上，数据任意），发 39us 脉冲，再打 16 个时钟，读回 16 位，低 8 位有效。</p>
+
+<h4>频率校准</h4>
+<p>发 128us 脉冲，等 td12，再打 16 个时钟（SDI 保持 0），读回 16 位，低 8 位有效，合格范围 0x7C–0x84。</p>
+
+<h3>现有代码怎么实现这些</h3>
+<div class="scroll"><table>
+  <tr><th>位置</th><th>作用</th></tr>
+  <tr><td><code>inc/button.h:16</code></td><td><code>USE_HALL_SENSOR</code>，选用哪组 TD 宏（现在是 5）</td></tr>
+  <tr><td><code>inc/button.h:48-61</code></td><td>H6 的一组 TD 宏，已经有人预留</td></tr>
+  <tr><td><code>app/button.c:801</code></td><td><code>Hall_CLK_Command_SET</code>：把 PIO1_15 切成 GPIO，拉高指定微秒，再切回 SCK</td></tr>
+  <tr><td><code>app/button.c:859</code></td><td><code>hall_get_sample</code>：读采样</td></tr>
+  <tr><td><code>app/button.c:866</code></td><td><code>HALL_Read_Instru_cnt</code>：发频率校准命令并读回</td></tr>
+  <tr><td><code>app/button.c:873</code></td><td><code>Hall_osc_calibrate</code>：频率校准循环</td></tr>
+  <tr><td><code>app/button.c:909-936</code></td><td>读、写寄存器</td></tr>
+  <tr><td><code>app/button.c:938</code></td><td><code>ana_hall2_phy_set_mode</code>：把初始化表逐条写进芯片</td></tr>
+  <tr><td><code>app/button.c:953</code></td><td><code>HallSensor_INIT</code>：总入口，由 <code>src/device.c:462</code> 调用</td></tr>
+  <tr><td><code>app/button.c:226</code></td><td><code>sensor_reg_init_array</code>：H5 的 25 个寄存器初始值</td></tr>
+  <tr><td><code>app/button.c:24</code></td><td><code>bit_crc_write_reg</code>：查表得到“某字节的奇偶校验，放在 bit6”</td></tr>
+  <tr><td><code>src/my_misc.c:418</code></td><td><code>ProcessRecvSampleRawData</code>：校验、滤波、基线、分段、Rapid Trigger</td></tr>
+</table></div>
+<p class="note"><code>app/button.c:365-540</code> 整段在 <code>#if 0</code> 里，是不参与编译的旧代码，不用管。</p>
+</section>
+
+<!-- ================= 差异 ================= -->
+<section id="diff">
+<h2>H5 与 H6 的差异</h2>
+<div class="scroll"><table>
+  <tr><th>项目</th><th>H5</th><th>H6</th><th>要不要改</th></tr>
+  <tr><td>读采样的命令、数据格式、CRC</td><td>td1 = 5us</td><td>相同</td><td>不用</td></tr>
+  <tr><td>读采样后的等待（连续模式）</td><td>&gt;2us</td><td>&gt;4us</td><td>宏已预留为 6us</td></tr>
+  <tr><td>写寄存器命令</td><td>td4 = 24us</td><td><strong>td6 = 39us</strong></td><td>要改</td></tr>
+  <tr><td>频率校准命令</td><td>td7 = 128us</td><td><strong>td10 = 128us</strong>，等待 &gt;50us</td><td>要改</td></tr>
+  <tr><td>写寄存器校验位</td><td>只算 8 位数据</td><td><strong>6 位地址 + 8 位数据</strong></td><td>要改</td></tr>
+  <tr><td>寄存器表</td><td>0x0A–0x27</td><td>0x05–0x35，地址和含义全不同</td><td>整表重写</td></tr>
+  <tr><td>LNA 增益档位</td><td>8/16/32/64/128x</td><td>16/24/48/96x，联动 0x09、0x29、0x2A</td><td>重新选</td></tr>
+  <tr><td>输入高电平门限 VIH</td><td>0.5×VDD</td><td><strong>0.8×VDD</strong></td><td>查原理图</td></tr>
+  <tr><td>软复位命令</td><td>无</td><td>有（td11）</td><td>可选</td></tr>
+</table></div>
+<div class="warn"><b>最大的坑。</b>现有代码按编号使用宏：写寄存器用 <code>TD4_DELAY_US</code>，频率校准用 <code>TD7_DELAY_US</code>。而 H6 那组宏里 TD4 = 18us（写 PWM）、TD7 = 28us（SLEEP）。只把 <code>USE_HALL_SENSOR</code> 改成 6，结果是写寄存器变成写 PWM、上电校准变成让芯片休眠，而且编译不报任何错。第 1 步专门解决这个问题。</div>
+</section>
+
+<!-- ================= 准备 ================= -->
+<section id="prep">
+<h2>准备工作</h2>
+<p>动代码之前逐项确认，把结果写进<a href="#log">记录表</a>。</p>
+<ul class="checks">
+  <li><label><input type="checkbox" id="prep1"><span><strong>确认板上芯片是 H6。</strong>芯片丝印第一行应为 <code>GTRY164</code>（手册第 12 节）。</span></label></li>
+  <li><label><input type="checkbox" id="prep2"><span><strong>查霍尔芯片的 VDD。</strong>打开 <code>资料/GT_Lina T1A Hall Haptic POC_SCH_V0.1.pdf</code>，找到霍尔芯片的供电。3.3V 没问题。如果是 5V，H6 要求输入高电平不低于 4.0V，而 LPC11U35 的 IO 只有 3.3V，通信会不可靠，这时先找硬件同事，不要往下做。</span></label></li>
+  <li><label><input type="checkbox" id="prep3"><span><strong>准备示波器</strong>（或采样率不低于 20MHz 的逻辑分析仪），探头接 PIO1_15（SCK）。</span></label></li>
+  <li><label><input type="checkbox" id="prep4"><span><strong>确定怎么看数据。</strong>讲义把调试数据放进全局变量 <code>g_hall_dbg</code>。二选一：Keil 在线调试，在 Watch 窗口看这个变量；或把 <code>inc/my_debug.h:19</code> 的 <code>MYDEBUG_ENABLE</code> 改成 1，用 <code>InfoLog</code> 从 USB 打印，这需要上位机工具，问同事平时用哪个。</span></label></li>
+  <li><label><input type="checkbox" id="prep5"><span><strong>确认 Keil 能编译当前工程</strong>，并能烧录到板子上。</span></label></li>
+  <li><label><input type="checkbox" id="prep6"><span><strong>找一个 H5 的参考值。</strong>问同事要这块板型在 H5 下“松开”和“按到底”的原始值。问不到就先用代码里的线索：<code>app/button.c:15-16</code> 的基线初值是 8000 和 6800，说明 H5 下全行程的变化量大约在一千出头。这只是代码里的初值，不是实测，仅供第 7 步参考。</span></label></li>
+</ul>
+</section>
+
+<!-- ================= 第 1 步 ================= -->
+<section id="s1">
+<h2><span class="step">第 1 步 · 不需要板子</span>把时序宏改成按“用途”命名</h2>
+<p><strong>目标：</strong>让代码不再依赖 TD 编号。这一步不改变任何行为。</p>
+
+<h4>改动</h4>
+<p>在 <code>inc/button.h</code> 第 62 行（那组 <code>#if / #elif / #endif</code> 结束之后）加：</p>
+<div class="code"><pre><code>/* 按用途命名，屏蔽 H5/H6 的 TD 编号差异 */
+#if (6 == USE_HALL_SENSOR)
+#define HALL_TD_WR_REG      TD6_DELAY_US    /* 39us */
+#define HALL_TD_WR_WAIT     TD5_DELAY_US    /* &gt;3us */
+#define HALL_TD_FREQ_CAL    TD10_DELAY_US   /* 128us */
+#define HALL_TD_FREQ_WAIT   TD12_DELAY_US   /* &gt;50us */
+#else
+#define HALL_TD_WR_REG      TD4_DELAY_US
+#define HALL_TD_WR_WAIT     TD5_DELAY_US
+#define HALL_TD_FREQ_CAL    TD7_DELAY_US
+#define HALL_TD_FREQ_WAIT   TD10_DELAY_US
+#endif</code></pre></div>
+<p>改 <code>app/button.c</code> 三处：</p>
+<div class="scroll"><table>
+  <tr><th>行</th><th>所在函数</th><th>原来</th><th>改成</th></tr>
+  <tr><td>868</td><td><code>HALL_Read_Instru_cnt</code></td><td><code>TD7_DELAY_US, TD10_DELAY_US</code></td><td><code>HALL_TD_FREQ_CAL, HALL_TD_FREQ_WAIT</code></td></tr>
+  <tr><td>913</td><td><code>Hall_read_register</code></td><td><code>TD4_DELAY_US,TD5_DELAY_US</code></td><td><code>HALL_TD_WR_REG, HALL_TD_WR_WAIT</code></td></tr>
+  <tr><td>935</td><td><code>Hall_write_register</code></td><td><code>TD4_DELAY_US,TD5_DELAY_US</code></td><td><code>HALL_TD_WR_REG, HALL_TD_WR_WAIT</code></td></tr>
+</table></div>
+<p><code>USE_HALL_SENSOR</code> <strong>保持 5 不动</strong>。</p>
+
+<h4>验证</h4>
+<p><code>USE_HALL_SENSOR</code> 为 5 时，新宏展开后和原来一模一样，所以编译产物应当逐字节相同。工程里没有用到 <code>__DATE__</code>、<code>__TIME__</code>，这个比较是成立的。</p>
+<ol>
+  <li>改动之前，先用你自己的 Keil 完整编译一次，把 <code>EM_HapticMouse/output/Sample.hex</code> 复制一份，改名 <code>before.hex</code>。不要直接用仓库里已有的那份，它可能出自别人的编译器版本。</li>
+  <li>做上面的改动，再完整编译。</li>
+  <li>在 Windows 命令提示符里进入 <code>output</code> 目录比较：</li>
+</ol>
+<div class="code"><pre><code>fc /b before.hex Sample.hex</code></pre></div>
+
+<div class="pass">
+  <h4>通过标准</h4>
+  <p>输出“找不到差异”。如果有差异，说明改到了别的东西，对照上面的表格检查。</p>
+  <label><input type="checkbox" class="stepdone" id="done1" data-step="1"><span>第 1 步已通过</span></label>
+</div>
+<p class="commit">提交信息：<code>重构：霍尔时序宏按用途命名</code></p>
+</section>
+
+<!-- ================= 第 2 步 ================= -->
+<section id="s2">
+<h2><span class="step">第 2 步 · 需要示波器</span>切到 H6，只验证时序</h2>
+<p><strong>目标：</strong>证明三条命令的脉宽都在容差内。这一步不关心芯片回什么。</p>
+
+<h4>改动</h4>
+<p><code>inc/button.h:16</code>：</p>
+<div class="code"><pre><code>#define USE_HALL_SENSOR       6//GTRY12: 2, GTRY15: 5, GTRY16: 6.</code></pre></div>
+<p>这时工程仍能编译，但初始化表还是 H5 的地址和数值，写进 H6 是错的。这一步只测时序，所以暂时不写表。把 <code>HallSensor_INIT</code>（<code>app/button.c:953</code>）临时改成：</p>
+<div class="code"><pre><code>void HallSensor_INIT(void)
+{
+	Hall_osc_calibrate();
+	/* 第 5 步之前先不写寄存器表 */
+	//ana_hall2_phy_set_mode(2);
+
+	/* 临时：读一次寄存器，只为在示波器上看到 39us 脉冲。读操作不改变芯片状态 */
+	{ uint8_t l, r; Hall_ReadReg(0x30, &amp;l, &amp;r); }
+}</code></pre></div>
+
+<h4>验证</h4>
+<p>示波器接 PIO1_15，上升沿触发，量高电平宽度。</p>
+<div class="scroll"><table>
+  <tr><th>命令</th><th>何时出现</th><th>目标</th><th>允许范围</th></tr>
+  <tr><td>频率校准</td><td>上电后约 0.5s，连续 30 次</td><td>128us</td><td>121.6–134.4us</td></tr>
+  <tr><td>读写寄存器</td><td>紧跟在校准之后，1 次</td><td>39us</td><td>37.05–40.95us</td></tr>
+  <tr><td>读采样</td><td>正常运行中周期出现</td><td>5us</td><td>4.75–5.25us</td></tr>
+</table></div>
+<p>同时看一眼脉冲之后的低电平等待：校准后应大于 50us，读写寄存器后应大于 3us，读采样后应大于 4us。</p>
+
+<h4>不通过怎么调</h4>
+<p>脉宽由三部分组成：<code>CT16B1_DelayUs</code> 的定时（<code>src/Timer.c:202</code>）、GPIO 翻转的开销、切换引脚功能的开销。<code>DELAY_OUT(x)</code> 减去的 1 只是估计值。</p>
+<ul>
+  <li>偏大或偏小，就改 <code>inc/button.h:49-61</code> 里对应宏的数字。例如实测 39us 的命令是 41.5us，就把 <code>DELAY_OUT(39)</code> 改成 <code>DELAY_OUT(37)</code>，再量。</li>
+  <li>5us 那条最紧，容差只有 ±0.25us。<code>CT16B1_DelayUs</code> 的分辨率是 1us，如果怎么调都落不进去，记录实测值，带着波形去问同事他们是怎么处理的。</li>
+</ul>
+
+<div class="pass">
+  <h4>通过标准</h4>
+  <p>三条命令的脉宽全部在允许范围内。把最终宏值和实测脉宽填进记录表。</p>
+  <label><input type="checkbox" class="stepdone" id="done2" data-step="2"><span>第 2 步已通过</span></label>
+</div>
+<p class="commit">提交信息：<code>H6：切换时序宏并实测校准脉宽</code></p>
+</section>
+
+<!-- ================= 第 3 步 ================= -->
+<section id="s3">
+<h2><span class="step">第 3 步</span>频率校准，证明芯片在回应</h2>
+<p><strong>目标：</strong>第一次确认“MCU 发的命令芯片听懂了，芯片回的数据 MCU 读对了”。</p>
+
+<h4>改动</h4>
+<p>在 <code>inc/button.h</code> 里加一个调试结构体的定义和声明：</p>
+<div class="code"><pre><code>typedef struct
+{
+	uint8_t  freq[2];      /* 频率校准读回值：[0] 右键，[1] 左键 */
+	uint8_t  freq_ok;      /* 1 = 校准通过 */
+	uint8_t  freq_times;   /* 校准用了几次 */
+	uint8_t  reg_rd[2];    /* 最近一次读寄存器的结果 */
+	uint16_t raw[2];       /* 最近一次原始值（去掉 CRC 后的 14 位） */
+	uint16_t crc_err;      /* CRC 错误累计 */
+} HallDbg_ts;
+
+extern volatile HallDbg_ts g_hall_dbg;</code></pre></div>
+<p>在 <code>app/button.c</code> 开头的全局变量处加：</p>
+<div class="code"><pre><code>volatile HallDbg_ts g_hall_dbg;</code></pre></div>
+<p>把 <code>Hall_osc_calibrate</code>（<code>app/button.c:873-908</code>）整个替换成下面的版本，流程照手册图 11：</p>
+<div class="code"><pre><code>uint8_t Hall_osc_calibrate(void)
+{
+	uint8_t times;
+
+	g_hall_dbg.freq_ok = 0;
+
+	for(times = 0; times &lt; 128; times++)
+	{
+		/* H6 手册图 9：校准读回期间 SDI 必须为 0 */
+		hall_spi_tx[0] = 0;
+		hall_spi_tx[1] = 0;
+		hall_spi_tx[2] = 0;
+		hall_spi_tx[3] = 0;
+
+		HALL_Read_Instru_cnt();
+
+		g_hall_dbg.freq[0] = hall_spi_rx[1];
+		g_hall_dbg.freq[1] = hall_spi_rx[3];
+		g_hall_dbg.freq_times = times + 1;
+
+		if((hall_spi_rx[1] &gt;= 0x7C) &amp;&amp; (hall_spi_rx[1] &lt;= 0x84) &amp;&amp;
+		   (hall_spi_rx[3] &gt;= 0x7C) &amp;&amp; (hall_spi_rx[3] &lt;= 0x84))
+		{
+			g_hall_dbg.freq_ok = 1;
+			TimerDelayMsec(20);    /* 手册图 11：通过后延时 20ms */
+			return 1;
+		}
+
+		nsAPI_SSP_Delay1us(100);
+	}
+
+	return 0;
+}</code></pre></div>
+<p><code>inc/button.h:176</code> 的声明同步改成 <code>uint8_t Hall_osc_calibrate(void);</code>。</p>
+<ul>
+  <li>原代码发的是 <code>0x55</code>，而且只填了 <code>tx[1]</code>、<code>tx[3]</code>。H6 手册 V1.7 的改版记录明确写了 SDI 要为 0。</li>
+  <li>原代码固定跑 30 次、不判断结果。手册的流程是“读回值合格就结束，最多 128 次”。</li>
+</ul>
+
+<h4>不通过怎么查</h4>
+<div class="scroll"><table>
+  <tr><th>现象</th><th>最可能的原因</th></tr>
+  <tr><td>两个值都是 0x00 或都是 0xFF</td><td>芯片没回应：128us 脉宽不对、芯片没上电、MISO 没接通</td></tr>
+  <tr><td>只有一个合格</td><td>链上有一颗芯片异常，或两颗之间的连线有问题</td></tr>
+  <tr><td>值在变化但进不了范围</td><td>脉宽贴着容差边缘，回第 2 步重新量 128us</td></tr>
+  <tr><td>值合格但每次上电差别很大</td><td>先记录，继续往下，第 6 步再看</td></tr>
+</table></div>
+
+<div class="pass">
+  <h4>通过标准</h4>
+  <p><code>freq_ok == 1</code>，<code>freq[0]</code> 和 <code>freq[1]</code> 都在 0x7C–0x84。记下 <code>freq_times</code>。</p>
+  <label><input type="checkbox" class="stepdone" id="done3" data-step="3"><span>第 3 步已通过</span></label>
+</div>
+<p class="commit">提交信息：<code>H6：频率校准按手册流程并判断结果</code></p>
+</section>
+
+<!-- ================= 第 4 步 ================= -->
+<section id="s4">
+<h2><span class="step">第 4 步</span>改校验位，写一个寄存器再读回</h2>
+<p><strong>目标：</strong>证明写寄存器的帧格式和校验位是对的。</p>
+
+<h4>改动</h4>
+<p>先修一个现有的笔误。<code>app/button.c:921</code> 和 <code>:923</code> 把 <code>rx</code> 改成 <code>tx</code>：</p>
+<div class="code"><pre><code>	hall_spi_tx[1] = 0x55;//any value
+	hall_spi_tx[3] = 0x55;//any value</code></pre></div>
+<p>在 <code>Hall_write_register</code> 后面加一个写单个寄存器的函数，并在 <code>inc/button.h</code> 加声明：</p>
+<div class="code"><pre><code>void Hall_WriteReg(uint8_t reg, uint8_t data)
+{
+	uint8_t j;
+	uint8_t head;
+
+#if (6 == USE_HALL_SENSOR)
+	/* H6：校验位 = 6 位地址和 8 位数据一起求奇偶 */
+	head = reg | 0x80 | (bit_crc_write_reg[data] ^ bit_crc_write_reg[reg &amp; 0x3F]);
+#else
+	/* H5：校验位只算 8 位数据 */
+	head = reg | 0x80 | bit_crc_write_reg[data];
+#endif
+
+	for(j = 0; j &lt; 2; j++)
+	{
+		hall_spi_tx[j * 2 + 0] = head;
+		hall_spi_tx[j * 2 + 1] = data;
+	}
+
+	Hall_write_register();
+}</code></pre></div>
+<p class="note">为什么异或一次就行：<code>bit_crc_write_reg[x]</code> 返回的是“x 的奇偶，放在 bit6”。两个奇偶值异或，就是把两段合起来算的奇偶，位置仍在 bit6，正好是帧里 CRCWR 的位置。</p>
+<p>把 <code>ana_hall2_phy_set_mode</code>（<code>app/button.c:938</code>）改成调用它，这样校验逻辑只有一处：</p>
+<div class="code"><pre><code>void ana_hall2_phy_set_mode(unsigned char length)
+{
+	unsigned char i;
+
+	(void)length;
+	for(i = 0; i &lt; REG_CNT; i++)
+	{
+		Hall_WriteReg(sensor_reg_init_array[i][0], sensor_reg_init_array[i][1]);
+	}
+}</code></pre></div>
+<p>把第 2 步临时加的那行读寄存器换成一段写读测试：</p>
+<div class="code"><pre><code>	Hall_WriteReg(0x30, 0x21);                              /* 0x30 默认值是 0x20 */
+	Hall_ReadReg(0x30, (uint8_t *)&amp;g_hall_dbg.reg_rd[1],    /* 左键 */
+	                   (uint8_t *)&amp;g_hall_dbg.reg_rd[0]);   /* 右键 */</code></pre></div>
+<p class="note">选 0x30 的原因：它是“基线正偏差”，只有打开芯片内基线功能才起作用，本项目不开，改它没有副作用。</p>
+
+<h4>不通过怎么查</h4>
+<div class="scroll"><table>
+  <tr><th>读回值</th><th>含义</th></tr>
+  <tr><td>0x20</td><td>读是通的，写没生效。校验位算错，或 39us 脉宽不对</td></tr>
+  <tr><td>0x00 / 0xFF</td><td>读本身不通。回第 2 步量 39us</td></tr>
+  <tr><td>一个 0x21 一个 0x20</td><td>两颗芯片收到的帧不一样，检查 <code>tx[0..1]</code> 和 <code>tx[2..3]</code> 是否都填了</td></tr>
+</table></div>
+
+<h4>反向实验</h4>
+<p>为了确认校验位确实在起作用，故意把 <code>^ bit_crc_write_reg[reg &amp; 0x3F]</code> 去掉，再写一个地址奇偶为 1 的寄存器，写入应当失效。0x30 的二进制是 110000，奇偶为 0，测不出来；换 0x31（110001，奇偶为 1）来做。做完改回来。</p>
+
+<div class="pass">
+  <h4>通过标准</h4>
+  <p><code>g_hall_dbg.reg_rd[0]</code> 和 <code>reg_rd[1]</code> 都是 0x21；反向实验中写入失效。</p>
+  <label><input type="checkbox" class="stepdone" id="done4" data-step="4"><span>第 4 步已通过</span></label>
+</div>
+<p class="commit">提交信息：<code>H6：写寄存器校验位包含地址，并验证读写</code></p>
+</section>
+
+<!-- ================= 第 5 步 ================= -->
+<section id="s5">
+<h2><span class="step">第 5 步</span>写 H6 的初始化表</h2>
+<p><strong>目标：</strong>把芯片配置成“连续转换、124us 采样间隔、典型增益”。</p>
+
+<h4>改动</h4>
+<p><code>inc/button.h:12</code> 的 <code>REG_CNT</code> 改成按芯片区分：</p>
+<div class="code"><pre><code>#if (6 == USE_HALL_SENSOR)
+#define REG_CNT					15
+#else
+#define REG_CNT					25
+#endif</code></pre></div>
+<p><code>app/button.c:226</code> 的表外面套一层 <code>#if (6 == USE_HALL_SENSOR) … #else（原来的 H5 表）… #endif</code>，H6 的表如下：</p>
+<div class="code"><pre><code>const unsigned char sensor_reg_init_array[REG_CNT][2] = {
+	{0x0C, 0x83},	/* 固定值。手册第 8 节 */
+	{0x26, 0x0A},	/* 固定值。手册 */
+	{0x27, 0x05},	/* 固定值。手册 */
+	{0x28, 0x04},	/* 固定值。手册 */
+	{0x2F, 0x14},	/* 固定值。手册 */
+	{0x34, 0x03},	/* 固定值。手册 */
+	{0x09, 0x20},	/* bit5=1 配合 24x 增益；LED 最大电流=0，先关灯 */
+	{0x0B, 0x85},	/* LNA 24x + PGA 19.2x。手册标注的 Typical */
+	{0x29, 0x60},	/* 随 LNA 24x 联动。手册 */
+	{0x2A, 0x28},	/* 随 LNA 24x 联动。手册 */
+	{0x0F, 0x1F},	/* 采样间隔低 8 位：31 × 4us = 124us，与原 H5 配置一致 */
+	{0x10, 0x20},	/* 高 4 位固定 0x2，采样间隔高 4 位 = 0 */
+	{0x35, 0x27},	/* SDO 驱动 12mA，与原 H5 配置一致，也是默认值 */
+	{0x32, 0x01},	/* 不翻转极性，关省电模式，低 4 位固定 0x1 */
+	{0x33, 0x80},	/* 连续转换；芯片内基线、中断都不开 */
+};</code></pre></div>
+<p>关于这张表的三个决定：</p>
+<ul>
+  <li><strong>0x33 只开连续转换（0x80）。</strong>XENO 工程用 0x84，多开了芯片内部的基线跟踪。但本工程的基线是 MCU 在 <code>src/my_misc.c:135-290</code> 自己算的，两套同时开会互相干扰，所以不开。</li>
+  <li><strong>只写手册里有的寄存器。</strong>XENO 还写了 0x13、0x15、0x16、0x18、0x1C、0x1E、0x20、0x25 这 8 个手册里查不到的地址，这里没有放。见<a href="#ask">要问同事的问题</a>。</li>
+  <li><strong>LED 先关。</strong>原 H5 配置里灯是开的。板上霍尔芯片如果确实接了灯，等按键功能调通后再配 0x05–0x09 和 PWM。</li>
+</ul>
+<p><code>HallSensor_INIT</code> 恢复并加上读回校验：</p>
+<div class="code"><pre><code>void HallSensor_INIT(void)
+{
+	uint8_t i, l, r;
+
+	Hall_osc_calibrate();
+
+	ana_hall2_phy_set_mode(2);
+
+	for(i = 0; i &lt; REG_CNT; i++)
+	{
+		Hall_ReadReg(sensor_reg_init_array[i][0], &amp;l, &amp;r);
+		if((l != sensor_reg_init_array[i][1]) || (r != sensor_reg_init_array[i][1]))
+		{
+			g_hall_dbg.reg_rd[0] = sensor_reg_init_array[i][0];   /* 记下第一个出错的地址 */
+			g_hall_dbg.reg_rd[1] = l;
+			break;
+		}
+	}
+	if(i == REG_CNT)
+	{
+		g_hall_dbg.reg_rd[0] = 0xAA;                              /* 0xAA = 全部一致 */
+	}
+
+	CT16B1_DelayUs(100);   /* 手册 0x33 说明：切换转换模式后至少等 50us */
+}</code></pre></div>
+
+<div class="pass">
+  <h4>通过标准</h4>
+  <p><code>g_hall_dbg.reg_rd[0] == 0xAA</code>。否则它是第一个读回不一致的寄存器地址。个别寄存器可能读回值带保留位，把地址和读回值记下来，对照手册该寄存器的说明判断。</p>
+  <label><input type="checkbox" class="stepdone" id="done5" data-step="5"><span>第 5 步已通过</span></label>
+</div>
+<p class="commit">提交信息：<code>H6：初始化寄存器表</code></p>
+</section>
+
+<!-- ================= 第 6 步 ================= -->
+<section id="s6">
+<h2><span class="step">第 6 步</span>读原始值</h2>
+<p><strong>目标：</strong>读到稳定、通过校验的原始值。</p>
+
+<h4>改动</h4>
+<p>读采样的代码（<code>hall_get_sample</code>）和校验函数都不用改。只加一段调试记录，放在 <code>app/button.c:346</code> 的 <code>hall_get_sample();</code> 之后：</p>
+<div class="code"><pre><code>	{
+		uint8_t k;
+		for(k = 0; k &lt; 2; k++)
+		{
+			if((hall_spi_rx[2 * k] &amp; 0xC0) == (bit_error[hall_spi_rx[2 * k] &amp; 0x3f] ^ bit_error[hall_spi_rx[2 * k + 1]]))
+			{
+				g_hall_dbg.raw[k] = ((hall_spi_rx[2 * k] &amp; 0x3f) &lt;&lt; 8) | hall_spi_rx[2 * k + 1];
+			}
+			else
+			{
+				g_hall_dbg.crc_err++;
+			}
+		}
+	}</code></pre></div>
+<p class="note">这里记录的是芯片给出的原值。<code>src/my_misc.c</code> 在后续处理中会按 <code>PRESS_KEY_AND_VALUE_DECREASE</code> 把它翻转成 <code>16383 - 原值</code>，两者不要混淆。</p>
+
+<h4>不通过怎么查</h4>
+<div class="scroll"><table>
+  <tr><th>现象</th><th>原因</th></tr>
+  <tr><td><code>crc_err</code> 一直涨</td><td>5us 脉宽不对，或读采样后的等待不足 4us</td></tr>
+  <tr><td>数值固定不变</td><td>连续转换没开，回第 5 步检查 0x33 是否读回 0x80</td></tr>
+  <tr><td>数值贴近 0 或 16383</td><td>饱和，增益过大或磁铁太近</td></tr>
+</table></div>
+
+<div class="pass">
+  <h4>通过标准</h4>
+  <ul>
+    <li><code>crc_err</code> 上电稳定后不再增长。</li>
+    <li>磁铁拿远时 <code>raw[0]</code>、<code>raw[1]</code> 在 8192 附近，24x 增益下允许偏 ±700（手册 5.2 节 QOE24）。</li>
+    <li>没有出现 0xC000 或 0x3FFF。</li>
+    <li>记录静止不动时的抖动（最大值减最小值），第 7 步要用。</li>
+  </ul>
+  <label><input type="checkbox" class="stepdone" id="done6" data-step="6"><span>第 6 步已通过</span></label>
+</div>
+<p class="commit">提交信息：<code>H6：原始值读取正常</code></p>
+</section>
+
+<!-- ================= 第 7 步 ================= -->
+<section id="s7">
+<h2><span class="step">第 7 步</span>按键与增益</h2>
+<p><strong>目标：</strong>按键全行程对应的数值变化量足够大，且不饱和。</p>
+<p>装好按键，分别记录左右键“松开”和“按到底”的 <code>raw</code>，算出差值。</p>
+
+<h4>怎么判断增益是否合适</h4>
+<p>没有 H5 实测基准，下面前两条是经验判据，不是手册要求。拿到同事的参考值后以参考值为准。</p>
+<ul>
+  <li>松开和按到底的数值都离 0 和 16383 留出一千左右的余量，否则有饱和风险。</li>
+  <li>差值应远大于第 6 步记录的静止抖动。代码把全行程分成 100 段（<code>MAX_SEGMENT</code>），差值如果不到抖动的 100 倍，分段值会跳动。</li>
+  <li>代码要求差值不小于 100（<code>src/my_misc.c:301</code>），这是硬下限。</li>
+</ul>
+
+<h4>调增益</h4>
+<p>改 0x0B 时必须同时改 0x09、0x29、0x2A，四个是联动的。</p>
+<div class="scroll"><table>
+  <tr><th>LNA 增益</th><th>0x09</th><th>0x0B</th><th>0x29</th><th>0x2A</th></tr>
+  <tr><td>16x</td><td>0x00</td><td>0x85</td><td>0x50</td><td>0x20</td></tr>
+  <tr><td>24x（当前）</td><td>0x20</td><td>0x85</td><td>0x60</td><td>0x28</td></tr>
+  <tr><td>48x</td><td>0x20</td><td>0x95</td><td>0xA0</td><td>0x40</td></tr>
+  <tr><td>96x</td><td>0x20</td><td>0xA5</td><td>0xF0</td><td>0x60</td></tr>
+</table></div>
+<p class="note">0x0B 的低 4 位是 PGA，0x5 = 19.2x，范围 0x0–0x9，可做细调。0x09 的低 4 位是 LED 最大电流，表里按关灯写的。</p>
+
+<h4>按键方向</h4>
+<p>现在 <code>inc/my_misc.h:40-41</code> 定义 <code>PRESS_KEY_AND_VALUE_INCREASE</code> 为 0，即“按下时原始值减小”。如果实测按下时数值变大，把它改成 1。</p>
+
+<h4>依赖数值范围的常量</h4>
+<div class="scroll"><table>
+  <tr><th>常量</th><th>位置</th><th>现值</th><th>含义</th></tr>
+  <tr><td><code>MAGNETIC_NOISE</code></td><td><code>inc/my_hallkey_func.h:23</code></td><td>60</td><td>上电找基线时允许的抖动</td></tr>
+  <tr><td><code>FILTER_SKIP_VALUE</code></td><td><code>src/my_misc.c:424</code></td><td>60</td><td>超过这个变化量就不滤波、直接跟随</td></tr>
+  <tr><td>基线校准里的各阈值</td><td><code>src/my_misc.c:162-290</code></td><td>多处</td><td>对照实测抖动重新评估</td></tr>
+</table></div>
+
+<div class="pass">
+  <h4>通过标准</h4>
+  <p>左右键点击可靠触发和释放，慢按慢放时分段值单调变化、不来回跳。</p>
+  <label><input type="checkbox" class="stepdone" id="done7" data-step="7"><span>第 7 步已通过</span></label>
+</div>
+<p class="commit">提交信息：<code>H6：确定增益与阈值</code></p>
+</section>
+
+<!-- ================= 第 8 步 ================= -->
+<section id="s8">
+<h2><span class="step">第 8 步</span>回归测试</h2>
+<ul class="checks">
+  <li><label><input type="checkbox" id="reg1"><span>左右键点击、长按、快速连点。</span></label></li>
+  <li><label><input type="checkbox" id="reg2"><span>驱动里改 Rapid Trigger 行程，行为随之变化。</span></label></li>
+  <li><label><input type="checkbox" id="reg3"><span>电磁铁振动时霍尔读数不被干扰。H6 的分辨率比 H5 高一个量级，这一项的风险比 H5 大。</span></label></li>
+  <li><label><input type="checkbox" id="reg4"><span>USB 挂起再唤醒后霍尔恢复正常。相关代码在 <code>src/suspend.c:59</code> 和 <code>src/usbhw.c:669</code>，讲义没有分析这段的恢复流程，需要实测。</span></label></li>
+  <li><label><input type="checkbox" id="reg5"><span>反复上电 20 次，<code>freq_ok</code> 每次都是 1。</span></label></li>
+  <li><label><input type="checkbox" id="reg6"><span>清理：删掉第 4 步的写读测试，<code>g_hall_dbg</code> 按需保留或用宏关掉。</span></label></li>
+</ul>
+<div class="pass">
+  <h4>通过标准</h4>
+  <p>以上六项全部完成。</p>
+  <label><input type="checkbox" class="stepdone" id="done8" data-step="8"><span>第 8 步已通过</span></label>
+</div>
+</section>
+
+<!-- ================= 记录表 ================= -->
+<section id="log">
+<h2>记录表</h2>
+<p>每做完一步就填。空着的格子就是还没验证的东西。<span class="saved" id="savedNote"></span></p>
+<div class="scroll"><table>
+  <tr><th>项目</th><th>结果</th></tr>
+  <tr><td>芯片丝印</td><td><input type="text" id="log01" aria-label="芯片丝印"></td></tr>
+  <tr><td>霍尔芯片 VDD（原理图）</td><td><input type="text" id="log02" aria-label="霍尔芯片 VDD"></td></tr>
+  <tr><td>第 1 步 <code>fc /b</code> 结果</td><td><input type="text" id="log03" aria-label="fc 比较结果"></td></tr>
+  <tr><td>128us 实测 / 最终宏值</td><td><input type="text" id="log04" aria-label="128us 实测与宏值"></td></tr>
+  <tr><td>39us 实测 / 最终宏值</td><td><input type="text" id="log05" aria-label="39us 实测与宏值"></td></tr>
+  <tr><td>5us 实测 / 最终宏值</td><td><input type="text" id="log06" aria-label="5us 实测与宏值"></td></tr>
+  <tr><td>读采样后低电平等待实测</td><td><input type="text" id="log07" aria-label="读采样后等待"></td></tr>
+  <tr><td><code>freq[0]</code> / <code>freq[1]</code> / <code>freq_times</code></td><td><input type="text" id="log08" aria-label="频率校准结果"></td></tr>
+  <tr><td>写读 0x30 的结果</td><td><input type="text" id="log09" aria-label="写读 0x30 结果"></td></tr>
+  <tr><td>校验位反向实验（0x31）的结果</td><td><input type="text" id="log10" aria-label="反向实验结果"></td></tr>
+  <tr><td>初始化表读回 <code>reg_rd[0]</code></td><td><input type="text" id="log11" aria-label="初始化表读回"></td></tr>
+  <tr><td>无磁铁原始值 右 / 左</td><td><input type="text" id="log12" aria-label="无磁铁原始值"></td></tr>
+  <tr><td>静止抖动 右 / 左</td><td><input type="text" id="log13" aria-label="静止抖动"></td></tr>
+  <tr><td>松开原始值 右 / 左</td><td><input type="text" id="log14" aria-label="松开原始值"></td></tr>
+  <tr><td>按到底原始值 右 / 左</td><td><input type="text" id="log15" aria-label="按到底原始值"></td></tr>
+  <tr><td>最终增益（0x09 / 0x0B / 0x29 / 0x2A）</td><td><input type="text" id="log16" aria-label="最终增益"></td></tr>
+  <tr><td><code>PRESS_KEY_AND_VALUE_INCREASE</code></td><td><input type="text" id="log17" aria-label="按键方向宏"></td></tr>
+</table></div>
+</section>
+
+<!-- ================= 问题 ================= -->
+<section id="ask">
+<h2>要问同事的问题</h2>
+<p>问题要具体到寄存器和数值，这样对方一句话就能答。</p>
+<ol>
+  <li>XENO 工程在 <code>h6_hal_type_mode()</code> 里写了 0x13、0x15、0x16、0x18、0x1C、0x1E、0x20、0x25，V1.9 手册里没有这些地址。它们是必须写的吗？两颗芯片的鼠标上需要吗？</li>
+  <li>XENO 有偏移校准（<code>h6_offset_cali.c</code>，用到 0x36、0x37）。鼠标上要不要做？</li>
+  <li>16x 增益时 XENO 写 0x29 = 0x4E、0x2A = 0x32，手册写 0x50、0x20。以哪个为准？</li>
+  <li>5us 的 td1 容差只有 ±0.25us，用 GPIO 加定时器的方式你们实测能稳定在范围内吗？</li>
+  <li>这块板型在 H5 下松开和按到底的原始值大概是多少？</li>
+  <li>板上霍尔芯片有没有接 LED？</li>
+  <li>平时用什么上位机工具看霍尔原始值？</li>
+</ol>
+</section>
+
+<!-- ================= 参考 ================= -->
+<section id="refs">
+<h2>参考资料对照</h2>
+<div class="scroll"><table>
+  <tr><th>资料</th><th>是什么</th><th>怎么用</th></tr>
+  <tr><td>GTRY164 手册</td><td>H6 芯片手册</td><td>一切以它为准。7.8 节时序表、第 8 节寄存器表、图 11 校准流程</td></tr>
+  <tr><td>GTRY154 手册</td><td>H5 芯片手册</td><td>读懂现有代码为什么这么写</td></tr>
+  <tr><td><code>资料/GT_SS_XENO_APP_20260916/src/h6/</code></td><td>同事的 H6 工程</td><td>只参考数值和初始化顺序。它的时序由专用硬件 HASP 产生，读写代码不能照搬</td></tr>
+  <tr><td><code>资料/Marshall_20260425/</code></td><td>LPC55S28 的键盘工程</td><td><strong>不是 H6</strong>，是 H5 这一代的时序和校验（<code>hall_spi.h</code> 里 TD4 = 24us，注释写着 <code>only for GTRY154X</code>）。对本次移植没有参考价值</td></tr>
+  <tr><td><code>资料/H5_Sample code_20260210/</code></td><td>H5 的官方示例</td><td>现有驱动的来源</td></tr>
+</table></div>
+<p>XENO 里值得对照的三处：</p>
+<ul>
+  <li>时序数值：<code>src/h6/h6_drv.h:16-28</code></li>
+  <li>校验位算法：<code>src/h6/h6_drv.c:86-95</code></li>
+  <li>初始化顺序：<code>src/h6/h6_hal.c:1423</code>（软复位 → 频率校准 → 写读校验 → 寄存器配置 → PWM）</li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var KEY = 'h6-port-handout-v1';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      var n = document.getElementById('savedNote');
+      if (n) n.textContent = '已保存在本机浏览器。';
+    } catch (e) {}
+  }
+
+  function refreshProgress() {
+    var count = 0;
+    document.querySelectorAll('input.stepdone').forEach(function (cb) {
+      var link = document.querySelector('nav.toc a[data-step="' + cb.dataset.step + '"]');
+      if (cb.checked) count++;
+      if (link) link.classList.toggle('done', cb.checked);
+    });
+    document.getElementById('doneCount').textContent = count;
+  }
+
+  document.querySelectorAll('input[type="checkbox"], #log input[type="text"]').forEach(function (el) {
+    if (!el.id) return;
+    if (el.type === 'checkbox') {
+      if (state[el.id]) el.checked = true;
+      el.addEventListener('change', function () { state[el.id] = el.checked; save(); refreshProgress(); });
+    } else {
+      if (typeof state[el.id] === 'string') el.value = state[el.id];
+      el.addEventListener('input', function () { state[el.id] = el.value; save(); });
+    }
+  });
+  refreshProgress();
+
+  document.querySelectorAll('.code').forEach(function (box) {
+    var pre = box.querySelector('pre');
+    if (!pre || pre.textContent.indexOf('bit15') === 0) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '复制';
+    btn.addEventListener('click', function () {
+      var text = pre.textContent;
+      function done() { btn.textContent = '已复制'; setTimeout(function () { btn.textContent = '复制'; }, 1500); }
+      function fallback() {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        btn.textContent = '已选中，请按 Ctrl+C';
+      }
+      try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+    });
+    box.appendChild(btn);
+  });
+})();
+</script>
