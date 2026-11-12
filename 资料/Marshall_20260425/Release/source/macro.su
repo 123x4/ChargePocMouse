@@ -1,4 +1,0 @@
-../source/macro.c:437:6:AnalysisEXcode	0	static
-../source/macro.c:471:6:AnalysisFXcode	0	static
-../source/macro.c:501:6:CheckMouseKey	0	static
-../source/macro.c:63:6:ProcessMacroKey	8	static

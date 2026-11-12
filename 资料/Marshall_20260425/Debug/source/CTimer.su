@@ -1,4 +1,0 @@
-../source/CTimer.c:40:6:ctimer_match0_callback	0	static
-../source/CTimer.c:85:6:CTimer_Init	16	static
-../source/CTimer.c:107:6:CTimer_Start	8	static
-../source/CTimer.c:114:6:CTimer_Stop	0	static

@@ -1,8 +1,0 @@
-../source/flash_ic.c:25:13:SpiWriteByte	16	static
-../source/flash_ic.c:53:16:SpiReadByte	16	static
-../source/flash_ic.c:79:10:Flash_ReadID	8	static
-../source/flash_ic.c:111:6:Flash_PowerON_check_ID	16	static
-../source/flash_ic.c:135:10:Flash_Read_Data	16	static
-../source/flash_ic.c:162:6:Flash_Write_ENABLE	8	static
-../source/flash_ic.c:180:6:Flash_Write_Disable	8	static
-../source/flash_ic.c:198:6:Flash_Write_Data	8	static
