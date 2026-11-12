@@ -202,16 +202,20 @@ figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
 </ul>
 
 <h3>这块板子怎么接的</h3>
-<p>两颗芯片串成一条链（菊花链），共用三根线接到 MCU 的 SSP1，没有片选线。</p>
+<p>两颗芯片串成一条链（菊花链），共用三根线接到 MCU 的 SSP1，没有片选线。下表已对照原理图 <code>GT_Lina T1A Hall Haptic POC_SCH_V0.1.pdf</code> 核对，与代码一致。</p>
 <div class="scroll"><table>
   <tr><th>信号</th><th>MCU 引脚</th><th>出处</th></tr>
   <tr><td>SCK</td><td>PIO1_15</td><td><code>src/SPI.c:227</code></td></tr>
   <tr><td>MOSI（芯片的 SDI）</td><td>PIO0_21</td><td><code>src/SPI.c:216</code></td></tr>
   <tr><td>MISO（芯片的 SDO）</td><td>PIO0_22</td><td><code>src/SPI.c:221</code></td></tr>
+  <tr><td>Hall_PWR_EN（霍尔电源开关，高电平上电）</td><td>PIO0_16</td><td><code>inc/my_board.h:363</code>、<code>src/GPIO.c:577-584</code></td></tr>
 </table></div>
 <ul>
   <li>SPI 配置是 CPOL=0、CPHA=1、8 位，时钟 48MHz ÷ (8 × 3) = <strong>2MHz</strong>（<code>src/SPI.c:238-239</code>，旁边注释写的 8MHz 是错的）。手册要求高于 1MHz，满足。</li>
-  <li>一次传输 4 个字节：<code>hall_spi_rx[0..1]</code> 是<strong>右键</strong>，<code>hall_spi_rx[2..3]</code> 是<strong>左键</strong>。</li>
+  <li>链的顺序是 MOSI → H1（左键）→ H2（右键）→ MISO。离 MISO 最近的 H2 先被读出，所以一次传输的 4 个字节里，<code>hall_spi_rx[0..1]</code> 是<strong>右键</strong>，<code>hall_spi_rx[2..3]</code> 是<strong>左键</strong>。</li>
+  <li>霍尔芯片由 VCC3.3V 经 PMOS（MOS1）开关供电，和 MCU 是同一路 3.3V。固件上电时先把 Hall_PWR_EN 拉低 50ms 再拉高，调试中芯片状态乱了可以用这个脚断电重来。</li>
+  <li>两颗芯片的 PWM1–PWM4 全部悬空，<strong>板上没有接 LED</strong>，LED 相关寄存器不用配。</li>
+  <li>电磁线圈（7V 驱动）按设计就布置在霍尔芯片旁边，通电时的磁场会影响霍尔读数。代码里“振动期间不采用霍尔值”的逻辑（<code>USE_HALL_VALUE_DURING_VIBRATION</code>）就是为此而设。</li>
 </ul>
 
 <h3>“TD 时间”是什么</h3>
@@ -329,7 +333,7 @@ CRCWR = A5^A4^A3^A2^A1^A0 ^ D7^D6^D5^D4^D3^D2^D1^D0</code></pre></div>
   <tr><td>写寄存器校验位</td><td>只算 8 位数据</td><td><strong>6 位地址 + 8 位数据</strong></td><td>要改</td></tr>
   <tr><td>寄存器表</td><td>0x0A–0x27</td><td>0x05–0x35，地址和含义全不同</td><td>整表重写</td></tr>
   <tr><td>LNA 增益档位</td><td>8/16/32/64/128x</td><td>16/24/48/96x，联动 0x09、0x29、0x2A</td><td>重新选</td></tr>
-  <tr><td>输入高电平门限 VIH</td><td>0.5×VDD</td><td><strong>0.8×VDD</strong></td><td>查原理图</td></tr>
+  <tr><td>输入高电平门限 VIH</td><td>0.5×VDD</td><td><strong>0.8×VDD</strong></td><td>已查原理图：3.3V 供电，门限 2.64V，满足</td></tr>
   <tr><td>软复位命令</td><td>无</td><td>有（td11）</td><td>可选</td></tr>
 </table></div>
 <div class="warn"><b>最大的坑。</b>现有代码按编号使用宏：写寄存器用 <code>TD4_DELAY_US</code>，频率校准用 <code>TD7_DELAY_US</code>。而 H6 那组宏里 TD4 = 18us（写 PWM）、TD7 = 28us（SLEEP）。只把 <code>USE_HALL_SENSOR</code> 改成 6，结果是写寄存器变成写 PWM、上电校准变成让芯片休眠，而且编译不报任何错。第 1 步专门解决这个问题。</div>
@@ -341,12 +345,32 @@ CRCWR = A5^A4^A3^A2^A1^A0 ^ D7^D6^D5^D4^D3^D2^D1^D0</code></pre></div>
 <p>动代码之前逐项确认，把结果写进<a href="#log">记录表</a>。</p>
 <ul class="checks">
   <li><label><input type="checkbox" id="prep1"><span><strong>确认板上芯片是 H6。</strong>芯片丝印第一行应为 <code>GTRY164</code>（手册第 12 节）。</span></label></li>
-  <li><label><input type="checkbox" id="prep2"><span><strong>查霍尔芯片的 VDD。</strong>打开 <code>资料/GT_Lina T1A Hall Haptic POC_SCH_V0.1.pdf</code>，找到霍尔芯片的供电。3.3V 没问题。如果是 5V，H6 要求输入高电平不低于 4.0V，而 LPC11U35 的 IO 只有 3.3V，通信会不可靠，这时先找硬件同事，不要往下做。</span></label></li>
-  <li><label><input type="checkbox" id="prep3"><span><strong>准备示波器</strong>（或采样率不低于 20MHz 的逻辑分析仪），探头接 PIO1_15（SCK）。</span></label></li>
-  <li><label><input type="checkbox" id="prep4"><span><strong>确定怎么看数据。</strong>讲义把调试数据放进全局变量 <code>g_hall_dbg</code>。二选一：Keil 在线调试，在 Watch 窗口看这个变量；或把 <code>inc/my_debug.h:19</code> 的 <code>MYDEBUG_ENABLE</code> 改成 1，用 <code>InfoLog</code> 从 USB 打印，这需要上位机工具，问同事平时用哪个。</span></label></li>
+  <li><label><input type="checkbox" id="prep2"><span><strong>实测霍尔芯片的 VDD。</strong>原理图已确认是 3.3V 供电，H6 的输入高电平门限为 0.8 × 3.3V = 2.64V，MCU 的 3.3V 输出能满足。但图上有一处对不上：MOS1 输出的网络叫 <code>VDD_Hall</code>（测试点 TP22），两颗芯片电源脚的网络叫 <code>HALL_VDD</code>，按图面是两个不相连的网络；标题栏写“共 3 页”而 PDF 只有 2 页。所以要用万用表确认：上电后量 C33 或 C42 两端，以及 TP22，两处读数应一致，且在 3.1V（H6 最低工作电压）以上。量出 0V 就是没连通，找硬件同事。</span></label></li>
+  <li><label><input type="checkbox" id="prep3"><span><strong>准备示波器</strong>（或采样率不低于 20MHz 的逻辑分析仪），探头接 SCLK_0。原理图上这条线没有测试点，落针位置是霍尔芯片第 3 脚或 MCU 第 28 脚（PIO1_15），动手前先在板子上找好。</span></label></li>
+  <li><label><input type="checkbox" id="prep4"><span><strong>确定怎么看数据，这一条必须先解决。</strong>讲义把调试数据放进全局变量 <code>g_hall_dbg</code>。Keil 在线调试基本用不了：调试口的 SWCLK 和光学传感器的 SPI 时钟共用 PIO0_10，固件在 <code>src/SPI.c:155</code> 把它切成 SCK0 之后调试器就会断开（烧录不受影响）。所以要走 USB 打印：把 <code>inc/my_debug.h:19</code> 的 <code>MYDEBUG_ENABLE</code> 改成 1，按下面“调试数据怎么打印出来”加打印函数。它需要上位机工具接收，先问同事平时用哪个。</span></label></li>
   <li><label><input type="checkbox" id="prep5"><span><strong>确认 Keil 能编译当前工程</strong>，并能烧录到板子上。</span></label></li>
   <li><label><input type="checkbox" id="prep6"><span><strong>找一个 H5 的参考值。</strong>问同事要这块板型在 H5 下“松开”和“按到底”的原始值。问不到就先用代码里的线索：<code>app/button.c:15-16</code> 的基线初值是 8000 和 6800，说明 H5 下全行程的变化量大约在一千出头。这只是代码里的初值，不是实测，仅供第 7 步参考。</span></label></li>
 </ul>
+
+<h3>调试数据怎么打印出来</h3>
+<p>第 3 步定义了 <code>g_hall_dbg</code> 之后，在 <code>app/button.c</code> 里加一个打印函数：</p>
+<div class="code"><pre><code>#if MYDEBUG_ENABLE
+void Hall_DbgPrint(void)
+{
+	InfoLog("freq %02X %02X ok%u n%u | reg %02X %02X | raw %u %u | crc %u",
+	        g_hall_dbg.freq[0], g_hall_dbg.freq[1], g_hall_dbg.freq_ok, g_hall_dbg.freq_times,
+	        g_hall_dbg.reg_rd[0], g_hall_dbg.reg_rd[1],
+	        g_hall_dbg.raw[0], g_hall_dbg.raw[1], g_hall_dbg.crc_err);
+}
+#endif</code></pre></div>
+<p>在 <code>LR_GetState</code> 开头加一个计数器，大约每秒打印一次：</p>
+<div class="code"><pre><code>#if MYDEBUG_ENABLE
+	{
+		static uint16_t dbg_cnt = 0;
+		if(++dbg_cnt &gt;= 1000) { dbg_cnt = 0; Hall_DbgPrint(); }
+	}
+#endif</code></pre></div>
+<p class="note">周期打印而不是在初始化里打印一次，是因为 <code>HallSensor_INIT</code> 运行时 USB 还没枚举完，那时的日志不一定发得出来。“1000 次约等于 1 秒”是按 <code>MAGNETIC_SCAN_RATE</code> 为 1（1K 扫描）估的，实际间隔以你看到的为准。这段同样没有编译和上板验证过。</p>
 </section>
 
 <!-- ================= 第 1 步 ================= -->
@@ -417,7 +441,7 @@ CRCWR = A5^A4^A3^A2^A1^A0 ^ D7^D6^D5^D4^D3^D2^D1^D0</code></pre></div>
 <p>示波器接 PIO1_15，上升沿触发，量高电平宽度。</p>
 <div class="scroll"><table>
   <tr><th>命令</th><th>何时出现</th><th>目标</th><th>允许范围</th></tr>
-  <tr><td>频率校准</td><td>上电后约 0.5s，连续 30 次</td><td>128us</td><td>121.6–134.4us</td></tr>
+  <tr><td>频率校准</td><td>上电后约 0.5s，连续多次</td><td>128us</td><td>121.6–134.4us</td></tr>
   <tr><td>读写寄存器</td><td>紧跟在校准之后，1 次</td><td>39us</td><td>37.05–40.95us</td></tr>
   <tr><td>读采样</td><td>正常运行中周期出现</td><td>5us</td><td>4.75–5.25us</td></tr>
 </table></div>
@@ -617,7 +641,7 @@ extern volatile HallDbg_ts g_hall_dbg;</code></pre></div>
 <ul>
   <li><strong>0x33 只开连续转换（0x80）。</strong>XENO 工程用 0x84，多开了芯片内部的基线跟踪。但本工程的基线是 MCU 在 <code>src/my_misc.c:135-290</code> 自己算的，两套同时开会互相干扰，所以不开。</li>
   <li><strong>只写手册里有的寄存器。</strong>XENO 还写了 0x13、0x15、0x16、0x18、0x1C、0x1E、0x20、0x25 这 8 个手册里查不到的地址，这里没有放。见<a href="#ask">要问同事的问题</a>。</li>
-  <li><strong>LED 先关。</strong>原 H5 配置里灯是开的。板上霍尔芯片如果确实接了灯，等按键功能调通后再配 0x05–0x09 和 PWM。</li>
+  <li><strong>LED 关着。</strong>原 H5 配置里灯是开的，但原理图显示两颗芯片的 PWM 脚都悬空，板上没有灯，所以 0x05–0x08 和 PWM 都不用配。</li>
 </ul>
 <p><code>HallSensor_INIT</code> 恢复并加上读回校验：</p>
 <div class="code"><pre><code>void HallSensor_INIT(void)
@@ -748,7 +772,7 @@ extern volatile HallDbg_ts g_hall_dbg;</code></pre></div>
 <ul class="checks">
   <li><label><input type="checkbox" id="reg1"><span>左右键点击、长按、快速连点。</span></label></li>
   <li><label><input type="checkbox" id="reg2"><span>驱动里改 Rapid Trigger 行程，行为随之变化。</span></label></li>
-  <li><label><input type="checkbox" id="reg3"><span>电磁铁振动时霍尔读数不被干扰。H6 的分辨率比 H5 高一个量级，这一项的风险比 H5 大。</span></label></li>
+  <li><label><input type="checkbox" id="reg3"><span><strong>重点项：电磁线圈振动对霍尔读数的影响。</strong>线圈就布置在霍尔芯片旁边，H6 的分辨率又比 H5 高一个量级。分别在左、右线圈振动时记录 <code>raw</code> 的偏移量，再记录线圈断电后读数回到原值需要多久。振动期间不应误触发或误释放，振动结束后分段值不应跳变。</span></label></li>
   <li><label><input type="checkbox" id="reg4"><span>USB 挂起再唤醒后霍尔恢复正常。相关代码在 <code>src/suspend.c:59</code> 和 <code>src/usbhw.c:669</code>，讲义没有分析这段的恢复流程，需要实测。</span></label></li>
   <li><label><input type="checkbox" id="reg5"><span>反复上电 20 次，<code>freq_ok</code> 每次都是 1。</span></label></li>
   <li><label><input type="checkbox" id="reg6"><span>清理：删掉第 4 步的写读测试，<code>g_hall_dbg</code> 按需保留或用宏关掉。</span></label></li>
@@ -767,7 +791,7 @@ extern volatile HallDbg_ts g_hall_dbg;</code></pre></div>
 <div class="scroll"><table>
   <tr><th>项目</th><th>结果</th></tr>
   <tr><td>芯片丝印</td><td><input type="text" id="log01" aria-label="芯片丝印"></td></tr>
-  <tr><td>霍尔芯片 VDD（原理图）</td><td><input type="text" id="log02" aria-label="霍尔芯片 VDD"></td></tr>
+  <tr><td>霍尔芯片 VDD 实测：C33 或 C42 / TP22</td><td><input type="text" id="log02" aria-label="霍尔芯片 VDD 实测"></td></tr>
   <tr><td>第 1 步 <code>fc /b</code> 结果</td><td><input type="text" id="log03" aria-label="fc 比较结果"></td></tr>
   <tr><td>128us 实测 / 最终宏值</td><td><input type="text" id="log04" aria-label="128us 实测与宏值"></td></tr>
   <tr><td>39us 实测 / 最终宏值</td><td><input type="text" id="log05" aria-label="39us 实测与宏值"></td></tr>
@@ -783,6 +807,8 @@ extern volatile HallDbg_ts g_hall_dbg;</code></pre></div>
   <tr><td>按到底原始值 右 / 左</td><td><input type="text" id="log15" aria-label="按到底原始值"></td></tr>
   <tr><td>最终增益（0x09 / 0x0B / 0x29 / 0x2A）</td><td><input type="text" id="log16" aria-label="最终增益"></td></tr>
   <tr><td><code>PRESS_KEY_AND_VALUE_INCREASE</code></td><td><input type="text" id="log17" aria-label="按键方向宏"></td></tr>
+  <tr><td>线圈振动时 <code>raw</code> 偏移 右 / 左</td><td><input type="text" id="log18" aria-label="线圈振动时原始值偏移"></td></tr>
+  <tr><td>线圈断电后读数恢复时间</td><td><input type="text" id="log19" aria-label="线圈断电后恢复时间"></td></tr>
 </table></div>
 </section>
 
@@ -791,13 +817,13 @@ extern volatile HallDbg_ts g_hall_dbg;</code></pre></div>
 <h2>要问同事的问题</h2>
 <p>问题要具体到寄存器和数值，这样对方一句话就能答。</p>
 <ol>
+  <li><strong>先问这条：</strong>平时用什么上位机工具接收 USB 调试日志、看霍尔原始值？在线调试因为 SWCLK 复用用不了，没有这个工具后面每一步都看不到结果。</li>
   <li>XENO 工程在 <code>h6_hal_type_mode()</code> 里写了 0x13、0x15、0x16、0x18、0x1C、0x1E、0x20、0x25，V1.9 手册里没有这些地址。它们是必须写的吗？两颗芯片的鼠标上需要吗？</li>
   <li>XENO 有偏移校准（<code>h6_offset_cali.c</code>，用到 0x36、0x37）。鼠标上要不要做？</li>
   <li>16x 增益时 XENO 写 0x29 = 0x4E、0x2A = 0x32，手册写 0x50、0x20。以哪个为准？</li>
   <li>5us 的 td1 容差只有 ±0.25us，用 GPIO 加定时器的方式你们实测能稳定在范围内吗？</li>
   <li>这块板型在 H5 下松开和按到底的原始值大概是多少？</li>
-  <li>板上霍尔芯片有没有接 LED？</li>
-  <li>平时用什么上位机工具看霍尔原始值？</li>
+  <li>（问硬件同事）原理图上 MOS1 输出叫 <code>VDD_Hall</code>，芯片电源脚叫 <code>HALL_VDD</code>，实物上是连通的吗？标题栏写共 3 页，PDF 只有 2 页，是否缺一页？</li>
 </ol>
 </section>
 
