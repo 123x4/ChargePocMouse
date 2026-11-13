@@ -272,13 +272,13 @@ const unsigned char sensor_reg_init_array[REG_CNT][2] = {
 #endif
 	{0x17, 0x7C},		//fix
 	{0x18, 0x8E},		//ModeConfig0, led enable, continue conversion mode, smart power-saving mode disabled
-	//led恒流源档位设置
+	// LED constant-current range settings
 	//{0x18, 0x0A}, 	//disable led
 	{0x19, 0xFF},		//LED_Current_1
 	{0x1A, 0xFF},		//LED_Current_2
 	{0x1B, 0xFF},		//LED_Current_3
 	{0x1C, 0xFF},		//LED_Current_4
-	//led恒流源设置
+	// LED constant-current source settings
 	{0x1D, 0x88},		//LED_MaxCur1_2
 	{0x1E, 0x88},		//LED_MaxCur3_4
 	{0x1F, 0x07},		//LED_SDO_ Driver, LED_Multiplier = 0, SDO IO Driver current 12mA

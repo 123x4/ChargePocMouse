@@ -235,7 +235,7 @@ void InitSPI1Master(void)
  //  LPC_IOCON->PIO1_19			|= 0x02 ;
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    LPC_SSP1->CR0 = 0x0287  ;                                        //CPOL = 0 CPHA = 1 8Bits 
+    LPC_SSP1->CR0 = 0x0287  ;                                        // 8Bits  CPOL = 0 CPHA = 1
     LPC_SSP1->CPSR = 0x08 ;
     //SPI SPEED = ((MCU_OSC/SSP0CLKDIV)/(CPSR*[CR0 High Byte+1]))
     //((48MHz/1)/(2*[2+1])) = 8Mhz
@@ -291,6 +291,8 @@ void InitSPI1Master(void)
     return ;    
 #endif
 }
+
+
 #if 0
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //~                 Drv                             ~
