@@ -123,7 +123,7 @@ label.chk{display:inline-flex;gap:6px;align-items:center;font-size:.9rem;cursor:
 <h2><span class="no">2</span>SPI：用"打拍子"一位一位地传数据</h2>
 <p class="why">一根线一次只能表示 1 位（0 或 1）。要传 8 位，就需要另一根线告诉对方"现在读下一位"。这根线就是 SCK。</p>
 <div class="bench">
-  <div class="scroll"><svg id="s2" viewBox="0 0 640 300" style="min-width:540px;width:100%"></svg></div>
+  <div class="scroll"><svg id="s2" viewBox="0 0 640 380" style="min-width:560px;width:100%"></svg></div>
   <div class="caption" id="cap2"></div>
   <div class="ctrl" id="ctl2"></div>
 </div>
@@ -348,50 +348,90 @@ function codePanel(id, lines){
 /* ======================= 2. SPI one byte ======================= */
 (function(){
   const svg = document.getElementById("s2");
-  const BYTE = 0xF3, bits = [...bin(BYTE, 8)].map(Number);
-  const frames = [{ k: -1, ph: "idle", cells: Array(8).fill(null), tag: "准备",
-    cap: "现在要把 1 个字节 <b class='m'>0xF3</b>（二进制 <span class='m'>11110011</span>）送进芯片。用两根线：<b style='color:var(--sck)'>SCK</b> 是 MCU 打的拍子，<b style='color:var(--mosi)'>MOSI</b> 上放数据。芯片里有一排格子，用来接收这些位。从最高位（bit7）开始送。" }];
-  let cells = Array(8).fill(null);
+  const BYTE = 0xF3, bits = [...bin(BYTE, 8)].map(Number);   /* bits[0] = bit7 */
+  /* tx cells displayed left→right as bit0..bit7; the right end touches the wire, so bit7 leaves first */
+  let tx = []; for (let d = 0; d < 8; d++) tx.push({ b: (BYTE >> d) & 1, s: "T" });
+  let rxc = Array(8).fill(null);
+  const frames = [{ k: -1, ph: "idle", tx: tx.slice(), rx: rxc.slice(), tok: null, tag: "认识主机和从机",
+    cap: "<b>主机</b>是 MCU：它决定什么时候传、打拍子（SCK）。<b>从机</b>是 H6 芯片：只能跟着主机的拍子收发，自己不会主动说话。现在主机的发送格子里装着要发的 1 个字节 <b class='m'>0xF3</b>（二进制 11110011），从机的接收格子是空的。两者之间先看两根线：<b style='color:var(--sck)'>SCK</b> 和 <b style='color:var(--mosi)'>MOSI</b>（Master Out Slave In，主机出、从机进）。" }];
   bits.forEach((b, k) => {
-    frames.push({ k, ph: "rise", cells: cells.slice(), tag: "第 " + (k + 1) + " 拍 · SCK 上升沿",
-      cap: "SCK 从 0 跳到 1。按 H6 手册的约定，<b>上升沿时 MCU 把下一位放到 MOSI 上</b>：这一位是 bit" + (7 - k) + " = <b>" + b + "</b>。" });
-    cells = [{ b, s: "T" }].concat(cells.slice(0, 7));
-    frames.push({ k, ph: "fall", cells: cells.slice(), tag: "第 " + (k + 1) + " 拍 · SCK 下降沿",
-      cap: "SCK 从 1 落回 0。<b>下降沿时芯片看一眼 MOSI</b>，读到 " + b + "。芯片把所有格子往右挪一格，新读到的这一位放进最左边的格子。" });
+    const tok = tx[7]; tx = [null].concat(tx.slice(0, 7));
+    frames.push({ k, ph: "rise", tx: tx.slice(), rx: rxc.slice(), tok: { b, at: "wire" }, tag: "第 " + (k + 1) + " 拍 · SCK 上升沿（主机动作）",
+      cap: "主机把 SCK 从 0 拉到 1。按 H6 手册的约定，<b>上升沿时主机把下一位推到 MOSI 上</b>：主机发送格子最右边那一位（bit" + (7 - k) + " = <b>" + b + "</b>）离开主机，出现在 MOSI 线上。" });
+    rxc = [{ b, s: "T" }].concat(rxc.slice(0, 7));
+    frames.push({ k, ph: "fall", tx: tx.slice(), rx: rxc.slice(), tok: { b, at: "slave" }, tag: "第 " + (k + 1) + " 拍 · SCK 下降沿（从机动作）",
+      cap: "主机把 SCK 从 1 放回 0。<b>下降沿时从机看一眼 MOSI</b>，读到 " + b + "。从机把自己的格子整体右移一格，新读到的这一位放进最左边。" });
   });
-  frames.push({ k: 8, ph: "end", cells: cells.slice(), tag: "完成",
-    cap: "打了 8 拍，8 位全部进了芯片，格子里从右到左正好是 bit7…bit0，也就是 0xF3。<b>这就是 SPI：SCK 每打一拍，传 1 位</b>。真实的 SCK 是 2MHz，每拍只有 0.5us，一拍里高电平只占 0.25us。" });
+  frames.push({ k: 8, ph: "end", tx: tx.slice(), rx: rxc.slice(), tok: null, tag: "完成",
+    cap: "8 拍之后，主机的发送格子空了，从机的接收格子装满了，内容正好是 0xF3。<b>整个过程就是一条传送带：主机格子 → MOSI → 从机格子，SCK 每打一拍，传送带走一格。</b>真实的 SCK 是 2MHz，一拍只有 0.5us。灰色的 MISO 是反方向（从机回给主机）的线，第 3 关会用到。" });
+
+  function cellRow(x, y, cells, cs, label){
+    for (let d = 0; d < 8; d++){
+      const c = cells[d];
+      el("rect", { x: x + d * cs, y, width: cs - 3, height: cs - 3, rx: 3, fill: c ? SRC[c.s] : "var(--bg)", stroke: "var(--line)", "fill-opacity": c ? 0.88 : 1 }, svg);
+      if (c) el("text", { x: x + d * cs + (cs - 3) / 2, y: y + cs * 0.62, "text-anchor": "middle", fill: "var(--panel)", "font-size": 12, "font-weight": 700, class: "m" }, svg, c.b);
+    }
+  }
   function render(f){
     clear(svg);
-    const x0 = 70, cw = 62, yS = 30, yM = 100, h = 34;
+    const defs = el("defs", {}, svg);
+    const mk = (id, col) => { const m = el("marker", { id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 12, markerHeight: 12, markerUnits: "userSpaceOnUse", orient: "auto" }, defs); el("path", { d: "M0,0 L10,5 L0,10 z", fill: col }, m); };
+    mk("a2s", "var(--sck)"); mk("a2m", "var(--mosi)"); mk("a2g", "var(--muted)");
+    /* master */
+    el("rect", { x: 8, y: 14, width: 214, height: 170, rx: 10, fill: "var(--bg)", stroke: "var(--accent)", "stroke-width": 1.5 }, svg);
+    el("text", { x: 20, y: 36, fill: "var(--fg)", "font-size": 14, "font-weight": 700 }, svg, "主机 MCU");
+    el("text", { x: 20, y: 54, fill: "var(--muted)", "font-size": 11 }, svg, "LPC11U35 · SSP1（SPI 硬件）");
+    el("text", { x: 20, y: 84, fill: "var(--muted)", "font-size": 11 }, svg, "发送格子");
+    cellRow(20, 92, f.tx, 24, "");
+    el("text", { x: 20 + 8 * 24 - 3, y: 132, "text-anchor": "end", fill: "var(--muted)", "font-size": 10 }, svg, "最右边一位先出去 →");
+    el("text", { x: 20, y: 168, fill: "var(--sck)", "font-size": 11 }, svg, "主机打拍子（产生 SCK）");
+    /* slave */
+    el("rect", { x: 418, y: 14, width: 214, height: 170, rx: 10, fill: "var(--bg)", stroke: "var(--line)", "stroke-width": 1.5 }, svg);
+    el("text", { x: 430, y: 36, fill: "var(--fg)", "font-size": 14, "font-weight": 700 }, svg, "从机 H6 芯片");
+    el("text", { x: 430, y: 54, fill: "var(--muted)", "font-size": 11 }, svg, "GTRY164 · SCK / SDI / SDO 引脚");
+    el("text", { x: 430, y: 84, fill: "var(--muted)", "font-size": 11 }, svg, "接收格子");
+    cellRow(430, 92, f.rx, 24, "");
+    el("text", { x: 430, y: 132, fill: "var(--muted)", "font-size": 10 }, svg, "← 新来的从左边进");
+    el("text", { x: 430, y: 168, fill: "var(--muted)", "font-size": 11 }, svg, "只能跟着 SCK 的拍子动");
+    /* wires */
+    const hi = f.ph === "rise";
+    el("line", { x1: 222, y1: 70, x2: 416, y2: 70, stroke: "var(--sck)", "stroke-width": hi ? 5 : 2, "marker-end": "url(#a2s)", opacity: hi ? 1 : 0.6 }, svg);
+    el("text", { x: 319, y: 62, "text-anchor": "middle", fill: "var(--sck)", "font-size": 12, class: "m" }, svg, "SCK  " + (f.ph === "rise" ? "= 1（高）" : "= 0（低）"));
+    el("line", { x1: 222, y1: 112, x2: 416, y2: 112, stroke: "var(--mosi)", "stroke-width": 2.5, "marker-end": "url(#a2m)" }, svg);
+    el("text", { x: 319, y: 104 - (f.tok && f.tok.at === "wire" ? 12 : 0), "text-anchor": "middle", fill: "var(--mosi)", "font-size": 12, class: "m" }, svg, "MOSI");
+    el("line", { x1: 416, y1: 152, x2: 224, y2: 152, stroke: "var(--muted)", "stroke-width": 1.5, "stroke-dasharray": "4 4", "marker-end": "url(#a2g)", opacity: 0.6 }, svg);
+    el("text", { x: 300, y: 146, "text-anchor": "middle", fill: "var(--muted)", "font-size": 10.5, class: "m" }, svg, "MISO（第 3 关再讲）");
+    if (f.tok){
+      const tx0 = f.tok.at === "wire" ? 319 : 384;
+      el("circle", { cx: tx0, cy: 112, r: 11, fill: "var(--mosi)" }, svg);
+      el("text", { x: tx0, y: 116.5, "text-anchor": "middle", fill: "var(--panel)", "font-size": 13, "font-weight": 700, class: "m" }, svg, f.tok.b);
+    }
+    el("text", { x: 228, y: 84, fill: "var(--muted)", "font-size": 9.5, class: "m" }, svg, "PIO1_15");
+    el("text", { x: 228, y: 126, fill: "var(--muted)", "font-size": 9.5, class: "m" }, svg, "PIO0_21");
+    el("text", { x: 228, y: 166, fill: "var(--muted)", "font-size": 9.5, class: "m" }, svg, "PIO0_22");
+    el("text", { x: 404, y: 64, "text-anchor": "end", fill: "var(--muted)", "font-size": 9.5, class: "m" }, svg, "SCK 脚");
+    el("text", { x: 404, y: 106, "text-anchor": "end", fill: "var(--muted)", "font-size": 9.5, class: "m" }, svg, "SDI 脚");
+    el("text", { x: 404, y: 146, "text-anchor": "end", fill: "var(--muted)", "font-size": 9.5, class: "m" }, svg, "SDO 脚");
+    /* waveform */
+    const x0 = 70, cw = 62, yS = 256, yM = 320, h = 34;
+    el("text", { x: 8, y: 212, fill: "var(--fg)", "font-size": 12 }, svg, "同一过程画成波形（逻辑分析仪上看到的样子）：");
     const xEnd = f.ph === "idle" ? x0 : f.ph === "end" ? x0 + 8 * cw : x0 + f.k * cw + (f.ph === "rise" ? 4 : cw / 2 + 4);
     const sck = [{ x: 20, v: 0 }], mosi = [{ x: 20, v: 0 }];
     for (let k = 0; k < 8; k++){ sck.push({ x: x0 + k * cw, v: 1 }); sck.push({ x: x0 + k * cw + cw / 2, v: 0 }); mosi.push({ x: x0 + k * cw, v: bits[k] }); }
-    const clipId = "cl2";
-    const defs = el("defs", {}, svg); const cp = el("clipPath", { id: clipId }, defs); el("rect", { x: 0, y: 0, width: Math.max(xEnd, 21), height: 170 }, cp);
-    const g = el("g", { "clip-path": "url(#" + clipId + ")" }, svg);
-    for (let k = 0; k < 8; k++){
-      el("rect", { x: x0 + k * cw, y: yM - 4, width: cw, height: h + 8, fill: k % 2 ? "transparent" : "var(--grid)" }, g);
-      el("text", { x: x0 + k * cw + cw / 2, y: yM + h + 20, "text-anchor": "middle", fill: "var(--mosi)", "font-size": 12, class: "m" }, g, "bit" + (7 - k) + "=" + bits[k]);
-    }
+    const cp = el("clipPath", { id: "cl2" }, defs); el("rect", { x: 0, y: 0, width: Math.max(xEnd, 21), height: 470 }, cp);
+    const g = el("g", { "clip-path": "url(#cl2)" }, svg);
+    for (let k = 0; k < 8; k++) el("rect", { x: x0 + k * cw, y: yM - 4, width: cw, height: h + 8, fill: k % 2 ? "transparent" : "var(--grid)" }, g);
     channel(g, yS, h, sck, x0 + 8 * cw + 20, "var(--sck)", "");
     channel(g, yM, h, mosi, x0 + 8 * cw + 20, "var(--mosi)", "");
+    const shown = f.ph === "idle" ? 0 : f.ph === "end" ? 8 : f.k + 1;
+    for (let k = 0; k < shown; k++) el("text", { x: x0 + k * cw + cw / 2, y: yM + h + 20, "text-anchor": "middle", fill: "var(--mosi)", "font-size": 12, class: "m" }, svg, "bit" + (7 - k) + "=" + bits[k]);
     el("text", { x: 8, y: yS + 22, fill: "var(--sck)", "font-size": 12, class: "m" }, svg, "SCK");
     el("text", { x: 8, y: yM + 22, fill: "var(--mosi)", "font-size": 12, class: "m" }, svg, "MOSI");
     if (f.ph === "rise" || f.ph === "fall"){
       const ex = x0 + f.k * cw + (f.ph === "rise" ? 0 : cw / 2);
       el("line", { x1: ex, y1: yS - 10, x2: ex, y2: yM + h + 6, stroke: "var(--accent)", "stroke-width": 2, "stroke-dasharray": "4 3" }, svg);
-      el("text", { x: ex + 4, y: yS - 14, fill: "var(--accent)", "font-size": 12 }, svg, f.ph === "rise" ? "↑ 上升沿：放数据" : "↓ 下降沿：芯片读");
+      el("text", { x: Math.min(ex + 4, 520), y: yS - 14, fill: "var(--accent)", "font-size": 12 }, svg, f.ph === "rise" ? "↑ 上升沿：主机放数据" : "↓ 下降沿：从机读数据");
     }
-    const cy = 215, cx0 = 200, cs = 34;
-    el("text", { x: 70, y: cy + 22, fill: "var(--fg)", "font-size": 13 }, svg, "芯片里的格子 →");
-    for (let k = 0; k < 8; k++){
-      const c = f.cells[k];
-      el("rect", { x: cx0 + k * cs, y: cy, width: cs - 4, height: cs - 4, rx: 4, fill: c ? SRC[c.s] : "var(--bg)", stroke: "var(--line)", "fill-opacity": c ? 0.85 : 1 }, svg);
-      if (c) el("text", { x: cx0 + k * cs + (cs - 4) / 2, y: cy + 21, "text-anchor": "middle", fill: "var(--panel)", "font-size": 14, "font-weight": 700, class: "m" }, svg, c.b);
-    }
-    el("text", { x: cx0, y: cy + cs + 14, fill: "var(--muted)", "font-size": 11 }, svg, "新来的从这里进");
-    el("text", { x: cx0 + 8 * cs - 4, y: cy + cs + 14, fill: "var(--muted)", "font-size": 11, "text-anchor": "end" }, svg, "最早进来的在这里");
   }
   Player("ctl2", "cap2", frames, render);
 })();
