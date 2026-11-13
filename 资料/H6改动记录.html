@@ -1,0 +1,123 @@
+<title>H6 移植改动记录</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: single reading column, one block per commit; code shown as before/after diffs. Same palette family as the timing animation page. */
+:root{
+  --bg:#f2f4f3; --panel:#ffffff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e6eae9;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --add:#e1f2e7; --add-fg:#22693f; --del:#fbe3e1; --del-fg:#9f2a22;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+    --accent:#3cc6b5; --accent-soft:#16312e; --add:#173022; --add-fg:#7fd9a2; --del:#3a1c1a; --del-fg:#ff9b92;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --add:#173022; --add-fg:#7fd9a2; --del:#3a1c1a; --del-fg:#ff9b92;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.75 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:780px;margin:0 auto;padding-block:28px 72px}
+h1{font-size:1.7rem;line-height:1.3;margin:0 0 6px;text-wrap:balance}
+h2{font-size:1.25rem;margin:40px 0 8px;text-wrap:balance}
+h3{font-size:1.05rem;margin:24px 0 6px}
+p,li{margin:6px 0}
+.sub{color:var(--muted);margin:0 0 16px}
+code{font-family:var(--font-mono);font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px;font-variant-ligatures:none}
+pre{font-family:var(--font-mono);font-size:12.5px;line-height:1.6;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 0;overflow-x:auto;margin:8px 0;font-variant-ligatures:none}
+pre span{display:block;padding:0 14px;white-space:pre}
+pre .a{background:var(--add);color:var(--add-fg)}
+pre .d{background:var(--del);color:var(--del-fg)}
+pre .c{color:var(--muted)}
+.file{font-family:var(--font-mono);font-size:.8rem;color:var(--muted);margin-top:14px}
+.summary{background:var(--accent-soft);border-radius:10px;padding:12px 16px}
+.summary b{display:block}
+.commit{font-family:var(--font-mono);font-size:.82rem;color:var(--accent)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin:8px 0}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--grid);font-weight:500}
+.why{border-left:3px solid var(--accent);padding:4px 12px;margin:10px 0;background:var(--panel);border-radius:0 8px 8px 0}
+ol.q li{margin:8px 0}
+details{margin-top:4px;color:var(--muted)}
+summary{cursor:pointer;color:var(--accent)}
+</style>
+
+<main>
+<h1>H6 移植：目前改了什么，为什么这样改</h1>
+<p class="sub">分支 <code>H6</code>，截至提交 <code>1450eaa</code>。只记录对固件代码的改动；讲义和动画网页不算在内。</p>
+
+<div class="summary"><b>一句话总结</b>目前只完成了移植的第 1 步：给时序参数换了一种写法。芯片型号开关仍然是 H5（<code>USE_HALL_SENSOR = 5</code>），所以<b>板子上跑的程序和改之前完全一样</b>，已经用"编译结果逐字节相同"证明过。真正切到 H6 是下一步的事。</div>
+
+<h2>改动一览</h2>
+<div class="tw"><table>
+<tr><th>提交</th><th>文件</th><th>改了什么</th><th>影响程序吗</th></tr>
+<tr><td class="commit">093a92f</td><td><code>inc/button.h</code></td><td>新增 12 个"按用途命名"的时序宏</td><td>不影响（型号还是 5）</td></tr>
+<tr><td class="commit">093a92f</td><td><code>app/button.c</code></td><td>4 个函数里的时序参数换成新宏名</td><td>不影响</td></tr>
+<tr><td class="commit">1450eaa</td><td><code>inc/button.h</code></td><td>上面新增那段的中文注释换成英文</td><td>只改注释</td></tr>
+<tr><td class="commit">1450eaa</td><td><code>app/button.c</code>、<code>src/SPI.c</code>、<code>.gitignore</code></td><td>两行中文注释换英文、一行注释调换词序、忽略本地素材目录</td><td>只改注释和配置</td></tr>
+</table></div>
+
+<h2>改动 1：给时序参数起"用途名"</h2>
+
+<h3>问题是什么</h3>
+<p>MCU 给霍尔芯片下命令，靠的是"把 SCK 拉高并保持一段时间"（动画网页第 4、5 关）。代码里这些时长用手册里的编号命名，比如 <code>TD4_DELAY_US</code>、<code>TD7_DELAY_US</code>。麻烦在于，<b>同一个编号在两代芯片的手册里代表不同的命令</b>：</p>
+<div class="tw"><table>
+<tr><th>宏名</th><th>H5 手册里是</th><th>H6 手册里是</th><th>代码拿它来干什么</th></tr>
+<tr><td><code>TD4</code></td><td>写寄存器，24us</td><td>写 LED 亮度，18us</td><td>写寄存器</td></tr>
+<tr><td><code>TD7</code></td><td>频率校准，128us</td><td><b>让芯片休眠</b>，28us</td><td>频率校准</td></tr>
+<tr><td><code>TD10</code></td><td>校准后等待，&gt;2us</td><td>频率校准，128us</td><td>校准后等待</td></tr>
+</table></div>
+<p><code>button.h</code> 里早就有人按 H6 手册写好了一组 TD 宏，但函数里用的还是 H5 的编号。如果直接把型号开关改成 6，写寄存器会变成写 LED，上电校准会变成让芯片休眠。<b>编译不报任何错</b>，板子上就是什么都读不对，而且很难查到原因。</p>
+
+<h3>改了什么</h3>
+<p class="file">EM_HapticMouse/inc/button.h（在那组 TD 宏的 #endif 之后新增）</p>
+<pre><span class="a">#if (6 == USE_HALL_SENSOR)</span><span class="a">#define HALL_TD_CONVERT       TD1_DELAY_US      /* 5us +/-5%   Read sample */</span><span class="a">#define HALL_TD_CONVERT_WAIT  (DELAY_OUT(8))    /* >4us        Wait after the sample command */</span><span class="a">#define HALL_TD_WR_REG        TD6_DELAY_US      /* 39us +/-5%  Read/write register */</span><span class="a">#define HALL_TD_WR_WAIT       (DELAY_OUT(10))   /* >3us        Wait after register read/write */</span><span class="a">#define HALL_TD_FREQ_CAL      TD10_DELAY_US     /* 128us +/-5% Oscillator frequency calibration */</span><span class="a">#define HALL_TD_FREQ_WAIT     (DELAY_OUT(60))   /* >50us       Wait after calibration */</span><span class="a">#else</span><span class="a">#define HALL_TD_CONVERT       TD1_DELAY_US</span><span class="a">#define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US</span><span class="a">#define HALL_TD_WR_REG        TD4_DELAY_US</span><span class="a">#define HALL_TD_WR_WAIT       TD5_DELAY_US</span><span class="a">#define HALL_TD_FREQ_CAL      TD7_DELAY_US</span><span class="a">#define HALL_TD_FREQ_WAIT     TD10_DELAY_US</span><span class="a">#endif</span></pre>
+
+<p class="file">EM_HapticMouse/app/button.c（4 个函数，每个只改调用 Hall_CLK_Command_SET 的那一行）</p>
+<pre><span class="c">hall_get_sample()            第 861 行</span><span class="d">-  Hall_CLK_Command_SET(TD1_DELAY_US, TD2_CONTIUNS_DELAY_US);</span><span class="a">+  Hall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);</span><span class="c"> </span><span class="c">HALL_Read_Instru_cnt()       第 868 行</span><span class="d">-  Hall_CLK_Command_SET(TD7_DELAY_US, TD10_DELAY_US);</span><span class="a">+  Hall_CLK_Command_SET(HALL_TD_FREQ_CAL, HALL_TD_FREQ_WAIT);</span><span class="c"> </span><span class="c">Hall_read_register()         第 913 行</span><span class="c">Hall_write_register()        第 935 行</span><span class="d">-  Hall_CLK_Command_SET(TD4_DELAY_US,TD5_DELAY_US);</span><span class="a">+  Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);</span></pre>
+
+<h3>为什么这样改</h3>
+<div class="why"><b>函数只说"我要干什么"，具体用哪个 TD 交给宏去选。</b>现在 <code>Hall_write_register()</code> 里写的是"写寄存器用的时长"（<code>HALL_TD_WR_REG</code>），型号是 5 时它自动对应 H5 的 TD4（24us），型号改成 6 时自动对应 H6 的 TD6（39us）。以后切换芯片只改一个开关，函数一行都不用动，也就不会再踩编号的坑。</div>
+
+<div class="why"><b>H6 的三个"等待"值比手册要求多留了余量。</b>手册对等待只要求"不少于"（&gt;4us、&gt;3us、&gt;50us），多等几微秒没有坏处。而代码里的延时其实比写的数短：<code>DELAY_OUT(x)</code> 先减 1，<code>CT16B1_DelayUs()</code> 内部再少数 2，定时器实际只计了大约 x−3 微秒（动画网页第 7 关）。所以等待类干脆给足：8、10、60。<b>"按住"类（±5%）不能这样做</b>，多了少了都会被芯片认成别的命令，这几个还是用原来的宏，靠逻辑分析仪实测来确认。</div>
+
+<div class="why"><b><code>#else</code> 分支一字不差地对应原来的宏。</b>型号是 5 时，新名字展开后和改之前完全一样。这正是能"证明没改坏"的前提，见下一节。</div>
+
+<h3>怎么证明没改坏</h3>
+<p>型号仍是 5，新宏展开后和原来一模一样，所以编译出来的固件应当<b>逐字节相同</b>。Codex 在 Keil 里改前改后各编译一次，用 <code>fc /b</code> 比较两份 <code>Sample.hex</code>，结果是"找不到差异"。</p>
+<p>这样就不需要上板测试：重构（换写法）用"hex 相同"来证明，改行为（换芯片）留到下一步再上板。两件事分开做，出问题时才分得清是哪一件出了错。</p>
+
+<h2>改动 2：注释改成英文</h2>
+<p>第 1 步提交后，<code>button.h</code> 新加的中文注释在 VS Code 里显示成乱码。原因是：<code>button.h</code> 原本是纯英文文件，我给 Codex 的代码里带了中文注释，Codex 按 GBK 编码存了进去，而 VS Code 按 UTF-8 打开。</p>
+<p>修法是把注释换成英文，文件恢复成纯英文，用什么编码打开都不会乱。Codex 顺手把 <code>button.c</code> 里仅有的两行 GBK 中文注释也换成了英文，所以 <code>button.c</code> 现在也是纯英文了，以后不会再有编码问题。</p>
+<p>这次 Codex 还改了一些我没要求的东西（<code>SPI.c</code> 的一行注释、<code>.gitignore</code>）。都是无害的，但说明<b>让 AI 改完代码，一定要看一眼到底改了哪些文件</b>（<code>git show --stat</code>）。</p>
+
+<h2>还没改的（下一步要做的）</h2>
+<div class="tw"><table>
+<tr><th>内容</th><th>现在的状态</th><th>计划在哪一步改</th></tr>
+<tr><td>芯片型号开关 <code>USE_HALL_SENSOR</code></td><td>5（H5）</td><td>第 2 步改成 6</td></tr>
+<tr><td>频率校准流程</td><td>固定 30 次，不检查结果，SDI 发 0x55</td><td>第 2 步按 H6 手册图 11 重写</td></tr>
+<tr><td><code>Hall_ReadReg()</code> 的 rx/tx 笔误</td><td>未修</td><td>第 2 步</td></tr>
+<tr><td>写寄存器的校验位</td><td>只算数据（H5 规则）</td><td>第 3 步，加上地址</td></tr>
+<tr><td>寄存器初始化表</td><td>还是 H5 的 25 项</td><td>第 4 步换成 H6 的表</td></tr>
+</table></div>
+<p>在第 2 步之前，先用逻辑分析仪量一下现在固件里三种命令脉冲的实际宽度（128us、24us、5us），看看"x−3 微秒靠开销补上"这个假设到底准不准。</p>
+
+<h2>自测：能回答这三个问题，第 1 步就算真的懂了</h2>
+<ol class="q">
+<li>为什么只把 <code>USE_HALL_SENSOR</code> 改成 6、而不改函数里的宏名，编译不会报错，板子却会出问题？
+  <details><summary>参考答案</summary>H6 那组 TD 宏全都存在，编译器只检查名字有没有定义，不知道 TD4 在 H6 里代表"写 LED"。所以能编过，但写寄存器时发出的是 18us 脉冲，芯片把它当成写 LED 的命令。</details></li>
+<li>为什么这一步改完，hex 文件必须和改之前完全一样？
+  <details><summary>参考答案</summary>型号仍是 5，新宏在 #else 分支里展开成原来的宏，编译器看到的代码和以前一字不差，生成的机器码自然也一样。如果不一样，就说明除了换名字之外还改到了别的东西。</details></li>
+<li>为什么等待时间可以多留余量，"按住"的时间却不行？
+  <details><summary>参考答案</summary>等待在手册里只规定了下限（大于多少），多等只是慢一点。按住的时间是命令本身，芯片按长度判断是哪条命令，只允许 ±5% 的误差，多了少了都会被认成别的命令或不认。</details></li>
+</ol>
+</main>
