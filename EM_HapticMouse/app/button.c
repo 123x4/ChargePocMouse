@@ -8,9 +8,29 @@
 #include "my_hallkey_func.h"
 #include "my_board.h"
 #include "my_adc.h"
+#include "my_debug.h"
 
 UINT8 hall_spi_tx[4] = {0};
 UINT8 hall_spi_rx[4] = {0};
+
+/* H6 self-check ("exams"): results are printed over USB by InfoLog,
+ * read them on the PC with tools/hid_log.py. Exam 1 = frequency calibration. */
+typedef struct
+{
+  uint8_t cal_ok;      /* 1 = both chips returned 0x7C..0x84 */
+  uint8_t cal_times;   /* number of calibration commands sent */
+  uint8_t cal_r;       /* last value from the right-key chip (rx[1]) */
+  uint8_t cal_l;       /* last value from the left-key chip (rx[3]) */
+} HallChk_ts;
+
+volatile HallChk_ts g_hall_chk;
+
+static void HallChk_Print(void)
+{
+  InfoLog("CAL ok=%u n=%u R=%02X L=%02X (expect 7C..84)",
+          (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
+          (unsigned)g_hall_chk.cal_r, (unsigned)g_hall_chk.cal_l);
+}
 
 UINT16 top_baseline[2] = {8000, 8000};
 uint16_t bottom_baseline[2] = {6800, 6800};
@@ -345,6 +365,15 @@ UINT32 LR_GetState(void)
   #else
 	hall_get_sample();
   #endif
+
+  {
+    static uint16_t prt = 0;
+    if(++prt >= 2000)                /* LR_GetState runs every 1 ms: print every ~2 s */
+    {
+      prt = 0;
+      HallChk_Print();
+    }
+  }
   
   #if PUSH_VIBRATING_HALL_VALUE_TO_GUI
   if(Ele_IsTureVibrating(ELE_POS_LEFT))
@@ -870,41 +899,38 @@ void HALL_Read_Instru_cnt(void)
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
 
-void Hall_osc_calibrate(void)
+/* Frequency calibration, following GTRY164 datasheet 9.1 Fig 11.
+ * Returns 1 when both chips answer 0x7C..0x84, 0 after 128 failed tries. */
+uint8_t Hall_osc_calibrate(void)
 {
-	//uint16_t i, j,times=0;
-	uint16_t i, times=0;
-//    uint8_t verify_start = 0;
+	uint8_t times;
 
-	for(i = 0; i < 2; i++)
+	g_hall_chk.cal_ok = 0;
+	for(times = 0; times < 128; times++)
 	{
-		hall_spi_tx[i * 2 + 1] = 0x55;
-	}
-	
-    while(times < 30)  //Calibrate times is 20
-    {
-    	HALL_Read_Instru_cnt();
-		
-        times++;
-		nsAPI_SSP_Delay1us(100);
-    }
-	
-//	for(i = 0; i < 2; i++)
-//	{
-//		if(hall_spi_rx[i * 2 + 1] > 0x84)
-//		{
-//			verify_start = 1;
-//		}
-//		else if(hall_spi_rx[i * 2 + 1] < 0x7C)
-//		{
-//			verify_start = 1;
-//		}
-//	}
+		/* Datasheet Fig 9: SDI must be 0 while the result is read back,
+		 * and SSP sends hall_spi_tx while it receives, so clear all 4 bytes. */
+		hall_spi_tx[0] = 0;
+		hall_spi_tx[1] = 0;
+		hall_spi_tx[2] = 0;
+		hall_spi_tx[3] = 0;
 
-//	if(verify_start == 0)
-//	{
-//		return;
-//	}
+		HALL_Read_Instru_cnt();                /* td10 128us pulse, td12 wait, 32 clocks */
+
+		g_hall_chk.cal_r = hall_spi_rx[1];     /* right-key chip, low 8 bits valid */
+		g_hall_chk.cal_l = hall_spi_rx[3];     /* left-key chip */
+		g_hall_chk.cal_times = times + 1;
+
+		if((hall_spi_rx[1] >= 0x7C) && (hall_spi_rx[1] <= 0x84) &&
+		   (hall_spi_rx[3] >= 0x7C) && (hall_spi_rx[3] <= 0x84))
+		{
+			g_hall_chk.cal_ok = 1;
+			CT16B1_DelayUs(20000);             /* Fig 11: delay 20 ms after success */
+			return 1;
+		}
+	}
+
+	return 0;
 }
 void Hall_read_register(void)
 {
@@ -953,7 +979,13 @@ void ana_hall2_phy_set_mode(unsigned char length)
 
 void HallSensor_INIT(void)
 {
+#if (6 == USE_HALL_SENSOR)
+	/* Exam 1 only. The register table is still the H5 one (H5 addresses),
+	 * so it must not be written to H6 yet. */
+	Hall_osc_calibrate();
+#else
 	Hall_osc_calibrate();
 
 	ana_hall2_phy_set_mode(2);
+#endif
 }

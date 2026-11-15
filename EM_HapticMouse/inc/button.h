@@ -13,7 +13,7 @@
 
 /***DrvGPIOOutput() is expected to take 1 microsecond. */
 #define  DELAY_OUT(x)         (x - 1)
-#define USE_HALL_SENSOR       5//GTRY12: 2, GTRY15: 5, GTRY16: 6.
+#define USE_HALL_SENSOR       6//GTRY12: 2, GTRY15: 5, GTRY16: 6.
 #if (2 == USE_HALL_SENSOR)
 #define  TD1_DELAY_US    							(DELAY_OUT(5))		//(5.5)+-5%
 #define  TD2_CONTIUNS_DELAY_US 	 			(DELAY_OUT(10)) 		//>5
@@ -193,7 +193,7 @@ void Hall_ReadReg(uint8_t reg, uint8_t *leftValue, uint8_t *rightValue);
 
 UINT32 LR_GetState(void);
 void hall_get_sample(void);
-void Hall_osc_calibrate(void);
+uint8_t Hall_osc_calibrate(void);
 void HallSensor_INIT(void);
 void Button_Init(void);
 
