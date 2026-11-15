@@ -1,0 +1,730 @@
+<title>H6 芯片判卷</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one reading column; each "exam" is a bench panel (logic-analyzer look) with a step player; manual references sit under every bench. */
+:root{
+  --bg:#f2f4f3; --panel:#ffffff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e6eae9;
+  --accent:#0d7a70; --accent-soft:#d7eeeb;
+  --sck:#b97400; --mosi:#1d68c9; --miso:#b42f68;
+  --left:#d06a14; --right:#7a4fd0; --tx:#1d68c9;
+  --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1; --hl:#fff1c2;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+    --accent:#3cc6b5; --accent-soft:#16312e;
+    --sck:#f2b33d; --mosi:#5ea4ff; --miso:#ff6fa6;
+    --left:#ff9a4a; --right:#b293ff; --tx:#5ea4ff;
+    --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; --hl:#3a3216;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e;
+  --sck:#f2b33d; --mosi:#5ea4ff; --miso:#ff6fa6;
+  --left:#ff9a4a; --right:#b293ff; --tx:#5ea4ff;
+  --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; --hl:#3a3216;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.75 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:820px;margin:0 auto;padding-block:28px 80px}
+h1{font-size:1.75rem;line-height:1.3;margin:0 0 6px;text-wrap:balance}
+h2{font-size:1.3rem;line-height:1.4;margin:0 0 4px;text-wrap:balance}
+h2 .no{font-family:var(--font-mono);color:var(--accent);margin-right:8px}
+h3{font-size:1.05rem;margin:22px 0 6px}
+p,li{margin:6px 0}
+.lede{color:var(--muted);margin:0 0 16px}
+code,.mono,pre,.code,.decode,svg .m{font-family:var(--font-mono);font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+section.ch{margin-top:44px;scroll-margin-top:12px}
+.why{color:var(--muted);margin:2px 0 12px}
+.bench{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block}
+svg text{font-family:var(--font-body)}
+.caption{min-height:4.6em;border-left:3px solid var(--accent);padding:6px 12px;background:var(--bg);border-radius:0 8px 8px 0}
+.caption .k{font-family:var(--font-mono);font-size:.8rem;color:var(--accent);display:block}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctrl button,.pick button,.copy{font:inherit;font-size:.9rem;padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.ctrl button:hover,.pick button:hover,.copy:hover{border-color:var(--accent)}
+.ctrl button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ctrl select{font:inherit;font-size:.9rem;padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.ctrl .cnt{font-family:var(--font-mono);font-size:.82rem;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
+.code{font-size:12.5px;line-height:1.6;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 0;overflow-x:auto;min-width:0}
+.code div{white-space:pre;padding:0 12px;}
+.code div.on{background:var(--hl)}
+.code .cm{color:var(--muted)}
+pre{font-size:12.5px;line-height:1.55;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;overflow-x:auto;margin:8px 0;white-space:pre}
+.decode{font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;white-space:pre-wrap;min-height:2.5em}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:var(--grid);font-weight:500}
+td.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.box{border-radius:10px;padding:10px 14px;margin:12px 0}
+.box b.t{display:block;margin-bottom:2px}
+.idea{background:var(--accent-soft)}
+.warn{background:var(--bad-soft)}
+.good{background:var(--ok-soft)}
+.manual{background:var(--grid);border-radius:10px;padding:10px 14px;margin-top:12px;font-size:.92rem}
+.manual .mt{display:block;font-weight:700;margin-bottom:4px}
+.manual .mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.manual .mg>div{min-width:0}
+.manual b.s{display:block;color:var(--accent);font-size:.85rem}
+.copyrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}
+nav.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+nav.chips a{font-size:.88rem;padding:3px 11px;border:1px solid var(--line);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--panel)}
+nav.chips a:hover{border-color:var(--accent);color:var(--accent)}
+.okc{color:var(--ok)} .badc{color:var(--bad)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<main>
+<h1>让 H6 芯片当裁判：不焊线验证时序</h1>
+<p class="lede">杰哥说时间应该是准的。这份讲义把"准"变成 5 道考题，交给 H6 芯片自己判卷：芯片答对了，就证明对应的那条命令时长它认得。结果通过 USB 打印到电脑上，不用焊线，也不用接调试器。</p>
+
+<div class="box idea"><b class="t">一句话原理（H6 手册 §7，PDF 第 8 页）</b>手册原文："recognizes the instruction by calculating the high-level time of SCK and performs the corresponding action"，意思是芯片靠计算 SCK 高电平持续了多久来识别命令，再执行对应的动作。所以反过来说：<b>只要芯片做出了正确的动作，就说明它量到的时长落在了正确的档位里。</b>我们不用自己去量时间，看芯片的反应就行。</div>
+
+<nav class="chips" aria-label="章节">
+  <a href="#c0">0 原理</a><a href="#c1">1 校准</a><a href="#c2">2 读寄存器</a><a href="#c3">3 写再读</a><a href="#c4">4 整张表</a><a href="#c5">5 读采样</a><a href="#c6">6 判卷表</a><a href="#c7">7 怎么做</a>
+</nav>
+
+<!-- 0 -->
+<section class="ch" id="c0">
+<h2><span class="no">0</span>芯片怎么"判卷"</h2>
+<p class="why">先用一个小实验建立直觉：点下面的按钮，选一个 SCK 高电平时长，看芯片会不会执行命令。芯片判断的依据，就是手册第 12 页那张时序表。</p>
+<div class="bench">
+  <div class="pick" id="pick0" role="group" aria-label="选择 SCK 高电平时长"></div>
+  <div class="scroll"><svg id="s0" viewBox="0 0 640 230" style="min-width:540px;width:100%"></svg></div>
+  <div class="caption" id="cap0"></div>
+</div>
+<div class="box warn"><b class="t">芯片判卷能证明什么，不能证明什么</b>
+<ul>
+<li><b>能证明</b>：脉冲时长落在芯片"认得"的范围里，现在这套代码在这块板子上能工作。</li>
+<li><b>不能证明</b>：离手册规定的 ±5% 边界还有多少余量。芯片实际容忍的范围可能比 ±5% 宽，手册没写。换一批芯片、温度变化之后还准不准，只有逻辑分析仪实测才能回答。</li>
+</ul>
+所以这套验证的定位是：<b>先确认"能用"，有条件的时候再用仪器确认"余量够"。</b></div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg">
+<div><b class="s">H6 手册 GTRY164 V1.9</b>§7 开头，<b>PDF 第 8 页</b>：靠 SCK 高电平时长识别命令，SCK 当时钟用时频率必须高于 1MHz。§7.8 时序表，<b>PDF 第 12 页</b>：td1 = 5us、td6 = 39us、td10 = 128us，都是 ±5%；等待时间 td2 &gt; 4us、td5 &gt; 3us、td12 &gt; 50us。</div>
+<div><b class="s">MCU 手册 UM10462</b>表 115 PIO1_15（<b>PDF 第 116 页</b>）：代码把 SCK 脚的 FUNC 改成 0，变成普通 GPIO 来"按住"，改成 3 还给 SSP1 打快拍子。动画讲解网页第 5 关演示过这个过程。</div>
+</div></div>
+</section>
+
+<!-- 1 -->
+<section class="ch" id="c1">
+<h2><span class="no">1</span>考题一：频率校准，考 128us 和"等 50us"</h2>
+<p class="why">上电后的第一条命令。MCU 发 128us 脉冲，等待超过 50us，然后打 32 拍把结果读回来。两颗芯片的读回值都在 0x7C–0x84 之间，才算答对。</p>
+<div class="bench">
+  <div class="code" id="code1"></div>
+  <div class="scroll" id="wv1"><svg id="w1" viewBox="0 0 640 150" style="width:100%"></svg></div>
+  <div class="legend"><span><i style="background:var(--left)"></i>左键芯片 H1 的数据</span><span><i style="background:var(--right)"></i>右键芯片 H2 的数据</span><span><i style="background:var(--tx)"></i>MCU 送进去的数据</span></div>
+  <div class="scroll"><svg id="s1" viewBox="0 0 660 200" style="min-width:600px;width:100%"></svg></div>
+  <div class="decode" id="dec1"></div>
+  <div class="caption" id="cap1"></div>
+  <div class="ctrl" id="ctl1"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg">
+<div><b class="s">H6 手册</b>§7.6 图 9，<b>PDF 第 10–11 页</b>：td10（128us）→ 等 td12（&gt;50us）→ 读 16 位，低 8 位有效。图中 SDI 全是 0（V1.7 改版专门改的），所以读回时 MCU 必须发全 0。§9.1 图 11，<b>PDF 第 19 页</b>：读回值 0x7C ≤ Data0 ≤ 0x84 算通过，最多试 128 次，通过后延时 20ms。</div>
+<div><b class="s">为什么答对能证明时间准</b>手册说这条命令用来"校准芯片内部振荡器"（PDF 第 11 页）。芯片要先认出这是 128us 档，才会执行校准、才会把结果放进格子。读回值不在范围内或者全是 0x00 / 0xFF，就说明芯片没认出来。<br><span class="note">读回值为什么正好在 0x80（=128）附近，手册没有解释。我推测是芯片用自己的时钟数出了这段脉冲的长度，但这只是推测。</span></div>
+</div></div>
+</section>
+
+<!-- 2 -->
+<section class="ch" id="c2">
+<h2><span class="no">2</span>考题二：读一个寄存器，考 39us</h2>
+<p class="why">只读、不写，最安全。读寄存器 0x0C：H6 刚上电时它的值是 <b>0xAA</b>（二进制 10101010，很有辨识度，不容易碰巧读对）。两颗芯片都读回 0xAA，就答对了。</p>
+<div class="bench">
+  <div class="code" id="code2"></div>
+  <div class="scroll" id="wv2"><svg id="w2" viewBox="0 0 640 150" style="width:100%"></svg></div>
+  <div class="scroll"><svg id="s2" viewBox="0 0 660 200" style="min-width:600px;width:100%"></svg></div>
+  <div class="decode" id="dec2"></div>
+  <div class="caption" id="cap2"></div>
+  <div class="ctrl" id="ctl2"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg">
+<div><b class="s">H6 手册</b>§7.4 图 7，<b>PDF 第 10 页</b>：先送 16 位（最高位 0 表示读，接着是地址，数据位随便填），再发 WR_REG 命令（td6 = 39us），然后读回 16 位，低 8 位就是寄存器的值。§8 寄存器表（PDF 第 13–17 页）：0x0C Test_Reg0 默认值 0xAA。</div>
+<div><b class="s">代码里要顺手修的</b><code>Hall_ReadReg()</code> 原来把"随便填的 0x55"写进了 <code>hall_spi_rx</code>，应该写进 <code>hall_spi_tx</code>。数据位本来就是随便填，所以这个错不影响结果，但要改正。</div>
+</div></div>
+</section>
+
+<!-- 3 -->
+<section class="ch" id="c3">
+<h2><span class="no">3</span>考题三：写一个寄存器再读回来，考 39us 和校验位</h2>
+<p class="why">把寄存器 0x30（默认值 0x20）写成 0x21，再读回来。读回 0x21 说明写入被芯片接受了。H6 写寄存器时校验位要把地址也算进去，这是和 H5 不一样的地方，算错了芯片会直接丢弃这次写入，而且不报错。</p>
+<div class="bench">
+  <div class="pick" id="opt3" role="group" aria-label="校验位算法"></div>
+  <div class="code" id="code3"></div>
+  <div class="scroll" id="wv3"><svg id="w3" viewBox="0 0 640 150" style="width:100%"></svg></div>
+  <div class="scroll"><svg id="s3" viewBox="0 0 660 200" style="min-width:600px;width:100%"></svg></div>
+  <div class="decode" id="dec3"></div>
+  <div class="caption" id="cap3"></div>
+  <div class="ctrl" id="ctl3"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg">
+<div><b class="s">H6 手册</b>§7.4 图 6，<b>PDF 第 9–10 页</b>：bit15 = 1（写），bit14 = CRCWR，bit13–8 = 地址，bit7–0 = 数据。公式 <code>CRCWR = A5^…^A0^D7^…^D0</code>；"if the value of CRCWR is incorrect, the instruction is invalid"，也就是校验位错了，这条命令无效。</div>
+<div><b class="s">为什么选 0x30</b>它是"芯片内基线"的参数，我们不打开这个功能，改了没有副作用，测完再写回 0x20。注意：0x30 的地址位里 1 的个数是偶数，地址的奇偶为 0，所以就算漏算了地址也碰巧能写成功。想真正证明地址算进去了，要换 0x31 再测一次（上面的切换按钮演示了这种情况）。</div>
+</div></div>
+</section>
+
+<!-- 4 -->
+<section class="ch" id="c4">
+<h2><span class="no">4</span>考题四：写整张初始化表，逐个读回核对</h2>
+<p class="why">考题三只证明了一个寄存器能写进去。这一题把 H6 的 15 项初始化表全部写进去，再一项一项读回来对比。最后一项把 0x33 写成 0x80，让芯片进入连续采样模式，为考题五做准备。</p>
+<div class="bench">
+  <div class="scroll"><svg id="s4" viewBox="0 0 660 250" style="min-width:600px;width:100%"></svg></div>
+  <div class="caption" id="cap4"></div>
+  <div class="ctrl" id="ctl4"></div>
+</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg">
+<div><b class="s">H6 手册 §8 寄存器表，PDF 第 13–17 页</b>标着 "write fix value" 的必须写固定值：0x0C=0x83、0x26=0x0A、0x27=0x05、0x28=0x04、0x2F=0x14、0x34=0x03。增益要四个寄存器一起改：0x09 的 bit5、0x0B、0x29、0x2A。<b>0x33 默认是单次采样</b>，bit7 写 1 才是连续采样，切换后要等 50us。</div>
+<div><b class="s">为什么 H5 的表不能用</b>H5 表里的地址在 H6 上全部撞车：0x0B 在 H5 是采样间隔，在 H6 是增益；0x10 在 H5 是省电阈值，在 H6 是采样间隔的高位……所以切到 H6 后，H5 的那张表一项都不能写。</div>
+</div></div>
+</section>
+
+<!-- 5 -->
+<section class="ch" id="c5">
+<h2><span class="no">5</span>考题五：读采样，考 5us 和"等 4us"</h2>
+<p class="why">这道题每 1ms 考一次，一直考下去。每次读回的 16 位里，最高 2 位是芯片按数据算出来的校验位。校验一直通过，而且数值不是全 0 或全 1，就说明芯片每次都认出了 5us 命令。</p>
+<div class="bench">
+  <div class="code" id="code5"></div>
+  <div class="scroll" id="wv5"><svg id="w5" viewBox="0 0 640 150" style="width:100%"></svg></div>
+  <div class="scroll"><svg id="s5" viewBox="0 0 660 200" style="min-width:600px;width:100%"></svg></div>
+  <div class="decode" id="dec5"></div>
+  <div class="caption" id="cap5"></div>
+  <div class="ctrl" id="ctl5"></div>
+</div>
+<div class="box warn"><b class="t">一个容易漏掉的坑：全 0 和全 1 也能"通过"校验</b>如果芯片根本没回应，MISO 线一直是低电平或高电平，读回来就是 0x0000 或 0xFFFF。按手册的公式算一下：0x0000 的校验位是 00，0xFFFF 的数据是 0x3FFF、校验位是 11，<b>两个都能通过校验</b>。所以代码里要把原始值等于 0 或 0x3FFF 的情况单独算作错误，否则会把"芯片没回应"误判成"一切正常"。</div>
+<div class="manual"><span class="mt">📖 翻开手册对照</span><div class="mg">
+<div><b class="s">H6 手册</b>§7.2 图 4，<b>PDF 第 8–9 页</b>：td1（5us）→ 等 td2（连续模式 &gt;4us）→ 读 16 位。<code>CRC0 = D0^D2^…^D12</code>，<code>CRC1 = D1^D3^…^D13</code>。第 9 页：读到 0xC000 或 0x3FFF 表示芯片状态异常。</div>
+<div><b class="s">代码里已有的校验</b><code>button.c</code> 里的 <code>bit_error[]</code> 表，加上 <code>my_misc.c</code> 里的 <code>ana_phy_bit_error_checker2()</code>，实现的就是这两个公式，H5 和 H6 完全一样，不用改。</div>
+</div></div>
+</section>
+
+<!-- 6 -->
+<section class="ch" id="c6">
+<h2><span class="no">6</span>判卷表：每道题证明了什么</h2>
+<div class="bench">
+<div class="scroll"><table>
+<tr><th>考题</th><th>正确答案</th><th>答对证明</th><th>答错时先查</th></tr>
+<tr><td>1 校准</td><td class="n">CAL ok=1，R、L 都在 7C–84</td><td>128us 脉冲被认出；校准后等待 &gt;50us 够了；三根线和芯片供电都通</td><td>R、L 是 00 或 FF：芯片没回应，查 128us 时长、供电（TP8 应为 3.3V）、MISO。值在变但进不了范围：128us 偏差太大</td></tr>
+<tr><td>2 读 0x0C</td><td class="n">RD0C R=AA L=AA</td><td>39us 脉冲被认出；读寄存器的帧格式对</td><td>FF / 00：39us 没被认出，查 TD6 是否生效（<code>USE_HALL_SENSOR</code> 是不是 6）</td></tr>
+<tr><td>3 写读 0x30</td><td class="n">WR30 R=21 L=21</td><td>写帧格式和 H6 校验位都对</td><td>读回 20：写入被丢弃，查 <code>Hall_WriteReg()</code> 的校验位。只有一边是 21：查两颗芯片之间的连线</td></tr>
+<tr><td>4 整张表</td><td class="n">TBL ok=1</td><td>15 个寄存器全部写入成功</td><td>bad= 后面是第一个不一致的地址，对照手册查这个寄存器（可能有保留位读回来不一样）</td></tr>
+<tr><td>5 读采样</td><td class="n">SMP err 不再增长，R、L 在合理范围</td><td>5us 脉冲被认出；读采样后等待 &gt;4us 够了</td><td>err 一直涨：查 5us 和等待时间。R、L 一直不变：查 0x33 是否写成了 0x80</td></tr>
+</table></div>
+<p>考题按顺序依赖：前一题不对，后一题的结果就没有意义。<b>从上往下看，找到第一道答错的题，只查那一题。</b></p>
+</div>
+</section>
+
+<!-- 7 -->
+<section class="ch" id="c7">
+<h2><span class="no">7</span>怎么做</h2>
+
+<h3>第一步：结果怎么从芯片传到你的电脑上</h3>
+<div class="bench">
+  <div class="scroll"><svg id="s7" viewBox="0 0 660 130" style="min-width:600px;width:100%"></svg></div>
+  <p style="margin:0">MCU 把每道题的结果存进全局变量 <code>g_hall_chk</code>，每隔 2 秒用 <code>InfoLog()</code> 打印一遍。<code>InfoLog</code> 的输出走 USB（<code>inc/my_debug.h</code>，<code>MYDEBUG_ENABLE = 1</code>），电脑上用 <code>main</code> 分支里现成的 <code>tools/hid_log.py</code> 读出来。全程只用一根 USB 线，不用焊线，不用调试器。</p>
+</div>
+
+<h3>第二步：操作顺序</h3>
+<ol>
+<li><b>烧 bootloader</b>：插 USB 弹出 U 盘 → 删掉 <code>firmware.bin</code> → 拷入 <code>BootLoader_2019.2.22.bin</code> → 拔插 USB。（之前核对过：这个版本检查标志的地址是 0x3F00，和我们的程序一致）</li>
+<li><b>让 Codex 改代码</b>：把下面"给 Codex 的指令"整段复制给它。</li>
+<li><b>烧应用程序</b>：用同事给的升级工具，烧 Codex 编译出来的 <code>Sample.hex</code>。</li>
+<li><b>看结果</b>：电脑上安装一次 <code>pip install hidapi</code>，然后运行 <code>python tools/hid_log.py</code>。要先关掉 MouseTest.exe，它会占用同一个 USB 接口。</li>
+<li><b>把打印出来的 5 行发给我</b>，我们一起对照上面的判卷表看。</li>
+</ol>
+
+<p>正常情况下大概会看到这样的输出（<b>下面是示例，不是实测数据</b>，SMP 的数值每块板子都不一样）：</p>
+<pre>[I]HallChk_Print: CAL ok=1 n=1 R=80 L=7F
+[I]HallChk_Print: RD0C R=AA L=AA (expect AA)
+[I]HallChk_Print: WR30 R=21 L=21 (expect 21)
+[I]HallChk_Print: TBL ok=1 bad=00 R=00 L=00
+[I]HallChk_Print: SMP ok=3998 err=2 R=8650 L=7210</pre>
+<p class="note">刚上电的头几次采样，<code>err</code> 有几次属于正常（切换采样模式的那一下）。之后 <code>err</code> 不再增长就算通过。</p>
+
+<h3>第三步：给 Codex 的指令</h3>
+<p>这些改动正好就是移植计划里的第 2 到 4 步。考试通过后这些代码直接保留，不用再改一遍。</p>
+<div class="copyrow"><span class="note">整段复制，发给 Codex</span><button class="copy" type="button" id="copybtn">复制指令</button></div>
+<pre id="codex">在仓库 ChargePocMouse 的 H6 分支工作，先 git pull origin H6。
+目标：切换到 H6，并加入"芯片判卷"自检代码，结果用 InfoLog 打印。
+约束：只改 EM_HapticMouse/inc/button.h 和 EM_HapticMouse/app/button.c；两个文件都保持纯 ASCII（不要写中文）。
+另外把 main 分支的 tools/hid_log.py 带到 H6：git checkout origin/main -- tools/hid_log.py
+
+=== button.h ===
+1) 删除第 12 行  #define REG_CNT 25
+2) 把  #define USE_HALL_SENSOR 5  改成 6，并在这一行的下面紧接着加：
+#if (6 == USE_HALL_SENSOR)
+#define REG_CNT                 15
+#else
+#define REG_CNT                 25
+#endif
+（必须放在 USE_HALL_SENSOR 定义之后，否则 #if 判断不到）
+3) 函数声明区：把  void Hall_osc_calibrate(void);  改成  uint8_t Hall_osc_calibrate(void);
+   并在 Hall_ReadReg 声明旁边加一行：  void Hall_WriteReg(uint8_t reg, uint8_t data);
+
+=== button.c ===
+4) 文件开头的 #include 区加：  #include "my_debug.h"
+5) 紧跟在  UINT8 hall_spi_rx[4] = {0};  之后加：
+typedef struct
+{
+  uint8_t  cal_ok, cal_times, cal_r, cal_l;
+  uint8_t  rd0c_r, rd0c_l;
+  uint8_t  wr30_r, wr30_l;
+  uint8_t  tbl_ok, tbl_bad_addr, tbl_bad_r, tbl_bad_l;
+  uint32_t smp_ok, smp_err;
+  uint16_t raw_r, raw_l;
+} HallChk_ts;
+
+volatile HallChk_ts g_hall_chk;
+
+static void HallChk_Print(void)
+{
+  InfoLog("CAL ok=%u n=%u R=%02X L=%02X", (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
+          (unsigned)g_hall_chk.cal_r, (unsigned)g_hall_chk.cal_l);
+  InfoLog("RD0C R=%02X L=%02X (expect AA)", (unsigned)g_hall_chk.rd0c_r, (unsigned)g_hall_chk.rd0c_l);
+  InfoLog("WR30 R=%02X L=%02X (expect 21)", (unsigned)g_hall_chk.wr30_r, (unsigned)g_hall_chk.wr30_l);
+  InfoLog("TBL ok=%u bad=%02X R=%02X L=%02X", (unsigned)g_hall_chk.tbl_ok, (unsigned)g_hall_chk.tbl_bad_addr,
+          (unsigned)g_hall_chk.tbl_bad_r, (unsigned)g_hall_chk.tbl_bad_l);
+  InfoLog("SMP ok=%lu err=%lu R=%u L=%u", (unsigned long)g_hall_chk.smp_ok, (unsigned long)g_hall_chk.smp_err,
+          (unsigned)g_hall_chk.raw_r, (unsigned)g_hall_chk.raw_l);
+}
+
+6) sensor_reg_init_array：在原数组定义外面套  #if (6 == USE_HALL_SENSOR) ... #else（原数组原样保留）#endif
+   H6 分支的数组：
+const unsigned char sensor_reg_init_array[REG_CNT][2] = {
+  {0x0C, 0x83},  /* fixed value */
+  {0x26, 0x0A},  /* fixed value */
+  {0x27, 0x05},  /* fixed value */
+  {0x28, 0x04},  /* fixed value */
+  {0x2F, 0x14},  /* fixed value */
+  {0x34, 0x03},  /* fixed value */
+  {0x09, 0x20},  /* bit5=1 for LNA 24x, LED current 0 */
+  {0x0B, 0x85},  /* LNA 24x, PGA 19.2x (typical) */
+  {0x29, 0x60},  /* paired with LNA 24x */
+  {0x2A, 0x28},  /* paired with LNA 24x */
+  {0x0F, 0x1F},  /* sample interval low: 31 x 4us = 124us */
+  {0x10, 0x20},  /* [7:4] fixed 0x2, interval high = 0 */
+  {0x32, 0x41},  /* default */
+  {0x35, 0x27},  /* default, SDO 12mA */
+  {0x33, 0x80},  /* last: continuous conversion, chip baseline off */
+};
+
+7) LR_GetState() 里，紧跟在  hall_get_sample();  后面那个  #endif  之后加：
+  {
+    static uint16_t prt = 0;
+    uint8_t k;
+    for(k = 0; k < 2; k++)                      /* k=0 right, k=1 left */
+    {
+      uint8_t  hi = hall_spi_rx[2 * k];
+      uint8_t  lo = hall_spi_rx[2 * k + 1];
+      uint16_t v  = ((uint16_t)(hi & 0x3F) << 8) | lo;
+      if(((hi & 0xC0) == (bit_error[hi & 0x3F] ^ bit_error[lo])) && (v != 0) && (v != 0x3FFF))
+      {
+        g_hall_chk.smp_ok++;
+        if(k == 0) { g_hall_chk.raw_r = v; } else { g_hall_chk.raw_l = v; }
+      }
+      else
+      {
+        g_hall_chk.smp_err++;
+      }
+    }
+    if(++prt >= 2000) { prt = 0; HallChk_Print(); }
+  }
+
+8) 整个替换 Hall_osc_calibrate()：
+uint8_t Hall_osc_calibrate(void)
+{
+  uint8_t times;
+
+  g_hall_chk.cal_ok = 0;
+  for(times = 0; times < 128; times++)          /* datasheet Fig 11: up to 128 tries */
+  {
+    hall_spi_tx[0] = 0;                         /* SDI must be 0 during read back (Fig 9) */
+    hall_spi_tx[1] = 0;
+    hall_spi_tx[2] = 0;
+    hall_spi_tx[3] = 0;
+    HALL_Read_Instru_cnt();
+    g_hall_chk.cal_r = hall_spi_rx[1];
+    g_hall_chk.cal_l = hall_spi_rx[3];
+    g_hall_chk.cal_times = times + 1;
+    if((hall_spi_rx[1] >= 0x7C) && (hall_spi_rx[1] <= 0x84) &&
+       (hall_spi_rx[3] >= 0x7C) && (hall_spi_rx[3] <= 0x84))
+    {
+      g_hall_chk.cal_ok = 1;
+      CT16B1_DelayUs(20000);                    /* Fig 11: wait 20ms after success */
+      return 1;
+    }
+  }
+  return 0;
+}
+
+9) Hall_ReadReg()：把两处  hall_spi_rx[1] = 0x55;  hall_spi_rx[3] = 0x55;  改成  hall_spi_tx[1] = 0x55;  hall_spi_tx[3] = 0x55;
+
+10) 在 Hall_write_register() 之后新增：
+void Hall_WriteReg(uint8_t reg, uint8_t data)
+{
+  uint8_t head;
+#if (6 == USE_HALL_SENSOR)
+  /* H6: CRCWR covers 6 address bits and 8 data bits (datasheet 7.4) */
+  head = (reg & 0x3F) | 0x80 | (bit_crc_write_reg[data] ^ bit_crc_write_reg[reg & 0x3F]);
+#else
+  head = reg | 0x80 | bit_crc_write_reg[data];
+#endif
+  hall_spi_tx[0] = head;
+  hall_spi_tx[1] = data;
+  hall_spi_tx[2] = head;
+  hall_spi_tx[3] = data;
+  Hall_write_register();
+}
+
+11) 整个替换 ana_hall2_phy_set_mode()：
+void ana_hall2_phy_set_mode(unsigned char length)
+{
+  unsigned char i;
+  (void)length;
+  for(i = 0; i < REG_CNT; i++)
+  {
+    Hall_WriteReg(sensor_reg_init_array[i][0], sensor_reg_init_array[i][1]);
+  }
+}
+
+12) 整个替换 HallSensor_INIT()：
+void HallSensor_INIT(void)
+{
+#if (6 == USE_HALL_SENSOR)
+  uint8_t i, l, r;
+
+  if(Hall_osc_calibrate() == 0)                 /* exam 1 */
+  {
+    return;
+  }
+
+  Hall_ReadReg(0x0C, &l, &r);                   /* exam 2: H6 reset value of 0x0C is 0xAA */
+  g_hall_chk.rd0c_r = r;
+  g_hall_chk.rd0c_l = l;
+
+  Hall_WriteReg(0x30, 0x21);                    /* exam 3: 0x30 default is 0x20 */
+  Hall_ReadReg(0x30, &l, &r);
+  g_hall_chk.wr30_r = r;
+  g_hall_chk.wr30_l = l;
+  Hall_WriteReg(0x30, 0x20);                    /* restore default */
+
+  ana_hall2_phy_set_mode(2);                    /* exam 4 */
+  g_hall_chk.tbl_ok = 1;
+  for(i = 0; i < REG_CNT; i++)
+  {
+    Hall_ReadReg(sensor_reg_init_array[i][0], &l, &r);
+    if((l != sensor_reg_init_array[i][1]) || (r != sensor_reg_init_array[i][1]))
+    {
+      g_hall_chk.tbl_ok = 0;
+      g_hall_chk.tbl_bad_addr = sensor_reg_init_array[i][0];
+      g_hall_chk.tbl_bad_r = r;
+      g_hall_chk.tbl_bad_l = l;
+      break;
+    }
+  }
+  CT16B1_DelayUs(100);                          /* 0x33 note: wait 50us after mode change */
+#else
+  Hall_osc_calibrate();
+  ana_hall2_phy_set_mode(2);
+#endif
+}
+
+=== 验证 ===
+- Keil 命令行编译，0 Error；Warning 数量和改之前对比，有新增就列出来。
+- grep -nP "[^\x00-\x7F]" 检查 button.h 和 button.c，必须没有输出。
+- git diff --stat 只应该有 button.h、button.c、tools/hid_log.py 三个文件。
+- 提交信息：H6: switch to GTRY164 and add chip self-check (exams 1-5)，推送到 origin H6。
+- 向我汇报：git diff、编译结果、Warning 对比、提交号。</pre>
+</section>
+</main>
+
+<script>
+(function(){
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(tag, attrs, parent, text){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; if (parent) parent.appendChild(e); return e; }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+const hex = (v, n) => "0x" + v.toString(16).toUpperCase().padStart(n, "0");
+const bin = (v, n) => v.toString(2).padStart(n, "0");
+const SRC = { L: "var(--left)", R: "var(--right)", T: "var(--tx)", N: "var(--muted)" };
+function parity(v){ let p = 0; while (v){ p ^= v & 1; v >>= 1; } return p; }
+function sampleFrame(v){ let c0 = 0, c1 = 0; for (let i = 0; i < 14; i++) if ((v >> i) & 1){ if (i % 2 === 0) c0 ^= 1; else c1 ^= 1; } return (c1 << 15) | (c0 << 14) | v; }
+
+function Player(ctlId, capId, frames, render){
+  const ctl = document.getElementById(ctlId), cap = document.getElementById(capId);
+  ctl.innerHTML = "";
+  const mk = (txt, cls) => { const b = document.createElement("button"); b.type = "button"; b.textContent = txt; if (cls) b.className = cls; ctl.appendChild(b); return b; };
+  const bPrev = mk("◀ 上一步"), bNext = mk("下一步 ▶", "primary"), bPlay = mk("自动播放"), bReset = mk("从头开始");
+  const sel = document.createElement("select"); sel.setAttribute("aria-label", "播放速度");
+  [["慢", 2400], ["中", 1400], ["快", 650]].forEach(([t, v], i) => { const o = document.createElement("option"); o.textContent = t; o.value = v; if (i === 0) o.selected = true; sel.appendChild(o); });
+  ctl.appendChild(sel);
+  const cnt = document.createElement("span"); cnt.className = "cnt"; ctl.appendChild(cnt);
+  let i = 0, timer = null;
+  function show(){ const f = frames[i]; render(f, i); cap.innerHTML = (f.tag ? "<span class='k'>" + f.tag + "</span>" : "") + f.cap; cnt.textContent = (i + 1) + " / " + frames.length; bPrev.disabled = i === 0; bNext.disabled = i === frames.length - 1; }
+  function stop(){ if (timer){ clearTimeout(timer); timer = null; } bPlay.textContent = "自动播放"; }
+  function tick(){ if (i >= frames.length - 1){ stop(); return; } i++; show(); timer = setTimeout(tick, frames[i].fast ? Math.max(250, sel.value / 3) : +sel.value); }
+  bPrev.onclick = () => { stop(); if (i > 0){ i--; show(); } };
+  bNext.onclick = () => { stop(); if (i < frames.length - 1){ i++; show(); } };
+  bReset.onclick = () => { stop(); i = 0; show(); };
+  bPlay.onclick = () => { if (timer){ stop(); return; } if (i >= frames.length - 1) i = 0; bPlay.textContent = "暂停"; show(); timer = setTimeout(tick, +sel.value); };
+  show();
+  return { stop };
+}
+function channel(svg, y, h, pts, xEnd, color){
+  let d = "", pv = null;
+  pts.forEach(p => { const yy = p.v ? y : y + h; if (pv === null) d += "M" + p.x + "," + yy; else d += " L" + p.x + "," + (pv ? y : y + h) + " L" + p.x + "," + yy; pv = p.v; });
+  if (pv !== null) d += " L" + xEnd + "," + (pv ? y : y + h);
+  el("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+}
+function codePanel(id, lines){
+  const box = document.getElementById(id); box.innerHTML = ""; const rows = {};
+  lines.forEach(([k, t]) => { const d = document.createElement("div"); const ci = t.indexOf("/*");
+    if (ci >= 0){ d.appendChild(document.createTextNode(t.slice(0, ci))); const c = document.createElement("span"); c.className = "cm"; c.textContent = t.slice(ci); d.appendChild(c); } else d.textContent = t;
+    box.appendChild(d); if (k) rows[k] = d; });
+  return list => { Object.values(rows).forEach(r => r.classList.remove("on")); (list || []).forEach(k => rows[k] && rows[k].classList.add("on")); };
+}
+function loadChain(h1, h2, s1, s2){ const c = []; for (let k = 0; k < 16; k++) c.push({ b: (h1 >> k) & 1, s: s1 }); for (let k = 0; k < 16; k++) c.push({ b: (h2 >> k) & 1, s: s2 }); return c; }
+function chainVal(c, off){ let v = 0; for (let k = 0; k < 16; k++) v |= c[off + k].b << k; return v; }
+function txBits(tx){ const o = []; tx.forEach(b => { for (let k = 7; k >= 0; k--) o.push((b >> k) & 1); }); return o; }
+function drawChain(svg, c, rx, regs){
+  clear(svg);
+  const cs = 16, y = 44, xH1 = 92, xH2 = 92 + 16 * cs + 30;
+  const defs = el("defs", {}, svg); const mk = el("marker", { id: svg.id + "a", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto" }, defs); el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--muted)" }, mk);
+  el("rect", { x: 6, y: y - 34, width: 62, height: 128, rx: 8, fill: "var(--bg)", stroke: "var(--line)" }, svg);
+  el("text", { x: 37, y: y - 14, "text-anchor": "middle", fill: "var(--fg)", "font-size": 13, "font-weight": 700 }, svg, "MCU");
+  el("text", { x: 37, y: y + 13, "text-anchor": "middle", fill: "var(--mosi)", "font-size": 10, class: "m" }, svg, "MOSI→");
+  el("text", { x: 37, y: y + 78, "text-anchor": "middle", fill: "var(--miso)", "font-size": 10, class: "m" }, svg, "←MISO");
+  [[xH1, "H1 左键芯片", 0, 0], [xH2, "H2 右键芯片", 16, 1]].forEach(([x, name, off, ri]) => {
+    el("rect", { x: x - 6, y: y - 30, width: 16 * cs + 10, height: 62, rx: 8, fill: "none", stroke: "var(--line)" }, svg);
+    el("text", { x, y: y - 14, fill: "var(--fg)", "font-size": 12 }, svg, name);
+    el("text", { x: x + 16 * cs - 2, y: y - 14, "text-anchor": "end", fill: "var(--muted)", "font-size": 11, class: "m" }, svg, "格子 " + hex(chainVal(c, off), 4));
+    for (let k = 0; k < 16; k++){ const e = c[off + k];
+      el("rect", { x: x + k * cs, y: y - 4, width: cs - 2, height: cs + 2, rx: 2, fill: SRC[e.s], "fill-opacity": 0.88 }, svg);
+      el("text", { x: x + k * cs + 7, y: y + 10, "text-anchor": "middle", fill: "var(--panel)", "font-size": 11, "font-weight": 700, class: "m" }, svg, e.b); }
+    el("text", { x, y: y + 28, fill: "var(--muted)", "font-size": 9, class: "m" }, svg, "bit0");
+    el("text", { x: x + 16 * cs - 2, y: y + 28, fill: "var(--muted)", "font-size": 9, "text-anchor": "end", class: "m" }, svg, "bit15");
+    if (regs) el("text", { x, y: y + 46, fill: regs[ri].hot ? "var(--accent)" : "var(--muted)", "font-size": 11, "font-weight": regs[ri].hot ? 700 : 400, class: "m" }, svg, regs[ri].t);
+  });
+  const a = { stroke: "var(--muted)", "stroke-width": 1.5, fill: "none", "marker-end": "url(#" + svg.id + "a)" };
+  el("path", Object.assign({ d: "M68," + (y + 5) + " L" + (xH1 - 8) + "," + (y + 5) }, a), svg);
+  el("path", Object.assign({ d: "M" + (xH1 + 16 * cs + 4) + "," + (y + 5) + " L" + (xH2 - 8) + "," + (y + 5) }, a), svg);
+  el("path", Object.assign({ d: "M" + (xH2 + 16 * cs + 4) + "," + (y + 5) + " L" + (xH2 + 16 * cs + 18) + "," + (y + 5) + " L" + (xH2 + 16 * cs + 18) + "," + (y + 70) + " L68," + (y + 70) }, a), svg);
+  el("text", { x: 6, y: 168, fill: "var(--fg)", "font-size": 12 }, svg, "MCU 收到：");
+  for (let b = 0; b < 4; b++){ const x = 92 + b * 140, got = Math.max(0, Math.min(8, rx.length - b * 8)); let s = ""; for (let k = 0; k < 8; k++) s += k < got ? rx[b * 8 + k] : "·";
+    el("rect", { x, y: 154, width: 130, height: 22, rx: 4, fill: "var(--bg)", stroke: "var(--line)" }, svg);
+    el("text", { x: x + 6, y: 169, fill: b < 2 ? "var(--right)" : "var(--left)", "font-size": 10, class: "m" }, svg, "rx[" + b + "] " + s + (got === 8 ? " " + hex(parseInt(s, 2), 2) : "")); }
+  el("text", { x: 92, y: 192, fill: "var(--right)", "font-size": 10 }, svg, "rx[0..1] 来自右键芯片");
+  el("text", { x: 372, y: 192, fill: "var(--left)", "font-size": 10 }, svg, "rx[2..3] 来自左键芯片");
+}
+
+/* generic exam builder: steps are clk (per byte), pulse, wait, load, note */
+function buildExam(spec){
+  let x = 30; const segs = []; const frames = [];
+  let c = spec.init.slice ? spec.init.map(e => ({ ...e })) : spec.init; let rx = []; let regs = spec.regs ? spec.regs.map(r => ({ ...r })) : null;
+  const snap = o => frames.push(Object.assign({ c: c.map(e => ({ ...e })), rx: rx.slice(), regs: regs ? regs.map(r => ({ ...r })) : null }, o));
+  spec.steps.forEach(st => {
+    if (st.k === "note") snap({ line: st.line || [], x, tag: st.tag, cap: st.cap, dec: st.dec });
+    if (st.k === "pulse"){
+      const w = st.w; const s = { type: "pulse", x0: x, x1: x + w, lbl: st.lbl, brk: st.brk }; segs.push(s);
+      snap({ line: st.line, x: x + 4, tag: st.tag + " · SCK 拉高", cap: st.capUp });
+      x += w; if (st.onEnd) st.onEnd({ setC: v => { c = v; }, setRegs: v => { regs = v; } });
+      snap({ line: st.line, x, tag: st.tag + " · 拉低", cap: st.capDown, dec: st.dec });
+    }
+    if (st.k === "wait"){ const s = { type: "wait", x0: x, x1: x + st.w, lbl: st.lbl, brk: st.brk }; segs.push(s); x += st.w; snap({ line: st.line, x, tag: st.tag, cap: st.cap }); }
+    if (st.k === "clk"){
+      const bits = txBits(st.tx); const s = { type: "clk", x0: x, bits, out: [] }; segs.push(s); rx = [];
+      for (let byte = 0; byte < 4; byte++){
+        for (let k = 0; k < 8; k++){ const j = byte * 8 + k; const out = c[31].b; s.out.push(out); for (let i = 31; i > 0; i--) c[i] = c[i - 1]; c[0] = { b: bits[j], s: "T" }; rx.push(out); }
+        const xe = s.x0 + (byte + 1) * 70;
+        snap({ line: st.line, x: xe, tag: st.tag + " · 第 " + (byte * 8 + 8) + " / 32 拍", cap: byte === 0 ? st.cap : byte === 3 ? (st.capEnd || "32 拍打完。") : "第 " + (byte + 1) + " 个字节收发完成。", fast: byte === 1 || byte === 2 });
+      }
+      s.x1 = s.x0 + 280; x = s.x1;
+    }
+  });
+  return { frames, segs, xEnd: x + 20 };
+}
+function drawWave(svg, scroller, model, xProg){
+  clear(svg);
+  const W = Math.max(640, model.xEnd + 10); svg.setAttribute("viewBox", "0 0 " + W + " 150"); svg.style.width = W + "px"; svg.style.maxWidth = "none";
+  const sck = [{ x: 20, v: 0 }], mosi = [{ x: 20, v: 0 }], miso = [{ x: 20, v: 0 }];
+  model.segs.forEach(s => {
+    if (s.type === "pulse"){ sck.push({ x: s.x0, v: 1 }); sck.push({ x: s.x1, v: 0 }); }
+    if (s.type === "clk") for (let j = 0; j < 32; j++){ const xk = s.x0 + Math.floor(j / 8) * 70 + (j % 8) * 8 + 3; sck.push({ x: xk, v: 1 }); sck.push({ x: xk + 4, v: 0 }); mosi.push({ x: xk, v: s.bits[j] }); miso.push({ x: xk, v: s.out[j] }); }
+    if (s.type === "clk"){ mosi.push({ x: s.x1, v: 0 }); miso.push({ x: s.x1, v: 0 }); }
+  });
+  model.segs.forEach(s => {
+    if (s.type !== "clk"){ el("rect", { x: s.x0, y: 6, width: s.x1 - s.x0, height: 128, fill: s.type === "pulse" ? "var(--accent-soft)" : "var(--grid)", opacity: 0.75 }, svg);
+      el("text", { x: (s.x0 + s.x1) / 2, y: 146, "text-anchor": "middle", fill: s.type === "pulse" ? "var(--accent)" : "var(--muted)", "font-size": 10, class: "m" }, svg, s.lbl);
+      if (s.brk) el("text", { x: (s.x0 + s.x1) / 2, y: 60, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 }, svg, "≈ 压缩 ≈"); }
+    else el("text", { x: (s.x0 + s.x1) / 2, y: 146, "text-anchor": "middle", fill: "var(--muted)", "font-size": 10 }, svg, "32 拍（放大显示）");
+  });
+  [["SCK", "var(--sck)", 14], ["MOSI", "var(--mosi)", 56], ["MISO", "var(--miso)", 98]].forEach(([n, col, y]) => el("text", { x: 0, y: y + 16, fill: col, "font-size": 10, class: "m" }, svg, n));
+  const defs = el("defs", {}, svg); const cp = el("clipPath", { id: svg.id + "c" }, defs); el("rect", { x: 0, y: 0, width: Math.max(xProg, 21), height: 150 }, cp);
+  const g = el("g", { "clip-path": "url(#" + svg.id + "c)" }, svg);
+  channel(g, 14, 24, sck, model.xEnd, "var(--sck)"); channel(g, 56, 24, mosi, model.xEnd, "var(--mosi)"); channel(g, 98, 24, miso, model.xEnd, "var(--miso)");
+  el("line", { x1: xProg, y1: 4, x2: xProg, y2: 136, stroke: "var(--accent)", "stroke-width": 1.5, "stroke-dasharray": "3 3" }, svg);
+  if (scroller){ const target = xProg - scroller.clientWidth * 0.6; if (Math.abs(scroller.scrollLeft - target) > 40) scroller.scrollLeft = Math.max(0, target); }
+}
+function runExam(n, spec, codeLines){
+  const hl = codePanel("code" + n, codeLines); const model = buildExam(spec);
+  const w = document.getElementById("w" + n), s = document.getElementById("s" + n), dec = document.getElementById("dec" + n), sc = document.getElementById("wv" + n);
+  return Player("ctl" + n, "cap" + n, model.frames, f => { hl(f.line); drawWave(w, sc, model, f.x); drawChain(s, f.c, f.rx.map(String), f.regs); dec.textContent = f.dec || "（这一步没有需要计算的内容）"; });
+}
+const N0 = loadChain(0, 0, "N", "N");
+
+/* ===== 0: stopwatch ===== */
+(function(){
+  const svg = document.getElementById("s0"), cap = document.getElementById("cap0"), pick = document.getElementById("pick0");
+  const zones = [
+    { lo: 4.75, hi: 5.25, name: "HAL_CONVERT 读采样", t: "td1" }, { lo: 11.4, hi: 12.6, name: "中断模式", t: "td3" },
+    { lo: 17.1, hi: 18.9, name: "写 PWM", t: "td4" }, { lo: 26.6, hi: 29.4, name: "休眠", t: "td7" },
+    { lo: 37.05, hi: 40.95, name: "WR_REG 读写寄存器", t: "td6" }, { lo: 121.6, hi: 134.4, name: "频率校准", t: "td10" }];
+  const X = us => 60 + (Math.log10(us) - Math.log10(0.1)) / (Math.log10(300) - Math.log10(0.1)) * 560;
+  let raf = null;
+  function draw(us, done){
+    clear(svg);
+    el("text", { x: 14, y: 20, fill: "var(--fg)", "font-size": 13 }, svg, "H6 芯片里的秒表：SCK 高电平保持了多久？（对数刻度）");
+    el("line", { x1: 60, y1: 120, x2: 620, y2: 120, stroke: "var(--line)", "stroke-width": 2 }, svg);
+    [0.1, 1, 10, 100].forEach(t => { el("line", { x1: X(t), y1: 114, x2: X(t), y2: 126, stroke: "var(--muted)" }, svg); el("text", { x: X(t), y: 142, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11, class: "m" }, svg, t + "us"); });
+    el("rect", { x: X(0.1), y: 86, width: X(0.5) - X(0.1), height: 24, fill: "var(--grid)" }, svg);
+    el("text", { x: X(0.1) + 4, y: 102, fill: "var(--muted)", "font-size": 10 }, svg, "普通时钟");
+    zones.forEach((z, i) => { const hit = done && us >= z.lo && us <= z.hi;
+      el("rect", { x: X(z.lo), y: 86, width: Math.max(4, X(z.hi) - X(z.lo)), height: 24, fill: hit ? "var(--accent)" : "var(--accent-soft)", stroke: "var(--accent)" }, svg);
+      el("text", { x: X(z.lo) + Math.max(4, X(z.hi) - X(z.lo)) / 2, y: 80, "text-anchor": "middle", fill: hit ? "var(--accent)" : "var(--muted)", "font-size": 10, "font-weight": hit ? 700 : 400, class: "m" }, svg, z.t); });
+    const xu = X(Math.max(us, 0.1));
+    el("line", { x1: xu, y1: 58, x2: xu, y2: 130, stroke: "var(--sck)", "stroke-width": 3 }, svg);
+    el("text", { x: xu, y: 52, "text-anchor": "middle", fill: "var(--sck)", "font-size": 14, "font-weight": 700, class: "m" }, svg, (us < 1 ? us.toFixed(2) : us.toFixed(1)) + "us");
+    el("text", { x: 14, y: 212, fill: "var(--sck)", "font-size": 12, class: "m" }, svg, "SCK");
+    const pw = 150 * Math.min(1, Math.log10(us + 1) / Math.log10(130)) + 4;
+    el("path", { d: "M50,222 L110,222 L110,196 L" + (110 + pw) + ",196" + (done ? " L" + (110 + pw) + ",222 L620,222" : ""), fill: "none", stroke: "var(--sck)", "stroke-width": 2 }, svg);
+    if (done){ const z = zones.find(z => us >= z.lo && us <= z.hi);
+      el("rect", { x: 420, y: 186, width: 200, height: 34, rx: 8, fill: z ? "var(--ok-soft)" : "var(--bad-soft)" }, svg);
+      el("text", { x: 520, y: 208, "text-anchor": "middle", fill: z ? "var(--ok)" : "var(--bad)", "font-size": 13, "font-weight": 700 }, svg, z ? "芯片执行：" + z.name.split(" ")[0] : (us < 1 ? "当成一拍时钟" : "不认识，不执行")); }
+  }
+  function run(us){
+    if (raf) cancelAnimationFrame(raf);
+    [...pick.children].forEach(b => b.setAttribute("aria-pressed", b.dataset.us == us ? "true" : "false"));
+    const dur = reduce ? 0 : 1600, t0 = performance.now();
+    cap.innerHTML = "<span class='k'>SCK 拉高中</span>芯片的秒表在走……";
+    function step(now){ const p = dur ? Math.min(1, (now - t0) / dur) : 1; const cur = Math.pow(10, Math.log10(0.1) + p * (Math.log10(us) - Math.log10(0.1))); draw(cur, p >= 1);
+      if (p < 1){ raf = requestAnimationFrame(step); return; }
+      const z = zones.find(z => us >= z.lo && us <= z.hi);
+      if (us < 1) cap.innerHTML = "<span class='k'>普通时钟</span>只有 0.25us，没到任何命令档位，芯片把它当成一拍：格子挪一格。";
+      else if (z) cap.innerHTML = "<span class='k'>" + z.t + " 档 → 执行</span>芯片做出正确动作。<b>所以只要看到正确的动作，就反过来证明这段时长落进了这一档。</b>这就是“芯片判卷”的全部原理。";
+      else cap.innerHTML = "<span class='k'>不在任何档位</span>芯片不执行，读回来的就不是我们期待的答案。<b>答案错了，就说明时长有问题。</b>（24us 是 H5 写寄存器的时长，H6 不认识。）";
+    }
+    raf = requestAnimationFrame(step);
+  }
+  [[0.25, "0.25us 普通时钟"], [5, "5us"], [39, "39us"], [128, "128us"], [24, "24us（H5 写寄存器）"], [34, "34us（偏短太多）"]].forEach(([us, t]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.dataset.us = us; b.onclick = () => run(us); pick.appendChild(b); });
+  draw(0.1, false); cap.innerHTML = "<span class='k'>点上面的按钮</span>选一个时长，看芯片怎么反应。";
+})();
+
+/* ===== 1: calibration ===== */
+runExam(1, { init: N0, steps: [
+  { k: "note", tag: "开始", cap: "上电后，<code>HallSensor_INIT()</code> 第一件事就是调用 <code>Hall_osc_calibrate()</code>。先把 <code>hall_spi_tx</code> 4 个字节全部清 0：手册要求读回校准结果时 SDI 必须为 0，而 MCU 读数据的同时也在往外送数据。", line: ["tx"] },
+  { k: "pulse", w: 150, brk: 1, lbl: "128us td10", tag: "HALL_Read_Instru_cnt", line: ["cmd"], capUp: "借用 SCK 脚并拉高，两颗芯片的秒表同时开始走。", capDown: "按住 128us 后拉低。秒表落在 td10 档，芯片执行频率校准，并把结果装进各自的 16 个格子（橙色、紫色）。", onEnd: o => o.setC(loadChain(0x007F, 0x0080, "L", "R")) },
+  { k: "wait", w: 60, brk: 1, lbl: ">50us td12", tag: "等待", line: ["cmd"], cap: "保持低电平等超过 50us，这是 H6 的要求（H5 只要 2us）。然后把 SCK 还给 SSP1。" },
+  { k: "clk", tx: [0, 0, 0, 0], line: ["ssp"], tag: "SSP_Send_Receive", cap: "SPI 打 32 拍：送出 4 个 0，同时收回两颗芯片的结果。", capEnd: "32 拍打完，结果在 rx[0..3] 里。" },
+  { k: "note", tag: "判卷", line: ["chk"], cap: "看 rx[1]（右键）和 rx[3]（左键），两个都在 0x7C–0x84 之间才算答对。答对就记 <code>cal_ok = 1</code>，等 20ms 后进入下一题；答错就重来，最多 128 次。", dec: "示例：rx[1] = 0x80（右键）  rx[3] = 0x7F（左键）\n0x7C ≤ 0x80 ≤ 0x84 ✓   0x7C ≤ 0x7F ≤ 0x84 ✓   → cal_ok = 1\n（芯片真实返回的数会略有不同，这里只是示例）" }
+] }, [["", "uint8_t Hall_osc_calibrate(void)   /* exam 1 */"], ["", "  for(times = 0; times < 128; times++) {"], ["tx", "    hall_spi_tx[0..3] = 0;          /* SDI must be 0 */"], ["cmd", "    HALL_Read_Instru_cnt();         /* 128us + wait */"], ["ssp", "      -> SSP_Send_Receive(tx, rx, 4);"], ["chk", "    if(rx[1], rx[3] in 0x7C..0x84) { cal_ok = 1; return 1; }"], ["", "  }"]]);
+
+/* ===== 2: read 0x0C ===== */
+runExam(2, { init: loadChain(0x007F, 0x0080, "L", "R"), steps: [
+  { k: "note", tag: "准备帧", line: ["prep"], cap: "读寄存器 0x0C：帧的高字节 = 0（读）+ 地址 0x0C = <b>0x0C</b>，低字节随便填 0x55。两颗芯片各一份。", dec: "高字节 0x0C = 0 | 0 | 001100（bit15=0 表示读）\n低字节 0x55 = 随便填\ntx = 0x0C 0x55 0x0C 0x55" },
+  { k: "clk", tx: [0x0C, 0x55, 0x0C, 0x55], line: ["s1"], tag: "SSP_Send_Receive（送入）", cap: "先把读命令帧送进两颗芯片的格子。这时收回来的是格子里的旧内容（上一题的校准结果），没有用。", capEnd: "读命令帧已经进到两颗芯片的格子里，但芯片还没执行。" },
+  { k: "pulse", w: 110, brk: 1, lbl: "39us td6", tag: "Hall_CLK_Command_SET", line: ["cmd"], capUp: "下命令：SCK 按住 39us。", capDown: "秒表落在 td6 档 → WR_REG。芯片看到帧的最高位是 0（读），就把寄存器 0x0C 的值放进格子的低 8 位。", onEnd: o => o.setC(loadChain(0x00AA, 0x00AA, "L", "R")) },
+  { k: "wait", w: 36, lbl: ">3us td5", tag: "等待", line: ["cmd"], cap: "等待超过 3us，把 SCK 还给 SSP1。" },
+  { k: "clk", tx: [0x0C, 0x55, 0x0C, 0x55], line: ["s2"], tag: "SSP_Send_Receive（读回）", cap: "再打 32 拍，把芯片格子里的值挤回 MCU。", capEnd: "读回完成。" },
+  { k: "note", tag: "判卷", line: ["chk"], cap: "rx[1]（右键）和 rx[3]（左键）都等于 <b>0xAA</b>：两颗芯片都正确执行了 39us 的读寄存器命令。如果 39us 没被认出，芯片不会把寄存器值放进格子，读回来的就是别的东西。", dec: "rx[1] = 0xAA  rx[3] = 0xAA   → 与手册默认值一致 ✓\n（0xAA = 10101010，碰巧读对的可能性很小）" }
+] }, [["", "/* exam 2 */"], ["prep", "Hall_ReadReg(0x0C, &l, &r);    /* tx = 0C 55 0C 55 */"], ["s1", "  SSP_Send_Receive(tx, rx, 4);   /* shift frame in */"], ["cmd", "  Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);"], ["s2", "  SSP_Send_Receive(tx, rx, 4);   /* read back */"], ["chk", "  r = rx[1]; l = rx[3];          /* expect 0xAA */"]]);
+
+/* ===== 3: write 0x30 then read ===== */
+(function(){
+  const pick = document.getElementById("opt3"); let mode = "h6", pl = null;
+  function start(m){
+    mode = m; if (pl) pl.stop();
+    [...pick.children].forEach(b => b.setAttribute("aria-pressed", b.dataset.m === m ? "true" : "false"));
+    const addr = m === "bad31" || m === "good31" ? 0x31 : 0x30, data = 0x21;
+    const pa = parity(addr & 0x3F), pd = parity(data);
+    const crcGood = pa ^ pd, crcUsed = m === "bad31" ? pd : crcGood, ok = crcUsed === crcGood;
+    const head = 0x80 | (crcUsed << 6) | (addr & 0x3F);
+    const regA = "寄存器 " + hex(addr, 2) + " = 0x20";
+    const regB = ok ? "寄存器 " + hex(addr, 2) + " = 0x21 ✓" : "校验位不对，丢弃 ✗";
+    const readVal = ok ? 0x21 : 0x20;
+    pl = runExam(3, { init: N0, regs: [{ t: regA }, { t: regA }], steps: [
+      { k: "note", tag: "准备帧", line: ["prep"], cap: m === "bad31" ? "演示：用 H5 的算法（只算数据）给 H6 写 0x31。0x31 的地址位里 1 的个数是奇数，漏算地址就会算错。" : "按 H6 的规则算校验位：地址的奇偶 ^ 数据的奇偶。", dec: "地址 " + hex(addr, 2) + " = " + bin(addr & 0x3F, 6) + "  奇偶 " + pa + "\n数据 0x21 = " + bin(data, 8) + "  奇偶 " + pd + "\n正确的校验位 = " + pa + " ^ " + pd + " = " + crcGood + (m === "bad31" ? "；H5 算法只算数据，得到 " + pd + " ✗" : "") + "\n高字节 = 1 | " + crcUsed + " | " + bin(addr & 0x3F, 6) + " = " + hex(head, 2) + "   tx = " + hex(head, 2) + " 21 " + hex(head, 2) + " 21" },
+      { k: "clk", tx: [head, 0x21, head, 0x21], line: ["w1"], tag: "写：送入帧", cap: "把写命令帧送进两颗芯片。", capEnd: "帧到位，等命令。" },
+      { k: "pulse", w: 110, brk: 1, lbl: "39us td6", tag: "写：下命令", line: ["w2"], capUp: "SCK 按住 39us。", capDown: ok ? "WR_REG。芯片检查帧里的校验位：正确，把 0x21 写进寄存器。" : "WR_REG。芯片自己算出的校验位和帧里的不一致：<b>直接丢弃，不报错</b>。", onEnd: o => o.setRegs([{ t: regB, hot: 1 }, { t: regB, hot: 1 }]) },
+      { k: "wait", w: 36, lbl: ">3us", tag: "等待", line: ["w2"], cap: "写完，等待超过 3us。" },
+      { k: "clk", tx: [addr & 0x3F, 0x55, addr & 0x3F, 0x55], line: ["r1"], tag: "读回：送入读帧", cap: "现在用考题二的方法把这个寄存器读回来。先送入读帧。", capEnd: "读帧到位。" },
+      { k: "pulse", w: 110, brk: 1, lbl: "39us td6", tag: "读回：下命令", line: ["r1"], capUp: "再按住 39us。", capDown: "芯片把寄存器当前的值装进格子。", onEnd: o => o.setC(loadChain(readVal, readVal, "L", "R")) },
+      { k: "wait", w: 36, lbl: ">3us", tag: "等待", line: ["r1"], cap: "等待超过 3us。" },
+      { k: "clk", tx: [addr & 0x3F, 0x55, addr & 0x3F, 0x55], line: ["r1"], tag: "读回：取数", cap: "打 32 拍取回。", capEnd: "取回完成。" },
+      { k: "note", tag: "判卷", line: ["chk"], cap: ok ? "读回 0x21：写入成功。证明写帧格式、H6 校验位和 39us 都对。" + (addr === 0x30 ? "注意：0x30 的地址奇偶是 0，漏算地址也能碰巧成功。想彻底证明，换 0x31 再测（点上面的按钮看）。" : "") : "读回还是 0x20：写入被芯片丢弃了。这就是用 H5 的校验算法给 H6 写寄存器的后果，而且<b>芯片不会报任何错</b>，只能靠写完再读回来发现。", dec: "rx[1] = " + hex(readVal, 2) + "  rx[3] = " + hex(readVal, 2) + (ok ? "   → 写入成功 ✓" : "   → 写入被丢弃 ✗") }
+    ] }, [["", "/* exam 3 */"], ["prep", "Hall_WriteReg(" + hex(addr, 2) + ", 0x21);   " + (m === "bad31" ? "/* WRONG: H5 CRC, data only */" : "/* build frame with H6 CRC */")], ["w1", "  SSP_Send_Receive(tx, rx, 4);"], ["w2", "  Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);"], ["r1", "Hall_ReadReg(" + hex(addr, 2) + ", &l, &r);  /* same as exam 2 */"], ["chk", "/* expect r == l == 0x21 */"]]);
+  }
+  [["h6", "H6 算法写 0x30"], ["good31", "H6 算法写 0x31"], ["bad31", "H5 算法写 0x31（错误示范）"]].forEach(([m, t]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.dataset.m = m; b.onclick = () => start(m); pick.appendChild(b); });
+  start("h6");
+})();
+
+/* ===== 4: table ===== */
+(function(){
+  const svg = document.getElementById("s4");
+  const T = [[0x0C, 0x83, "固定值"], [0x26, 0x0A, "固定值"], [0x27, 0x05, "固定值"], [0x28, 0x04, "固定值"], [0x2F, 0x14, "固定值"], [0x34, 0x03, "固定值"], [0x09, 0x20, "24x 联动"], [0x0B, 0x85, "增益"], [0x29, 0x60, "24x 联动"], [0x2A, 0x28, "24x 联动"], [0x0F, 0x1F, "间隔 124us"], [0x10, 0x20, "间隔高位"], [0x32, 0x41, "默认值"], [0x35, 0x27, "SDO 12mA"], [0x33, 0x80, "连续采样"]];
+  const frames = [{ w: 0, r: 0, tag: "开始", cap: "这 15 项是 H6 的初始化表，每一项都能在手册 §8 里找到依据。先全部写一遍，再一项一项读回来比较。" }];
+  for (let i = 1; i <= 15; i++) frames.push({ w: i, r: 0, tag: "写入 " + i + " / 15", cap: "写 " + hex(T[i - 1][0], 2) + " = " + hex(T[i - 1][1], 2) + "（" + T[i - 1][2] + "）：每一项都是一次考题三的写入过程。" + (i === 15 ? "最后写 0x33 = 0x80，芯片开始连续采样。" : ""), fast: i > 1 && i < 15 });
+  for (let i = 1; i <= 15; i++) frames.push({ w: 15, r: i, tag: "读回核对 " + i + " / 15", cap: "读回 " + hex(T[i - 1][0], 2) + "，和表里的值比较：一致。", fast: i > 1 && i < 15 });
+  frames.push({ w: 15, r: 15, tag: "判卷", cap: "15 项全部一致 → <code>tbl_ok = 1</code>。如果有一项不一致，记下它的地址和读回值，然后停止核对，打印出来的 <code>bad=</code> 就是这个地址。" });
+  Player("ctl4", "cap4", frames, f => {
+    clear(svg);
+    T.forEach((t, i) => {
+      const col = i % 5, row = Math.floor(i / 5), x = 10 + col * 128, y = 14 + row * 74;
+      const written = i < f.w, checked = i < f.r;
+      el("rect", { x, y, width: 120, height: 64, rx: 8, fill: checked ? "var(--ok-soft)" : written ? "var(--accent-soft)" : "var(--bg)", stroke: i === f.w - 1 && f.r === 0 || i === f.r - 1 ? "var(--accent)" : "var(--line)", "stroke-width": 1.5 }, svg);
+      el("text", { x: x + 10, y: y + 22, fill: "var(--fg)", "font-size": 14, "font-weight": 700, class: "m" }, svg, hex(t[0], 2) + " = " + hex(t[1], 2));
+      el("text", { x: x + 10, y: y + 40, fill: "var(--muted)", "font-size": 11 }, svg, t[2]);
+      el("text", { x: x + 10, y: y + 56, fill: checked ? "var(--ok)" : written ? "var(--accent)" : "var(--muted)", "font-size": 11 }, svg, checked ? "读回一致 ✓" : written ? "已写入" : "未写");
+    });
+  });
+})();
+
+/* ===== 5: sample ===== */
+runExam(5, { init: N0, steps: [
+  { k: "note", tag: "开始", line: [], cap: "初始化之后，主循环每 1ms 调用一次 <code>hall_get_sample()</code>。芯片已经在连续采样（考题四最后写了 0x33 = 0x80）。" },
+  { k: "pulse", w: 50, lbl: "5us td1", tag: "hall_get_sample", line: ["cmd"], capUp: "借用 SCK 并拉高。", capDown: "按住 5us 后拉低。秒表落在 td1 档 → HAL_CONVERT：芯片把最新测量值和 2 位校验位装进格子。", onEnd: o => o.setC(loadChain(sampleFrame(7210), sampleFrame(8650), "L", "R")) },
+  { k: "wait", w: 36, lbl: ">4us td2", tag: "等待", line: ["cmd"], cap: "等待超过 4us（连续采样模式的要求），然后把 SCK 还给 SSP1。" },
+  { k: "clk", tx: [0, 0, 0, 0], line: ["ssp"], tag: "SSP_Send_Receive", cap: "打 32 拍，把两颗芯片的测量值收回来。", capEnd: "收完。" },
+  { k: "note", tag: "判卷", line: ["chk"], cap: "对每颗芯片：用手册公式算一遍校验位，和收到的最高 2 位比较；同时排除全 0、全 1。通过就记 <code>smp_ok</code>，不通过记 <code>smp_err</code>。每 1ms 考一次，2 秒打印一次统计。", dec: "右键 rx[0..1]：校验位 + 14 位数据 = " + 8650 + "  ✓ 校验通过\n左键 rx[2..3]：校验位 + 14 位数据 = " + 7210 + "  ✓ 校验通过\n（数值是示例；真实值取决于磁铁位置，没有磁场时约为 8192）" }
+] }, [["", "/* LR_GetState(), every 1 ms */"], ["cmd", "hall_get_sample();   /* 5us + wait, then 32 clocks */"], ["ssp", "  -> SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);"], ["chk", "CRC ok && v != 0 && v != 0x3FFF ? smp_ok++ : smp_err++;"]]);
+
+/* ===== 7: data path ===== */
+(function(){
+  const svg = document.getElementById("s7");
+  const box = (x, w, t, s) => { el("rect", { x, y: 30, width: w, height: 60, rx: 8, fill: "var(--bg)", stroke: "var(--line)" }, svg); el("text", { x: x + w / 2, y: 56, "text-anchor": "middle", fill: "var(--fg)", "font-size": 13, "font-weight": 500 }, svg, t); el("text", { x: x + w / 2, y: 76, "text-anchor": "middle", fill: "var(--muted)", "font-size": 10.5, class: "m" }, svg, s); };
+  box(6, 110, "H6 芯片", "答题"); box(140, 130, "MCU 记分", "g_hall_chk"); box(294, 120, "每 2 秒打印", "InfoLog()"); box(438, 100, "USB 线", "EP3 vendor HID"); box(560, 94, "你的电脑", "hid_log.py");
+  const defs = el("defs", {}, svg); const mk = el("marker", { id: "a7", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto" }, defs); el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--accent)" }, mk);
+  [[116, 140], [270, 294], [414, 438], [538, 560]].forEach(([a, b]) => el("line", { x1: a, y1: 60, x2: b - 2, y2: 60, stroke: "var(--accent)", "stroke-width": 2, "marker-end": "url(#a7)" }, svg));
+  el("text", { x: 6, y: 116, fill: "var(--muted)", "font-size": 11 }, svg, "不焊线、不接调试器：只用一根 USB 线（它本来就要插着，给板子供电）");
+})();
+
+document.getElementById("copybtn").addEventListener("click", () => {
+  const t = document.getElementById("codex").textContent, b = document.getElementById("copybtn");
+  const done = () => { b.textContent = "已复制"; setTimeout(() => { b.textContent = "复制指令"; }, 1800); };
+  if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done).catch(() => { const r = document.createRange(); r.selectNodeContents(document.getElementById("codex")); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "已选中，按 Ctrl+C"; }); }
+});
+})();
+</script>
