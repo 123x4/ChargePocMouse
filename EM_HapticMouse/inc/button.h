@@ -62,14 +62,16 @@
 #endif
 
 /* Name timing macros by purpose to hide TD numbering differences between H5 and H6.
- * Measure pulses specified at +/-5% on the board. Wait times include margin above the specified minimum. */
+ * Each name maps to the datasheet TD macro of the selected chip, the same way the H5 code does.
+ * The real delay relies on about 3us of code overhead on top of the timer count (see DELAY_OUT
+ * and CT16B1_DelayUs); confirm the pulse and wait widths with a logic analyzer. */
 #if (6 == USE_HALL_SENSOR)
-#define HALL_TD_CONVERT       TD1_DELAY_US      /* 5us +/-5%   Read sample */
-#define HALL_TD_CONVERT_WAIT  (DELAY_OUT(8))    /* >4us        Wait after the sample command */
-#define HALL_TD_WR_REG        TD6_DELAY_US      /* 39us +/-5%  Read/write register */
-#define HALL_TD_WR_WAIT       (DELAY_OUT(10))   /* >3us        Wait after register read/write */
-#define HALL_TD_FREQ_CAL      TD10_DELAY_US     /* 128us +/-5% Oscillator frequency calibration */
-#define HALL_TD_FREQ_WAIT     (DELAY_OUT(60))   /* >50us       Wait after calibration */
+#define HALL_TD_CONVERT       TD1_DELAY_US           /* td1  5us +/-5%   Read sample */
+#define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US  /* td2  >4us        Wait after the sample command */
+#define HALL_TD_WR_REG        TD6_DELAY_US           /* td6  39us +/-5%  Read/write register */
+#define HALL_TD_WR_WAIT       TD5_DELAY_US           /* td5  >3us        Wait after register read/write */
+#define HALL_TD_FREQ_CAL      TD10_DELAY_US          /* td10 128us +/-5% Oscillator frequency calibration */
+#define HALL_TD_FREQ_WAIT     TD12_DELAY_US          /* td12 >50us       Wait after calibration */
 #else
 #define HALL_TD_CONVERT       TD1_DELAY_US
 #define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US

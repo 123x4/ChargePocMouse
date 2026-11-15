@@ -52,7 +52,7 @@ summary{cursor:pointer;color:var(--accent)}
 
 <main>
 <h1>H6 移植：目前改了什么，为什么这样改</h1>
-<p class="sub">分支 <code>H6</code>，截至提交 <code>1450eaa</code>。只记录对固件代码的改动；讲义和动画网页不算在内。</p>
+<p class="sub">分支 <code>H6</code>，含"改动 3"（等待宏改回指向 TD 宏）。只记录对固件代码的改动；讲义和动画网页不算在内。</p>
 
 <div class="summary"><b>一句话总结</b>目前只完成了移植的第 1 步：给时序参数换了一种写法。芯片型号开关仍然是 H5（<code>USE_HALL_SENSOR = 5</code>），所以<b>板子上跑的程序和改之前完全一样</b>，已经用"编译结果逐字节相同"证明过。真正切到 H6 是下一步的事。</div>
 
@@ -79,7 +79,7 @@ summary{cursor:pointer;color:var(--accent)}
 
 <h3>改了什么</h3>
 <p class="file">EM_HapticMouse/inc/button.h（在那组 TD 宏的 #endif 之后新增）</p>
-<pre><span class="a">#if (6 == USE_HALL_SENSOR)</span><span class="a">#define HALL_TD_CONVERT       TD1_DELAY_US      /* 5us +/-5%   Read sample */</span><span class="a">#define HALL_TD_CONVERT_WAIT  (DELAY_OUT(8))    /* >4us        Wait after the sample command */</span><span class="a">#define HALL_TD_WR_REG        TD6_DELAY_US      /* 39us +/-5%  Read/write register */</span><span class="a">#define HALL_TD_WR_WAIT       (DELAY_OUT(10))   /* >3us        Wait after register read/write */</span><span class="a">#define HALL_TD_FREQ_CAL      TD10_DELAY_US     /* 128us +/-5% Oscillator frequency calibration */</span><span class="a">#define HALL_TD_FREQ_WAIT     (DELAY_OUT(60))   /* >50us       Wait after calibration */</span><span class="a">#else</span><span class="a">#define HALL_TD_CONVERT       TD1_DELAY_US</span><span class="a">#define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US</span><span class="a">#define HALL_TD_WR_REG        TD4_DELAY_US</span><span class="a">#define HALL_TD_WR_WAIT       TD5_DELAY_US</span><span class="a">#define HALL_TD_FREQ_CAL      TD7_DELAY_US</span><span class="a">#define HALL_TD_FREQ_WAIT     TD10_DELAY_US</span><span class="a">#endif</span></pre>
+<pre><span class="a">#if (6 == USE_HALL_SENSOR)</span><span class="a">#define HALL_TD_CONVERT       TD1_DELAY_US           /* td1  5us +/-5%   Read sample */</span><span class="a">#define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US  /* td2  >4us        Wait after the sample command */</span><span class="a">#define HALL_TD_WR_REG        TD6_DELAY_US           /* td6  39us +/-5%  Read/write register */</span><span class="a">#define HALL_TD_WR_WAIT       TD5_DELAY_US           /* td5  >3us        Wait after register read/write */</span><span class="a">#define HALL_TD_FREQ_CAL      TD10_DELAY_US          /* td10 128us +/-5% Oscillator frequency calibration */</span><span class="a">#define HALL_TD_FREQ_WAIT     TD12_DELAY_US          /* td12 >50us       Wait after calibration */</span><span class="a">#else</span><span class="a">#define HALL_TD_CONVERT       TD1_DELAY_US</span><span class="a">#define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US</span><span class="a">#define HALL_TD_WR_REG        TD4_DELAY_US</span><span class="a">#define HALL_TD_WR_WAIT       TD5_DELAY_US</span><span class="a">#define HALL_TD_FREQ_CAL      TD7_DELAY_US</span><span class="a">#define HALL_TD_FREQ_WAIT     TD10_DELAY_US</span><span class="a">#endif</span></pre>
 
 <p class="file">EM_HapticMouse/app/button.c（4 个函数，每个只改调用 Hall_CLK_Command_SET 的那一行）</p>
 <pre><span class="c">hall_get_sample()            第 861 行</span><span class="d">-  Hall_CLK_Command_SET(TD1_DELAY_US, TD2_CONTIUNS_DELAY_US);</span><span class="a">+  Hall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);</span><span class="c"> </span><span class="c">HALL_Read_Instru_cnt()       第 868 行</span><span class="d">-  Hall_CLK_Command_SET(TD7_DELAY_US, TD10_DELAY_US);</span><span class="a">+  Hall_CLK_Command_SET(HALL_TD_FREQ_CAL, HALL_TD_FREQ_WAIT);</span><span class="c"> </span><span class="c">Hall_read_register()         第 913 行</span><span class="c">Hall_write_register()        第 935 行</span><span class="d">-  Hall_CLK_Command_SET(TD4_DELAY_US,TD5_DELAY_US);</span><span class="a">+  Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);</span></pre>
@@ -87,7 +87,7 @@ summary{cursor:pointer;color:var(--accent)}
 <h3>为什么这样改</h3>
 <div class="why"><b>函数只说"我要干什么"，具体用哪个 TD 交给宏去选。</b>现在 <code>Hall_write_register()</code> 里写的是"写寄存器用的时长"（<code>HALL_TD_WR_REG</code>），型号是 5 时它自动对应 H5 的 TD4（24us），型号改成 6 时自动对应 H6 的 TD6（39us）。以后切换芯片只改一个开关，函数一行都不用动，也就不会再踩编号的坑。</div>
 
-<div class="why"><b>H6 的三个"等待"值比手册要求多留了余量。</b>手册对等待只要求"不少于"（&gt;4us、&gt;3us、&gt;50us），多等几微秒没有坏处。而代码里的延时其实比写的数短：<code>DELAY_OUT(x)</code> 先减 1，<code>CT16B1_DelayUs()</code> 内部再少数 2，定时器实际只计了大约 x−3 微秒（动画网页第 7 关）。所以等待类干脆给足：8、10、60。<b>"按住"类（±5%）不能这样做</b>，多了少了都会被芯片认成别的命令，这几个还是用原来的宏，靠逻辑分析仪实测来确认。</div>
+<div class="why"><b>H6 的每个用途名都直接指向手册编号的 TD 宏，和 H5 的做法完全一样。</b>第一版里三个等待值曾经写死成 8、10、60 来"多留余量"。后来发现按同样的算法 H5 的等待也只是"刚好卡边"、读采样脉冲甚至差 3us，H5 能工作是靠代码本身约 3us 的开销补上的。既然 H6 用的是同一套延时函数，就按 H5 的思路来，不再单独加余量（见下面的改动 3）。真实宽度够不够，用逻辑分析仪实测确认。</div>
 
 <div class="why"><b><code>#else</code> 分支一字不差地对应原来的宏。</b>型号是 5 时，新名字展开后和改之前完全一样。这正是能"证明没改坏"的前提，见下一节。</div>
 
@@ -100,6 +100,11 @@ summary{cursor:pointer;color:var(--accent)}
 <p>修法是把注释换成英文，文件恢复成纯英文，用什么编码打开都不会乱。Codex 顺手把 <code>button.c</code> 里仅有的两行 GBK 中文注释也换成了英文，所以 <code>button.c</code> 现在也是纯英文了，以后不会再有编码问题。</p>
 <p>这次 Codex 还改了一些我没要求的东西（<code>SPI.c</code> 的一行注释、<code>.gitignore</code>）。都是无害的，但说明<b>让 AI 改完代码，一定要看一眼到底改了哪些文件</b>（<code>git show --stat</code>）。</p>
 
+<h2>改动 3：等待宏改回指向手册编号的宏</h2>
+<p>H6 分支里三个等待宏从写死的数字改成指向 TD 宏，H5 分支不变：</p>
+<pre><span class="d">-#define HALL_TD_CONVERT_WAIT  (DELAY_OUT(8))</span><span class="a">+#define HALL_TD_CONVERT_WAIT  TD2_CONTIUNS_DELAY_US   /* DELAY_OUT(6) */</span><span class="d">-#define HALL_TD_WR_WAIT       (DELAY_OUT(10))</span><span class="a">+#define HALL_TD_WR_WAIT       TD5_DELAY_US            /* DELAY_OUT(5) */</span><span class="d">-#define HALL_TD_FREQ_WAIT     (DELAY_OUT(60))</span><span class="a">+#define HALL_TD_FREQ_WAIT     TD12_DELAY_US           /* DELAY_OUT(55) */</span></pre>
+<p><b>为什么改</b>：你指出了一个矛盾。如果只按定时器计时算，H5 的等待也不够，可 H5 是能工作的。说明真实时间里还有约 3us 的代码开销。H6 和 H5 用的是同一套延时函数，开销也一样，所以按 H5 的思路来，结构前后一致，读代码时也不会再疑惑"为什么三个直接写数字"。</p>
+<p><b>为什么安全</b>：型号仍是 5，这次只改了 <code>#if (6 == USE_HALL_SENSOR)</code> 里面的内容，H5 编译出的固件不受影响。我用预处理器展开核对过：型号 5 时六个宏仍是 5/5/24/5/128/5（和原来一样），型号 6 时是 5/6/39/5/128/55。</p>
 <h2>还没改的（下一步要做的）</h2>
 <div class="tw"><table>
 <tr><th>内容</th><th>现在的状态</th><th>计划在哪一步改</th></tr>
