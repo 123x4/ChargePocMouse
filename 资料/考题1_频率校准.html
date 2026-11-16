@@ -96,6 +96,26 @@ pre{font-size:12.5px;line-height:1.55;background:var(--panel);border:1px solid v
 
 <div class="box idea"><b class="t">先记住一句话</b>H6 只有一根 SCK 线听命令。它不看数据，只看 SCK <b>保持高电平多久</b>：高 5 µs 是“采样”，高 39 µs 是“读写寄存器”，高 128 µs 就是“频率校准”。所以 MCU 要临时把 SCK 从 SPI 手里借过来，当普通 GPIO 自己拉高、计时、拉低。</div>
 
+<!-- 0 -->
+<section>
+<h2><span class="no">0</span>怎么跑这一关</h2>
+<p class="why">代码已经调成“只做考题一”。开关在 <code>app/button.c</code> 里 <code>g_hall_chk</code> 定义的下面：</p>
+<pre>#define HALL_EXAM             1   /* 1 = 只做频率校准 */
+#define HALL_EXAM1_BAD_WIDTH  0   /* 1 = 故意发 145 us（对照实验） */
+#define HALL_DIAG_PINS        0   /* 1 = 再跑一遍以前的引脚 / 回环检查 */</pre>
+<table>
+<tr><th>步骤</th><th>做什么</th></tr>
+<tr><td class="n">1</td><td>本地 <code>git pull</code>，拿到 H6 分支最新代码（提交 3fa3ba0 或更新）。</td></tr>
+<tr><td class="n">2</td><td>Keil 打开工程，Rebuild，确认 0 Error。</td></tr>
+<tr><td class="n">3</td><td>用你上次的方法烧录（经 bootloader 放入 bin）。</td></tr>
+<tr><td class="n">4</td><td>重新插 USB，运行 <code>python tools/hid_log.py</code>。大约每 2 秒出现一行 <code>EXAM1 CAL ...</code>。</td></tr>
+<tr><td class="n">5</td><td><b>正式考：</b>应该看到 <code>EXAM1 CAL ok=1 n=.. R=00:7C~84 L=00:7C~84 width=128</code>。</td></tr>
+<tr><td class="n">6</td><td><b>对照实验：</b>把 <code>HALL_EXAM1_BAD_WIDTH</code> 改成 1，重新编译烧录，应该看到 <code>ok=0 n=128 width=145</code>。看完改回 0。</td></tr>
+</table>
+<div class="box idea"><b class="t">为什么还要做第 6 步</b>一个检验只会说“通过”是不够的，还要证明它在该失败的时候真的会失败。145 µs 落在 121.6～134.4 的窗口外面，芯片应该不认这条命令。如果这时还显示 ok=1，说明这道题根本判不出对错，第 5 步的“通过”也就不可信。两步结果都对，这一关才算过。</div>
+<div class="box warn"><b class="t">这时候不用管的东西</b>日志里的 ProcessRecvSampleRawData 数值乱跳、右键反复触发，是因为 H6 寄存器还没初始化、采样还没移植（考题四、五）。这一关只看 EXAM1 那一行。</div>
+</section>
+
 <!-- 1 -->
 <section>
 <h2><span class="no">1</span>整个过程，一步一步看</h2>
