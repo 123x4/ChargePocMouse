@@ -1,0 +1,173 @@
+<title>Hall_WriteReg 图解</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+.grid{display:grid;grid-template-columns:110px repeat(8,minmax(0,40px)) auto;gap:4px;align-items:center;min-width:520px}
+.lab{font-size:.82rem;color:var(--muted)}
+.cell{height:36px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:15px;background:var(--panel);transition:background .3s,opacity .3s}
+.cell.dim{opacity:.25}
+.cell.one{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.cell.w{border-color:var(--muted)} .cell.c{border-color:var(--sck)} .cell.a{border-color:var(--accent)}
+.hexv{font-family:var(--font-mono);padding-left:10px;font-size:15px}
+.idx{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-align:center}
+.hidden{visibility:hidden}
+.crc{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.crc .cell{width:30px;height:30px}
+.crc .sep{width:10px}
+.inputs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.inputs label{font-size:.9rem;color:var(--muted)}
+.inputs input{font-family:var(--font-mono);width:4.5em;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.tx{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;max-width:440px}
+.tx div{border:1px solid var(--line);border-radius:8px;padding:6px;text-align:center;background:var(--panel)}
+.tx b{display:block;font-family:var(--font-mono);font-size:18px}
+.tx span{font-size:.78rem;color:var(--muted)}
+.codeline{font-family:var(--font-mono);font-size:13px;background:var(--bg);border-radius:8px;padding:8px 12px;white-space:pre;overflow-x:auto}
+.codeline .on{background:var(--accent-soft);border-radius:4px}
+</style>
+<main>
+<header>
+<h1>Hall_WriteReg 图解</h1>
+<p class="lede">一行代码拼出写帧的第一个字节：<code>head = 0x80 | (CRC &lt;&lt; 6) | (addr &amp; 0x3F)</code>。下面一步一步把它拼出来。</p>
+</header>
+
+<section class="stage">
+  <div class="inputs">
+    <button data-p="30,21" aria-pressed="true">0x30 = 0x21</button>
+    <button data-p="30,20" aria-pressed="false">0x30 = 0x20</button>
+    <button data-p="2F,14" aria-pressed="false">0x2F = 0x14</button>
+    <label for="ia">addr 0x</label><input id="ia" value="30" maxlength="2">
+    <label for="id">data 0x</label><input id="id" value="21" maxlength="2">
+  </div>
+  <div class="codeline" id="code"></div>
+
+  <div><div class="lab" style="margin-bottom:4px">第 ② 步：算 CRCWR（地址 6 位 + 数据 8 位，数 1 的个数）</div>
+  <div class="crc" id="crc"></div></div>
+
+  <div class="scroll"><div class="grid" id="grid"></div></div>
+
+  <div id="txbox"><div class="lab" style="margin-bottom:4px">第 ⑤ 步：填进发送缓冲，两颗芯片写同一个值</div>
+  <div class="tx" id="tx"></div></div>
+
+  <div class="say" id="say"></div>
+  <div class="dots" id="dots"><span></span><span></span><span></span><span></span><span></span><span></span>
+    <div class="ctl"><button id="prev">上一步</button><button id="next">下一步</button><button id="play">播放</button></div></div>
+</section>
+
+<section>
+<h2>对照 H5 的老写法</h2>
+<p id="h5"></p>
+<p class="ref">手册：H6 §7.4 图 6（PDF 第 9～10 页）写帧 = 1 | CRCWR | A5..A0，然后 D7..D0；CRCWR = A5^…^A0^D7^…^D0；不对则指令无效。</p>
+</section>
+</main>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const CODE = [
+  ["uint8_t head = ", 0], ["0x80", 1], [" | ", 0], ["(Hall_CrcWr(addr, data) << 6)", 3], [" | ", 0], ["(addr & 0x3F)", 4], [";", 0],
+  ["\nhall_spi_tx[0..3] = head, data, head, data;", 5], ["\nHall_write_register();   /* SPI 4 字节 -> 39us -> 等 td5 */", 6]
+];
+let A = 0x30, D = 0x21, step = 1, playing = false, timer = 0;
+const bits = (v, n) => Array.from({ length:n }, (_, i) => (v >> (n - 1 - i)) & 1);
+const hx = v => v.toString(16).toUpperCase().padStart(2, "0");
+const pop = v => { let c = 0; while (v) { c += v & 1; v >>= 1; } return c; };
+function crc(){ return (pop(A & 0x3F) + pop(D)) & 1; }
+function head(){ return 0x80 | (crc() << 6) | (A & 0x3F); }
+const SAY = [
+  () => `① 先放最高位：<code>0x80</code> = 1000 0000。bit7 = 1 表示这是一次“写”（读是 0）。`,
+  () => `② 算校验位：地址 0x${hx(A & 0x3F)} 有 ${pop(A & 0x3F)} 个 1，数据 0x${hx(D)} 有 ${pop(D)} 个 1，一共 ${pop(A & 0x3F) + pop(D)} 个，是${crc() ? "奇数，CRCWR = 1" : "偶数，CRCWR = 0"}。<code>&lt;&lt; 6</code> 把它挪到 bit6。`,
+  () => `③ 地址只占低 6 位：<code>addr &amp; 0x3F</code> 把 bit7、bit6 清掉，免得和写标志、校验位打架。`,
+  () => `④ 三行“按位或”叠在一起，每一位只要有一行是 1 就是 1：head = 0x${hx(head())}。`,
+  () => `⑤ 写帧 = head + data。tx[0..1] 一路推到远端的 H2（右键），tx[2..3] 留在 H1（左键）。两颗芯片写同一个值，所以两份一样。`,
+  () => `⑥ <code>Hall_write_register()</code>：SPI 把 4 字节推进去 → SCK 高 39 µs（WR_REG“执行键”）→ 等 td5。芯片核对 CRCWR，对上了才写入。写操作芯片不回话，要靠读回来确认（考题三）。`
+];
+function cells(row, v, kinds, show, dimMask){
+  let h = `<div class="lab">${row}</div>`;
+  bits(v, 8).forEach((b, i) => { const k = kinds ? kinds[i] : ""; const dim = dimMask && !dimMask[i]; h += `<div class="cell ${b ? "one" : ""} ${k} ${dim ? "dim" : ""} ${show ? "" : "hidden"}">${b}</div>`; });
+  return h + `<div class="hexv ${show ? "" : "hidden"}">0x${hx(v)}</div>`;
+}
+function render(){
+  let c = ""; CODE.forEach(([t, s]) => { c += `<span class="${s === step || (step === 2 && s === 3) ? "on" : ""}">${t.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span>`; }); $("code").innerHTML = c;
+  // crc strip
+  const ab = bits(A & 0x3F, 6), db = bits(D, 8);
+  let s = ""; ab.forEach(b => s += `<div class="cell ${b ? "one" : ""} ${step >= 2 ? "" : "dim"}">${b}</div>`);
+  s += `<span class="sep"></span>`; db.forEach(b => s += `<div class="cell ${b ? "one" : ""} ${step >= 2 ? "" : "dim"}">${b}</div>`);
+  s += `<span class="hexv">${step >= 2 ? `${pop(A & 0x3F)} + ${pop(D)} = ${pop(A & 0x3F) + pop(D)} 个 1 → CRCWR = <b>${crc()}</b>` : "A5..A0 | D7..D0"}</span>`;
+  $("crc").innerHTML = s;
+  // grid
+  let g = `<div></div>` + [7,6,5,4,3,2,1,0].map(i => `<div class="idx">bit${i}</div>`).join("") + `<div></div>`;
+  g += cells("0x80（写）", 0x80, null, step >= 1);
+  g += cells("CRC &lt;&lt; 6", crc() << 6, null, step >= 2);
+  g += cells("addr &amp; 0x3F", A & 0x3F, null, step >= 3, [0,0,1,1,1,1,1,1]);
+  g += cells("= head", head(), ["w","c","a","a","a","a","a","a"], step >= 4);
+  $("grid").innerHTML = g;
+  // tx
+  const show = step >= 5;
+  $("tx").innerHTML = [["tx[0]", head(), "head → H2 右"], ["tx[1]", D, "data → H2 右"], ["tx[2]", head(), "head → H1 左"], ["tx[3]", D, "data → H1 左"]]
+    .map(([n, v, w]) => `<div><span>${n}</span><b>${show ? hx(v) : "··"}</b><span>${w}</span></div>`).join("");
+  $("say").innerHTML = `<b class="n">${step}/6</b>` + SAY[step - 1]();
+  document.querySelectorAll("#dots > span").forEach((d, i) => d.classList.toggle("on", i === step - 1));
+  const h5 = 0x80 | (A & 0x3F) | ((pop(D) & 1) << 6);
+  $("h5").innerHTML = `H5 的写法 <code>addr | 0x80 | bit_crc_write_reg[data]</code> 只算数据的奇偶：得到 <b>0x${hx(h5)}</b>；H6 要算地址+数据：得到 <b>0x${hx(head())}</b>。` +
+    (h5 === head() ? `这一组两者相同（地址 0x${hx(A & 0x3F)} 的 1 是偶数个），所以用它考不出两种算法的区别。` : `<b>这一组两者不同</b>（地址 0x${hx(A & 0x3F)} 的 1 是奇数个）。用 H5 的算法写 H6，芯片会认为校验错，丢掉这次写入。`);
+}
+function setP(a, d){ A = a & 0x3F; D = d & 0xFF; $("ia").value = hx(A); $("id").value = hx(D); render(); }
+document.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { const [a, d] = b.dataset.p.split(","); document.querySelectorAll("[data-p]").forEach(x => x.setAttribute("aria-pressed", x === b)); setP(parseInt(a, 16), parseInt(d, 16)); });
+["ia", "id"].forEach(id => $(id).addEventListener("input", () => { const a = parseInt($("ia").value, 16), d = parseInt($("id").value, 16); if (!isNaN(a) && !isNaN(d)) { document.querySelectorAll("[data-p]").forEach(x => x.setAttribute("aria-pressed", false)); A = a & 0x3F; D = d & 0xFF; render(); } }));
+function stop(){ playing = false; clearTimeout(timer); $("play").textContent = "播放"; }
+$("next").onclick = () => { stop(); step = step % 6 + 1; render(); };
+$("prev").onclick = () => { stop(); step = step === 1 ? 6 : step - 1; render(); };
+$("play").onclick = () => { if (playing) { stop(); return; } playing = true; $("play").textContent = "暂停"; step = 1; render(); const tick = () => { if (!playing) return; if (step >= 6) { stop(); return; } timer = setTimeout(() => { step++; render(); tick(); }, 2600); }; tick(); };
+render();
+})();
+</script>
