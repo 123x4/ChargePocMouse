@@ -37,8 +37,31 @@ typedef struct
 
 volatile HallChk_ts g_hall_chk;
 
+/* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
+#define HALL_EXAM             1   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C */
+#define HALL_EXAM1_BAD_WIDTH  0   /* 1 = send a 145us pulse instead of 128us on purpose (control test) */
+#define HALL_DIAG_PINS        0   /* 1 = also run the old pin / loopback / power-off checks */
+
+#if HALL_EXAM1_BAD_WIDTH && (6 == USE_HALL_SENSOR)
+#define HALL_EXAM1_WIDTH      DELAY_OUT(145)          /* outside 121.6..134.4: chip must ignore it */
+#define HALL_EXAM1_WIDTH_US   145
+#else
+#define HALL_EXAM1_WIDTH      HALL_TD_FREQ_CAL        /* td10 128us */
+#define HALL_EXAM1_WIDTH_US   128
+#endif
+
 static void HallChk_Print(void)
 {
+  InfoLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (expect ok=1 with 128, ok=0 with 145)",
+          (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
+          (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
+          (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l,
+          (unsigned)HALL_EXAM1_WIDTH_US);
+#if (HALL_EXAM >= 2)
+  InfoLog("EXAM2 RD 0x0C R=%02X L=%02X (expect AA AA)",
+          (unsigned)g_hall_chk.rd0c_r, (unsigned)g_hall_chk.rd0c_l);
+#endif
+#if HALL_DIAG_PINS
   InfoLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
           (unsigned)g_hall_chk.miso_pd, (unsigned)g_hall_chk.miso_pu,
           (unsigned)g_hall_chk.mosi_h, (unsigned)g_hall_chk.mosi_l,
@@ -56,12 +79,7 @@ static void HallChk_Print(void)
   InfoLog("ECHO2 %02X %02X %02X %02X (after soft reset)",
           (unsigned)g_hall_chk.echo2[0], (unsigned)g_hall_chk.echo2[1],
           (unsigned)g_hall_chk.echo2[2], (unsigned)g_hall_chk.echo2[3]);
-  InfoLog("CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X (expect low 7C..84)",
-          (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
-          (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
-          (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l);
-  InfoLog("RD 0x0C R=%02X L=%02X (expect AA AA)",
-          (unsigned)g_hall_chk.rd0c_r, (unsigned)g_hall_chk.rd0c_l);
+#endif
 }
 
 /* Exam 0: loopback through the daisy chain, no SCK command pulse involved.
@@ -1041,7 +1059,7 @@ void hall_get_sample(void)
 
 void HALL_Read_Instru_cnt(void)
 {
-	Hall_CLK_Command_SET(HALL_TD_FREQ_CAL, HALL_TD_FREQ_WAIT);
+	Hall_CLK_Command_SET(HALL_EXAM1_WIDTH, HALL_TD_FREQ_WAIT);   /* normally td10 128us */
 
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
@@ -1129,18 +1147,23 @@ void ana_hall2_phy_set_mode(unsigned char length)
 void HallSensor_INIT(void)
 {
 #if (6 == USE_HALL_SENSOR)
-	/* Exams 0 and 1 only. The register table is still the H5 one (H5 addresses),
-	 * so it must not be written to H6 yet. */
+	/* Runs exam 1 .. HALL_EXAM (switches near g_hall_chk). The register table is
+	 * still the H5 one (H5 addresses), so it must not be written to H6 yet. */
+#if HALL_DIAG_PINS
 #if HALL_SCK_HOLD_HIGH
 	Hall_SckHoldHigh();                               /* never returns */
 #endif
 	Hall_SckPowerOffTest();                           /* exam 0C */
 	Hall_PinTest();                                   /* exam 0B */
 	Hall_LoopbackTest(g_hall_chk.echo);               /* exam 0 */
+#endif
 	Hall_CLK_Command_SET(TD11_DELAY_US, TD9_DELAY_US); /* soft reset: td11 >1280us, td9 >50us */
 	CT16B1_DelayUs(2000);
+#if HALL_DIAG_PINS
 	Hall_LoopbackTest(g_hall_chk.echo2);              /* exam 0 again after reset */
+#endif
 	Hall_osc_calibrate();                             /* exam 1 */
+#if (HALL_EXAM >= 2)
 	if(g_hall_chk.cal_ok)
 	{
 		uint8_t l, r;
@@ -1148,6 +1171,7 @@ void HallSensor_INIT(void)
 		g_hall_chk.rd0c_r = r;
 		g_hall_chk.rd0c_l = l;
 	}
+#endif
 #else
 	Hall_osc_calibrate();
 
