@@ -29,6 +29,7 @@ typedef struct
   uint8_t mosi_h, mosi_l;     /* MOSI pin read back while driven high / low */
   uint8_t sck_h, sck_l;       /* SCK pin read back while driven high / low */
   uint8_t sck_in_pu;          /* SCK as input with only the internal pull-up */
+  uint8_t sck_off_h, sck_off_in_pu;   /* same SCK checks with the Hall chips powered off */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
 } HallChk_ts;
 
@@ -41,6 +42,9 @@ static void HallChk_Print(void)
           (unsigned)g_hall_chk.mosi_h, (unsigned)g_hall_chk.mosi_l,
           (unsigned)g_hall_chk.sck_h, (unsigned)g_hall_chk.sck_l,
           (unsigned)g_hall_chk.sck_in_pu);
+  InfoLog("SCK pwr-off h=%u in_pu=%u | pwr-on h=%u in_pu=%u",
+          (unsigned)g_hall_chk.sck_off_h, (unsigned)g_hall_chk.sck_off_in_pu,
+          (unsigned)g_hall_chk.sck_h, (unsigned)g_hall_chk.sck_in_pu);
   InfoLog("IOCON MOSI=%02lX MISO=%02lX SCK=%02lX",
           (unsigned long)g_hall_chk.iocon_mosi, (unsigned long)g_hall_chk.iocon_miso,
           (unsigned long)g_hall_chk.iocon_sck);
@@ -78,6 +82,33 @@ static void Hall_LoopbackTest(volatile uint8_t *out)
   out[1] = hall_spi_rx[1];
   out[2] = hall_spi_rx[2];
   out[3] = hall_spi_rx[3];
+}
+
+/* Exam 0C: SCK with the Hall chips powered off (HALL_EN = PIO0_16 low).
+ * SCK is only an input on GTRY164 (datasheet pin table). If SCK can be pulled
+ * high now but not when the chips are powered, a powered chip holds it low;
+ * if it stays low either way, it is a passive short (solder bridge, damaged
+ * input, PCB or MCU pin). */
+static void Hall_SckPowerOffTest(void)
+{
+  uint32_t reg;
+
+  DrvGPIOOutput(HALL_EN_PORT, HALL_EN_PIN, 0);   /* Hall power off */
+  CT16B1_DelayUs(50000);                         /* let C26/C51 discharge */
+
+  reg = LPC_IOCON->PIO1_15;
+  LPC_IOCON->PIO1_15 = (reg & ~0x1FUL) | 0x10;   /* GPIO, pull-up */
+  LPC_GPIO->DIR[1] &= ~(1UL << 15);              /* input */
+  CT16B1_DelayUs(20);
+  g_hall_chk.sck_off_in_pu = DrvGPIORead(1, 15);
+  DrvGPIOOutput(1, 15, 1);
+  CT16B1_DelayUs(5);
+  g_hall_chk.sck_off_h = DrvGPIORead(1, 15);
+  DrvGPIOOutput(1, 15, 0);
+  LPC_IOCON->PIO1_15 = reg;
+
+  DrvGPIOOutput(HALL_EN_PORT, HALL_EN_PIN, 1);   /* Hall power on again */
+  CT16B1_DelayUs(50000);                         /* let the chips start up */
 }
 
 /* Exam 0B: pin check. UM10462 Table 164/165 (PDF p.165): the GPIO PIN register
@@ -1079,6 +1110,7 @@ void HallSensor_INIT(void)
 #if (6 == USE_HALL_SENSOR)
 	/* Exams 0 and 1 only. The register table is still the H5 one (H5 addresses),
 	 * so it must not be written to H6 yet. */
+	Hall_SckPowerOffTest();                           /* exam 0C */
 	Hall_PinTest();                                   /* exam 0B */
 	Hall_LoopbackTest(g_hall_chk.echo);               /* exam 0 */
 	Hall_CLK_Command_SET(TD11_DELAY_US, TD9_DELAY_US); /* soft reset: td11 >1280us, td9 >50us */
