@@ -9,6 +9,7 @@
 #include "my_board.h"
 #include "my_adc.h"
 #include "my_debug.h"
+#include "WWDT.h"
 
 UINT8 hall_spi_tx[4] = {0};
 UINT8 hall_spi_rx[4] = {0};
@@ -82,6 +83,23 @@ static void Hall_LoopbackTest(volatile uint8_t *out)
   out[1] = hall_spi_rx[1];
   out[2] = hall_spi_rx[2];
   out[3] = hall_spi_rx[3];
+}
+
+/* Multimeter check: 1 = drive SCK (PIO1_15, MCU pin 28) high forever and
+ * stop here. Set to 0 to run the normal test flow again. */
+#define HALL_SCK_HOLD_HIGH  1
+
+static void Hall_SckHoldHigh(void)
+{
+  uint32_t reg = LPC_IOCON->PIO1_15;
+
+  LPC_IOCON->PIO1_15 = (reg & ~0x1FUL) | 0x10;   /* GPIO, pull-up */
+  LPC_GPIO->DIR[1] |= (1UL << 15);               /* output */
+  DrvGPIOOutput(1, 15, 1);                       /* SCK high */
+  while (1)
+  {
+    wwdt_feed();                                 /* watchdog is on (device.c) */
+  }
 }
 
 /* Exam 0C: SCK with the Hall chips powered off (HALL_EN = PIO0_16 low).
@@ -1110,6 +1128,9 @@ void HallSensor_INIT(void)
 #if (6 == USE_HALL_SENSOR)
 	/* Exams 0 and 1 only. The register table is still the H5 one (H5 addresses),
 	 * so it must not be written to H6 yet. */
+#if HALL_SCK_HOLD_HIGH
+	Hall_SckHoldHigh();                               /* never returns */
+#endif
 	Hall_SckPowerOffTest();                           /* exam 0C */
 	Hall_PinTest();                                   /* exam 0B */
 	Hall_LoopbackTest(g_hall_chk.echo);               /* exam 0 */
