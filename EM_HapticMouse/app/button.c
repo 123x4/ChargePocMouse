@@ -31,6 +31,7 @@ typedef struct
   uint8_t sck_h, sck_l;       /* SCK pin read back while driven high / low */
   uint8_t sck_in_pu;          /* SCK as input with only the internal pull-up */
   uint8_t sck_off_h, sck_off_in_pu;   /* same SCK checks with the Hall chips powered off */
+  uint8_t rd0c_r, rd0c_l;             /* exam 2: register 0x0C read back */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
 } HallChk_ts;
 
@@ -59,6 +60,8 @@ static void HallChk_Print(void)
           (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
           (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
           (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l);
+  InfoLog("RD 0x0C R=%02X L=%02X (expect AA AA)",
+          (unsigned)g_hall_chk.rd0c_r, (unsigned)g_hall_chk.rd0c_l);
 }
 
 /* Exam 0: loopback through the daisy chain, no SCK command pulse involved.
@@ -1090,9 +1093,9 @@ void Hall_read_register(void)
 void Hall_ReadReg(uint8_t reg, uint8_t *leftValue, uint8_t *rightValue)
 {
 	hall_spi_tx[0] =  reg & (~(0x01 << 7));
-	hall_spi_rx[1] = 0x55;//any value
+	hall_spi_tx[1] = 0x55;//any value
 	hall_spi_tx[2] =  reg & (~(0x01 << 7));
-	hall_spi_rx[3] = 0x55;//any value
+	hall_spi_tx[3] = 0x55;//any value
 	
 	Hall_read_register();
 	
@@ -1137,7 +1140,14 @@ void HallSensor_INIT(void)
 	Hall_CLK_Command_SET(TD11_DELAY_US, TD9_DELAY_US); /* soft reset: td11 >1280us, td9 >50us */
 	CT16B1_DelayUs(2000);
 	Hall_LoopbackTest(g_hall_chk.echo2);              /* exam 0 again after reset */
-	Hall_osc_calibrate();
+	Hall_osc_calibrate();                             /* exam 1 */
+	if(g_hall_chk.cal_ok)
+	{
+		uint8_t l, r;
+		Hall_ReadReg(0x0C, &l, &r);                   /* exam 2: H6 reset value of 0x0C is 0xAA */
+		g_hall_chk.rd0c_r = r;
+		g_hall_chk.rd0c_l = l;
+	}
 #else
 	Hall_osc_calibrate();
 
