@@ -61,7 +61,7 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
 <section class="stage" aria-label="动画">
   <div class="cases" role="group" aria-label="选择情况">
     <button data-case="ok" aria-pressed="true">正常：39 µs</button>
-    <button data-case="bad" aria-pressed="false">对照：50 µs（预测）</button>
+    <button data-case="bad" aria-pressed="false">对照：50 µs（实测）</button>
   </div>
   <div class="scroll"><svg id="svg" viewBox="0 0 640 230" role="img" aria-label="MCU 读两颗霍尔芯片的寄存器 0x0C"></svg></div>
   <div class="say" id="say"></div>
@@ -90,7 +90,7 @@ EXAM2 RD 0x0C rx=00 AA 00 AA width=39 (expect R=AA L=AA)</pre></li>
 </ol>
 <p><b>为什么预测是 0C 55：</b>芯片不认 50 µs，就不会把寄存器值装进去。移位寄存器里还是我们刚送进去的读帧 <code>0C 55</code>，第二次 SPI 会把它原样推回来。<br>
 <b>为什么选 50：</b>它在 39 µs 的 ±5% 之外，又不是别的命令（28 µs 是睡眠，128 µs 是校准，不能用）。</p>
-<p>上一关的对照实验推翻过我的预测，这一关也可能。如果 50 µs 也读到 AA，说明芯片对这个命令的宽度比手册宽松，同样是有用的结论，照实发我。</p>
+<div class="fact" style="border-color:var(--ok)"><b>实测结果：本关通过。</b><p>39 µs：<code>rx=00 AA 00 AA</code>；50 µs：<code>rx=0C 55 0C 55</code>，和预测一致。芯片确实按宽度区分这条命令，而且校准后它的时钟跟 MCU 对齐，所以 39 µs 在它眼里也是 39。</p></div>
 <p class="ref">手册：H6 §7.4 图 7（PDF 第 10 页）读寄存器步骤；§7.8（第 12 页）td6 = 39 µs ±5%、td5 &gt; 3 µs；§8 寄存器表（第 14 页）0x0C 默认 0xAA。</p>
 </section>
 </main>
