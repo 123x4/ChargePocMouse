@@ -62,7 +62,7 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
 <section class="stage" aria-label="动画">
   <div class="cases" role="group" aria-label="选择情况">
     <button data-case="ok" aria-pressed="true">正常：128 µs</button>
-    <button data-case="wide" aria-pressed="false">对照：145 µs</button>
+    <button data-case="wide" aria-pressed="false">对照：145 µs（实测）</button>
     <button data-case="low" aria-pressed="false">旧板：SCK 被拉低</button>
   </div>
   <div class="scroll"><svg id="svg" viewBox="0 0 640 230" role="img" aria-label="MCU 向两颗霍尔芯片发校准命令"></svg></div>
@@ -74,8 +74,8 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
 <section>
 <h2>记住三件事</h2>
 <div class="facts">
-  <div class="fact"><span class="big">128 µs</span><p>命令靠 SCK 高电平的宽度区分。允许 ±5%，即 121.6～134.4 µs。</p></div>
-  <div class="fact"><span class="big">7C～84</span><p>两颗芯片回的低 8 位都在这个范围才算过。最多试 128 次。</p></div>
+  <div class="fact"><span class="big">128 µs</span><p>芯片用这个脉冲当“标准尺”，把自己的时钟调到和 MCU 一致。之后 39 µs、5 µs 的命令都按这把尺量。</p></div>
+  <div class="fact"><span class="big">7C～84</span><p>回值是芯片量到的脉宽（0x80 = 正好）。每发一次芯片调一点，进入这个范围就算过。</p></div>
   <div class="fact"><span class="big">20 ms</span><p>成功后照手册等 20 ms 再往下走。只在开机跑一次。</p></div>
 </div>
 </section>
@@ -87,9 +87,16 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
   <li><b>先</b>运行 <code>python tools/hid_log.py</code>，看到 waiting 后再插 USB。开机约 2、4、6 秒各打印一次 <code>EXAM1</code>，之后就安静了（其他日志都已关掉）。</li>
   <li>正式考，应该看到：
 <pre>EXAM1 CAL ok=1 n=.. R=00:7C~84 L=00:7C~84 width=128</pre></li>
-  <li>对照实验：<code>button.c</code> 里把 <code>HALL_EXAM1_PULSE_US</code> 从 128 改成 145，重新烧录，应该看到 <code>ok=0 n=128 ... width=145</code>。顺便看 seq 是 00 还是 95 附近。看完改回 128。</li>
+  <li>对照实验（已做）：把 <code>HALL_EXAM1_PULSE_US</code> 改成 145，结果是：
+<pre>EXAM1 CAL ok=1 n=17 R=00:83 L=00:84 width=145
+EXAM1 seq  R=96 94 92 91 8F 8D 8B 8A ...</pre>
+  做完记得改回 128。</li>
+  <li>可选的预测实验：改成 124。按上面的理解，第一次读数就该在 0x80 附近，n=1。说中了，说明这套理解是对的。</li>
 </ol>
-<p><b>两次都对，这一关才算过。</b>对照实验证明这道题真的能判出错。如果 145 µs 也显示 ok=1，那 128 µs 的“通过”就不可信。</p>
+<div class="fact" style="border-color:var(--bad)"><b>对照实验推翻了原来的假设。</b>
+<p>原来以为芯片会拒绝 ±5% 以外的脉宽，所以预测 145 µs 会得到 ok=0。实测芯片照收不误：先量出 150，再每次把自己的时钟调慢一点，第 17 次进了范围。
+所以这一关能证明的是：<b>两颗芯片都收到校准命令，并能把时钟收敛到范围内</b>。它判不出 MCU 的脉宽准不准，这要交给考题二：如果校准用的脉冲偏了，芯片的尺子跟着偏，39 µs 的读寄存器命令就会对不上。</p>
+<p>这也解释了“为什么总是 0x84”：128 µs 第一次量出来是 84～86，芯片从上往下调，一进范围就停，所以总停在上沿。</p></div>
 <p class="ref">采样值乱跳、右键乱触发是后面几关的事，现在不用管。<br>
 手册：H6 §7.6 图 9（PDF 第 10 页）命令波形；§7.8（第 12 页）td10 = 128 µs、td12 &gt; 50 µs；§9.1 图 11（第 19 页）校准流程。</p>
 </section>
@@ -102,12 +109,12 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function el(t, a, x){ const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x !== undefined) e.textContent = x; svg.appendChild(e); return e; }
 const CASES = {
   ok:   { w:128, heard:"认出：频率校准", reply:"84", pass:true },
-  wide: { w:145, heard:"145 µs 不在窗口里，不认", reply:"00", pass:false },
+  wide: { w:145, heard:"照收：量出 150，调慢时钟", reply:"84", pass:true },
   low:  { w:0,   heard:"没看到高电平", reply:"00", pass:false }
 };
 const SAY = {
-  ok: ["MCU 把 SCK 拉高，两颗芯片开始掐秒表。", "拉高约 128 µs 后拉低。芯片一看秒表：在 121.6～134.4 之间，是频率校准命令。", "MCU 等 55 µs，芯片校准自己的振荡器，把结果 0x84 准备好。", "SPI 发 32 个时钟把结果送回来：00 84 00 84。两个 0x84 都在 7C～84 内，通过。"],
-  wide:["MCU 把 SCK 拉高，这次故意拉 145 µs。", "芯片看秒表：145 µs 超出 128 µs 的 ±5% 窗口，不认这条命令。", "芯片什么也没准备，寄存器里还是 0。", "送回来 00 00 00 00，不合格。重试 128 次都一样，ok=0。对照实验就该是这个结果。"],
+  ok: ["MCU 把 SCK 拉高，两颗芯片开始掐秒表。", "拉高约 128 µs 后拉低。芯片用自己的时钟量出约 132 拍（0x84～0x86），把时钟微调一点。", "MCU 等 55 µs，芯片把量到的数 0x84 准备好。", "SPI 发 32 个时钟把结果送回来：00 84 00 84。两个 0x84 都在 7C～84 内，通过。"],
+  wide:["MCU 把 SCK 拉高，这次故意拉 145 µs。", "芯片照样当成校准命令，用自己的时钟量出约 150 拍（0x96），比 128 多，于是把自己的时钟调慢一点。", "第一次回 0x96，不合格，再发。每发一次芯片少数约 2 拍：96 → 94 → 92 → 91 → 8F …", "第 17 次降到 0x84，进入范围，ok=1。对照实验没有失败：这道题判不出脉宽准不准，芯片会自己去对齐 MCU。"],
   low: ["MCU 想把 SCK 拉高，但这根线被短路拉在 0 V，实际一直是低电平。", "芯片的秒表一直没动，没收到任何命令。", "芯片寄存器里还是 0。", "时钟也到不了芯片，MCU 收到 00 00 00 00，重试 128 次后 ok=0。这就是旧板的日志。"]
 };
 let cs = "ok", step = 0, t = 1, raf = 0, playing = !reduce, timer = 0;

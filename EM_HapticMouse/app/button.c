@@ -41,7 +41,7 @@ volatile HallChk_ts g_hall_chk;
 
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
 #define HALL_EXAM             1   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C */
-#define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal, 145 control test, 124 sweep test */
+#define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
 #define HALL_DIAG_PINS        0   /* 1 = also run the old pin / loopback / power-off checks */
 #define HALL_EXAM1_TRACE      1   /* 1 = log every calibration reading, and send 8 more after the pass */
 
@@ -72,7 +72,7 @@ static char *HallChk_Hex8(char *p, volatile uint8_t *v, uint8_t n)
 
 static void HallChk_Print(void)
 {
-  ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (expect ok=1 at 128, ok=0 at 145)",
+  ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (ok=1: chips converged to 7C..84)",
           (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
           (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
           (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l,
