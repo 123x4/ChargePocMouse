@@ -1,0 +1,158 @@
+<title>考题三 写寄存器</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+<main>
+<header>
+<h1>考题三：写寄存器 0x30 再读回</h1>
+<p class="lede">只考一件事：H6 的<b>写校验位 CRCWR</b> 算对没有。算错了芯片会直接丢掉这次写入，读回来还是旧值。</p>
+</header>
+
+<section class="stage" aria-label="动画">
+  <div class="cases" role="group" aria-label="选择情况">
+    <button data-case="ok" aria-pressed="true">正常：CRC 正确</button>
+    <button data-case="bad" aria-pressed="false">对照：CRC 故意取反（预测）</button>
+  </div>
+  <div class="scroll"><svg id="svg" viewBox="0 0 640 210" role="img" aria-label="MCU 写寄存器 0x30 再读回"></svg></div>
+  <div class="say" id="say"></div>
+  <div class="dots" id="dots"><span></span><span></span><span></span><span></span>
+    <div class="ctl"><button id="prev">上一步</button><button id="next">下一步</button><button id="play">暂停</button></div></div>
+</section>
+
+<section>
+<h2>记住三件事</h2>
+<div class="facts">
+  <div class="fact"><span class="big">1 C AAAAAA</span><p>写帧第一个字节：最高位 1 表示写，第二位是 CRCWR，后 6 位是地址。第二个字节是数据。</p></div>
+  <div class="fact"><span class="big">B0 21</span><p>写 0x30 = 0x21：地址 110000 有 2 个 1，数据 00100001 有 2 个 1，一共偶数个，CRCWR = 0，首字节 = 0xB0。</p></div>
+  <div class="fact"><span class="big">写完读回</span><p>写操作芯片不回话，只能用考题二的方法读回来看。最后再写回默认值 0x20，芯片恢复原状。</p></div>
+</div>
+</section>
+
+<section>
+<h2>怎么跑这一关</h2>
+<ol>
+  <li>本地先把考题二的 <code>HALL_EXAM2_PULSE_US</code> 改回 39，再 <code>git pull</code>。代码里 <code>HALL_EXAM</code> 已经是 3。</li>
+  <li>Keil Rebuild，0 Error 后烧录。<b>先</b>开 <code>python tools/hid_log.py</code>，再插 USB。</li>
+  <li>每组三行，看最后一行：
+<pre>EXAM1 CAL ok=1 ...
+EXAM2 RD 0x0C rx=00 AA 00 AA ...
+EXAM3 WR 0x30=21 -&gt; R=21 L=21 | =20 -&gt; R=20 L=20 crc=ok (expect 21 21 | 20 20)</pre></li>
+  <li>对照实验：把 <code>HALL_EXAM3_BAD_CRC</code> 改成 1，重新烧录。预测：<code>R=20 L=20 | R=20 L=20 crc=bad</code>，两次写都被拒，读回的都是默认值。看完改回 0。</li>
+</ol>
+<div class="fact" style="border-color:var(--sck)"><b>这一关验证不了的东西</b>
+<p>CRCWR 要把<b>地址和数据</b>一起算（手册公式），而原来 H5 的表只算数据。0x30 = 110000 的 1 是偶数个，两种算法在这里结果一样。所以这一关只能证明“芯片会检查校验位、我们算的对”，<b>证明不了“地址那一项算没算进去”</b>。
+这要留给考题四：例如写 0x2F = 0x14，新算法得到首字节 0xEF，H5 的算法会得到 0xAF，按手册芯片应该只接受前者。</p></div>
+<p class="ref">手册：H6 §7.4 图 6（PDF 第 9～10 页）写帧格式和 CRCWR 公式；§7.8（第 12 页）td6 = 39 µs、td5 &gt; 3 µs；寄存器表（第 16 页）0x30 默认 0x20。</p>
+</section>
+</main>
+
+<script>
+(function(){
+const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("svg");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(t, a, x){ const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x !== undefined) e.textContent = x; svg.appendChild(e); return e; }
+const CASES = {
+  ok:  { crc:0, head:"B0", reg:"21", pass:true },
+  bad: { crc:1, head:"F0", reg:"20", pass:false }
+};
+const SAY = {
+  ok: ["算 CRCWR：地址 0x30 = 110000（2 个 1），数据 0x21 = 00100001（2 个 1），合计偶数，CRCWR = 0。写帧 = 1 0 110000 + 00100001 = B0 21。", "SPI 把 B0 21 送进两颗芯片，再发 39 µs 的 WR_REG 命令。芯片检查校验位：对得上。", "芯片把 0x21 写进寄存器 0x30（原来是 0x20）。", "用考题二的方法读 0x30：读回 21。再写回 0x20、读回 20，两步都对，通过。"],
+  bad:["这次故意把 CRCWR 取反：写帧变成 F0 21（校验位是 1，但正确答案是 0）。", "SPI 送进去，再发 39 µs 命令。芯片检查校验位：对不上。", "按手册，这条写指令无效，寄存器 0x30 保持默认值 0x20。", "读 0x30：读回 20，没有被改。这是预测，等实测。"]
+};
+let cs = "ok", step = 0, t = 1, raf = 0, playing = !reduce, timer = 0;
+function bits(v, n){ return v.toString(2).padStart(n, "0"); }
+function draw(){
+  const c = CASES[cs]; svg.textContent = "";
+  // frame bits
+  el("text", { x:20, y:28, "font-size":"12", fill:"var(--muted)" }, "写帧（16 位）");
+  const cells = [{ t:"1", k:"w" }, { t:String(c.crc), k:"c" }].concat(bits(0x30, 6).split("").map(b => ({ t:b, k:"a" }))).concat(bits(0x21, 8).split("").map(b => ({ t:b, k:"d" })));
+  const col = { w:"var(--muted)", c:c.pass ? "var(--ok)" : "var(--bad)", a:"var(--sck)", d:"var(--accent)" };
+  cells.forEach((b, i) => {
+    const x = 20 + i * 30 + (i >= 8 ? 14 : 0);
+    el("rect", { x, y:36, width:26, height:30, rx:4, fill:"var(--panel)", stroke:col[b.k], "stroke-width": b.k === "c" ? 2.5 : 1.2 });
+    el("text", { x:x + 13, y:57, "text-anchor":"middle", class:"m", "font-size":"15", fill:col[b.k] }, b.t);
+  });
+  el("text", { x:20, y:84, "font-size":"11", fill:"var(--muted)" }, "写");
+  el("text", { x:50, y:84, "font-size":"11", fill:col.c }, "CRC");
+  el("text", { x:140, y:84, "font-size":"11", fill:col.a }, "地址 0x30");
+  el("text", { x:330, y:84, "font-size":"11", fill:col.d }, "数据 0x21");
+  el("text", { x:520, y:57, "font-size":"18", class:"m" }, "= " + c.head + " 21");
+  // chips / register
+  el("rect", { x:20, y:104, width:600, height:92, rx:10, fill:"var(--bg)", stroke:"var(--line)" });
+  const checked = step >= 1 && !(step === 1 && t < 1);
+  el("text", { x:40, y:132, "font-size":"13", fill:"var(--muted)" }, "芯片检查校验位");
+  el("text", { x:240, y:132, "font-size":"14", "font-weight":"700", fill:checked ? (c.pass ? "var(--ok)" : "var(--bad)") : "var(--muted)" }, checked ? (c.pass ? "✓ 对得上，执行写入" : "✗ 对不上，丢掉") : (step === 1 ? "发 39 µs 中…" : "—"));
+  el("text", { x:40, y:164, "font-size":"13", fill:"var(--muted)" }, "寄存器 0x30");
+  const regv = step >= 2 ? c.reg : "20";
+  el("text", { x:240, y:166, "font-size":"22", class:"m", fill:step >= 2 ? (c.pass ? "var(--ok)" : "var(--bad)") : "var(--fg)" }, "0x" + regv);
+  el("text", { x:330, y:164, "font-size":"12", fill:"var(--muted)" }, step >= 2 ? (c.pass ? "从 0x20 变成了 0x21" : "还是默认值 0x20") : "上电默认 0x20");
+  if (step === 3) el("text", { x:600, y:186, "text-anchor":"end", "font-size":"14", "font-weight":"700", fill:c.pass ? "var(--ok)" : "var(--bad)" }, "读回 R=" + c.reg + " L=" + c.reg + (c.pass ? " ✓" : " ✗"));
+  document.getElementById("say").innerHTML = `<b class="n">${step + 1}/4</b>` + SAY[cs][step];
+  document.querySelectorAll("#dots > span").forEach((s, i) => s.classList.toggle("on", i === step));
+}
+function run(){
+  cancelAnimationFrame(raf); clearTimeout(timer);
+  if (reduce || step !== 1) { t = 1; draw(); if (playing) timer = setTimeout(adv, 3000); return; }
+  const t0 = performance.now(), ms = 1200;
+  const tick = n => { t = Math.min(1, (n - t0) / ms); draw(); if (t < 1) raf = requestAnimationFrame(tick); else if (playing) timer = setTimeout(adv, 2200); };
+  raf = requestAnimationFrame(tick);
+}
+function adv(){ step = (step + 1) % 4; run(); }
+document.querySelectorAll("[data-case]").forEach(b => b.onclick = () => { cs = b.dataset.case; document.querySelectorAll("[data-case]").forEach(x => x.setAttribute("aria-pressed", x === b)); step = 0; run(); });
+document.getElementById("next").onclick = adv;
+document.getElementById("prev").onclick = () => { step = (step + 3) % 4; run(); };
+const pb = document.getElementById("play"); pb.textContent = playing ? "暂停" : "播放";
+pb.onclick = () => { playing = !playing; pb.textContent = playing ? "暂停" : "播放"; if (playing) run(); else clearTimeout(timer); };
+run();
+})();
+</script>

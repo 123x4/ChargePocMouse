@@ -33,6 +33,8 @@ typedef struct
   uint8_t sck_off_h, sck_off_in_pu;   /* same SCK checks with the Hall chips powered off */
   uint8_t rd0c_r, rd0c_l;             /* exam 2: register 0x0C read back */
   uint8_t rd0c_rx[4];                 /* exam 2: all 4 bytes of the read-back frame */
+  uint8_t wr30_r, wr30_l;             /* exam 3: 0x30 read back after writing 0x21 */
+  uint8_t wr30b_r, wr30b_l;           /* exam 3: 0x30 read back after writing 0x20 again */
   uint8_t seq_r[8], seq_l[8];         /* exam 1 trace: low byte of the first 8 tries */
   uint8_t more_r[8], more_l[8];       /* exam 1 trace: 8 extra commands after the pass */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
@@ -41,9 +43,10 @@ typedef struct
 volatile HallChk_ts g_hall_chk;
 
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
-#define HALL_EXAM             2   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C */
+#define HALL_EXAM             3   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30 */
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
+#define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
 #define HALL_DIAG_PINS        0   /* 1 = also run the old pin / loopback / power-off checks */
 #define HALL_EXAM1_TRACE      0   /* 1 = log every calibration reading, and send 8 more after the pass */
 
@@ -99,6 +102,12 @@ static void HallChk_Print(void)
           (unsigned)g_hall_chk.rd0c_rx[0], (unsigned)g_hall_chk.rd0c_rx[1],
           (unsigned)g_hall_chk.rd0c_rx[2], (unsigned)g_hall_chk.rd0c_rx[3],
           (unsigned)HALL_EXAM2_PULSE_US);
+#endif
+#if (HALL_EXAM >= 3)
+  ExamLog("EXAM3 WR 0x30=21 -> R=%02X L=%02X | =20 -> R=%02X L=%02X crc=%s (expect 21 21 | 20 20)",
+          (unsigned)g_hall_chk.wr30_r, (unsigned)g_hall_chk.wr30_l,
+          (unsigned)g_hall_chk.wr30b_r, (unsigned)g_hall_chk.wr30b_l,
+          HALL_EXAM3_BAD_CRC ? "bad" : "ok");
 #endif
 #if HALL_DIAG_PINS
   ExamLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
@@ -1210,6 +1219,37 @@ void Hall_write_register(void)
 	Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);
 }
 
+#if (6 == USE_HALL_SENSOR)
+/* GTRY164 datasheet 7.4 Fig 6: write frame = 1 | CRCWR | A5..A0, then D7..D0.
+ * CRCWR = A5^A4^A3^A2^A1^A0^D7^...^D0 (parity of address AND data; the H5
+ * table bit_crc_write_reg[] only covers the data). Both chips get the same value. */
+static uint8_t Hall_CrcWr(uint8_t addr, uint8_t data)
+{
+	uint16_t v = ((uint16_t)(addr & 0x3F) << 8) | data;
+	uint8_t p = 0;
+	while(v)
+	{
+		p ^= (uint8_t)(v & 1);
+		v >>= 1;
+	}
+#if HALL_EXAM3_BAD_CRC
+	p ^= 1;                                       /* control test: wrong on purpose */
+#endif
+	return p;
+}
+
+static void Hall_WriteReg(uint8_t addr, uint8_t data)
+{
+	uint8_t head = 0x80 | (uint8_t)(Hall_CrcWr(addr, data) << 6) | (addr & 0x3F);
+
+	hall_spi_tx[0] = head;
+	hall_spi_tx[1] = data;
+	hall_spi_tx[2] = head;
+	hall_spi_tx[3] = data;
+	Hall_write_register();                        /* SSP 4 bytes, then td6 39us + td5 */
+}
+#endif
+
 void ana_hall2_phy_set_mode(unsigned char length)
 {
 	unsigned char i, j;
@@ -1256,6 +1296,20 @@ void HallSensor_INIT(void)
 		g_hall_chk.rd0c_rx[1] = hall_spi_rx[1];
 		g_hall_chk.rd0c_rx[2] = hall_spi_rx[2];
 		g_hall_chk.rd0c_rx[3] = hall_spi_rx[3];
+	}
+#endif
+#if (HALL_EXAM >= 3)
+	if(g_hall_chk.cal_ok && (0xAA == g_hall_chk.rd0c_r) && (0xAA == g_hall_chk.rd0c_l))
+	{
+		uint8_t l, r;
+		Hall_WriteReg(0x30, 0x21);                    /* exam 3: 0x30 default is 0x20 */
+		Hall_ReadReg(0x30, &l, &r);
+		g_hall_chk.wr30_r = r;
+		g_hall_chk.wr30_l = l;
+		Hall_WriteReg(0x30, 0x20);                    /* write the default back */
+		Hall_ReadReg(0x30, &l, &r);
+		g_hall_chk.wr30b_r = r;
+		g_hall_chk.wr30b_l = l;
 	}
 #endif
 #else
