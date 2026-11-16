@@ -14,7 +14,7 @@
 UINT8 hall_spi_tx[4] = {0};
 UINT8 hall_spi_rx[4] = {0};
 
-/* H6 self-check ("exams"): results are printed over USB by InfoLog,
+/* H6 self-check ("exams"): results are printed over USB by ExamLog,
  * read them on the PC with tools/hid_log.py. Exam 1 = frequency calibration. */
 typedef struct
 {
@@ -52,31 +52,31 @@ volatile HallChk_ts g_hall_chk;
 
 static void HallChk_Print(void)
 {
-  InfoLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (expect ok=1 with 128, ok=0 with 145)",
+  ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (expect ok=1 with 128, ok=0 with 145)",
           (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
           (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
           (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l,
           (unsigned)HALL_EXAM1_WIDTH_US);
 #if (HALL_EXAM >= 2)
-  InfoLog("EXAM2 RD 0x0C R=%02X L=%02X (expect AA AA)",
+  ExamLog("EXAM2 RD 0x0C R=%02X L=%02X (expect AA AA)",
           (unsigned)g_hall_chk.rd0c_r, (unsigned)g_hall_chk.rd0c_l);
 #endif
 #if HALL_DIAG_PINS
-  InfoLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
+  ExamLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
           (unsigned)g_hall_chk.miso_pd, (unsigned)g_hall_chk.miso_pu,
           (unsigned)g_hall_chk.mosi_h, (unsigned)g_hall_chk.mosi_l,
           (unsigned)g_hall_chk.sck_h, (unsigned)g_hall_chk.sck_l,
           (unsigned)g_hall_chk.sck_in_pu);
-  InfoLog("SCK pwr-off h=%u in_pu=%u | pwr-on h=%u in_pu=%u",
+  ExamLog("SCK pwr-off h=%u in_pu=%u | pwr-on h=%u in_pu=%u",
           (unsigned)g_hall_chk.sck_off_h, (unsigned)g_hall_chk.sck_off_in_pu,
           (unsigned)g_hall_chk.sck_h, (unsigned)g_hall_chk.sck_in_pu);
-  InfoLog("IOCON MOSI=%02lX MISO=%02lX SCK=%02lX",
+  ExamLog("IOCON MOSI=%02lX MISO=%02lX SCK=%02lX",
           (unsigned long)g_hall_chk.iocon_mosi, (unsigned long)g_hall_chk.iocon_miso,
           (unsigned long)g_hall_chk.iocon_sck);
-  InfoLog("ECHO %02X %02X %02X %02X (expect A5 5A C3 3C)",
+  ExamLog("ECHO %02X %02X %02X %02X (expect A5 5A C3 3C)",
           (unsigned)g_hall_chk.echo[0], (unsigned)g_hall_chk.echo[1],
           (unsigned)g_hall_chk.echo[2], (unsigned)g_hall_chk.echo[3]);
-  InfoLog("ECHO2 %02X %02X %02X %02X (after soft reset)",
+  ExamLog("ECHO2 %02X %02X %02X %02X (after soft reset)",
           (unsigned)g_hall_chk.echo2[0], (unsigned)g_hall_chk.echo2[1],
           (unsigned)g_hall_chk.echo2[2], (unsigned)g_hall_chk.echo2[3]);
 #endif
@@ -533,9 +533,11 @@ UINT32 LR_GetState(void)
 
   {
     static uint16_t prt = 0;
-    if(++prt >= 2000)                /* LR_GetState runs every 1 ms: print every ~2 s */
+    static uint8_t  shown = 0;
+    if((shown < 3) && (++prt >= 2000))   /* LR_GetState runs every 1 ms: print at ~2, 4, 6 s, then stop */
     {
       prt = 0;
+      shown++;
       HallChk_Print();
     }
   }

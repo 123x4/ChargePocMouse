@@ -64,12 +64,23 @@
 #endif /*MYDEBUG_ENABLE*/
 
 
+/* 1 = H6 exam mode: only ExamLog() prints, every InfoLog() is silent.
+ * 0 = normal: InfoLog() and ExamLog() both print. */
+#define EXAM_LOG_ONLY           1
+
 #if MYDEBUG_PRINTF_ENABLE
+#define ExamLog(format, ...)  \
+    printf("[I]%s: " format "\r\n", __func__, ##__VA_ARGS__)
+#if EXAM_LOG_ONLY
+#define InfoLog(format, ...)  do{}while(0)
+#else
 #define InfoLog(format, ...)  \
     printf("[I]%s: " format "\r\n", __func__, ##__VA_ARGS__)
+#endif
 void MyDebug_Init(void);
 void MyDebug_Task(void);
 #else
+#define ExamLog(format, ...)      do{}while(0)
 #define InfoLog(format, ...)      do{}while(0)
 #define MyDebug_Init()            do{}while(0)
 #define MyDebug_Task()            do{}while(0)
