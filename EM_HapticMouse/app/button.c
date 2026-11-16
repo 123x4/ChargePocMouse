@@ -28,6 +28,7 @@ typedef struct
   uint8_t miso_pd, miso_pu;   /* exam 0B: MISO pin level with pull-down / pull-up */
   uint8_t mosi_h, mosi_l;     /* MOSI pin read back while driven high / low */
   uint8_t sck_h, sck_l;       /* SCK pin read back while driven high / low */
+  uint8_t sck_in_pu;          /* SCK as input with only the internal pull-up */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
 } HallChk_ts;
 
@@ -35,10 +36,11 @@ volatile HallChk_ts g_hall_chk;
 
 static void HallChk_Print(void)
 {
-  InfoLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u",
+  InfoLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
           (unsigned)g_hall_chk.miso_pd, (unsigned)g_hall_chk.miso_pu,
           (unsigned)g_hall_chk.mosi_h, (unsigned)g_hall_chk.mosi_l,
-          (unsigned)g_hall_chk.sck_h, (unsigned)g_hall_chk.sck_l);
+          (unsigned)g_hall_chk.sck_h, (unsigned)g_hall_chk.sck_l,
+          (unsigned)g_hall_chk.sck_in_pu);
   InfoLog("IOCON MOSI=%02lX MISO=%02lX SCK=%02lX",
           (unsigned long)g_hall_chk.iocon_mosi, (unsigned long)g_hall_chk.iocon_miso,
           (unsigned long)g_hall_chk.iocon_sck);
@@ -109,12 +111,17 @@ static void Hall_PinTest(void)
   g_hall_chk.mosi_l = DrvGPIORead(0, 21);
   LPC_IOCON->PIO0_21 = reg;
 
-  /* SCK P1.15: same, the high level lasts only a few us */
+  /* SCK P1.15: same method as MOSI (5 us before each read); the high level
+   * lasts about 5 us, which the chip would at most take as one sample command. */
   reg = LPC_IOCON->PIO1_15;
-  LPC_IOCON->PIO1_15 = reg & ~0x07UL;
-  DrvGPIOOutput(1, 15, 1);
+  LPC_IOCON->PIO1_15 = (reg & ~0x1FUL) | 0x10;   /* GPIO, pull-up */
+  LPC_GPIO->DIR[1] &= ~(1UL << 15);              /* input: only the internal pull-up acts */
+  CT16B1_DelayUs(20);
+  g_hall_chk.sck_in_pu = DrvGPIORead(1, 15);     /* 0 here = something outside holds SCK low */
+  DrvGPIOOutput(1, 15, 1);                       /* output high */
+  CT16B1_DelayUs(5);
   g_hall_chk.sck_h = DrvGPIORead(1, 15);
-  DrvGPIOOutput(1, 15, 0);
+  DrvGPIOOutput(1, 15, 0);                       /* output low */
   CT16B1_DelayUs(10);
   g_hall_chk.sck_l = DrvGPIORead(1, 15);
   LPC_IOCON->PIO1_15 = reg;
