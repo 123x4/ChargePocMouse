@@ -99,7 +99,7 @@ pre{font-size:12.5px;line-height:1.55;background:var(--panel);border:1px solid v
 <!-- 0 -->
 <section>
 <h2><span class="no">0</span>怎么跑这一关</h2>
-<p class="why">代码已经调成“只做考题一”。开关在 <code>app/button.c</code> 里 <code>g_hall_chk</code> 定义的下面：</p>
+<p class="why">代码已经调成“只做考题一”：HALL_EN 给芯片上电以后，第一件事就是频率校准，前面不发软复位（手册 §9.1 图 11，PDF 第 19 页）。这样这一关只考 128 µs 这一条命令。开关在 <code>app/button.c</code> 里 <code>g_hall_chk</code> 定义的下面：</p>
 <pre>#define HALL_EXAM             1   /* 1 = 只做频率校准 */
 #define HALL_EXAM1_BAD_WIDTH  0   /* 1 = 故意发 145 us（对照实验） */
 #define HALL_DIAG_PINS        0   /* 1 = 再跑一遍以前的引脚 / 回环检查 */</pre>
@@ -195,7 +195,7 @@ CT16B1_DelayUs(127);   /* 定时器 1 MHz（PR = 47，48 MHz / 48），数到约
 <tr><td>L 左键 H1</td><td class="n">00:84</td><td class="n">00:00</td></tr>
 <tr><td>原因</td><td>128 µs 脉冲被认出，两颗芯片都回了 0x84</td><td>SCK 被拉在低电平，芯片根本没看到脉冲，也没有时钟把数据移出来</td></tr>
 </table>
-<div class="box good"><b class="t">新板为什么是“第 2 次才过”</b>手册图 11 的流程本来就是“发一次、检查、不合格就再发”，最多 128 次。第一次不合格，可能是芯片刚软复位完，振荡器还没校到范围内，也可能读回的是移位寄存器里的旧内容；手册没细说原因，但明确允许重试，所以 n=2 属于正常范围。如果以后 n 经常是几十次，才需要追查。</div>
+<div class="box good"><b class="t">新板为什么是“第 2 次才过”</b>手册图 11 的流程本来就是“发一次、检查、不合格就再发”，最多 128 次。第一次不合格，可能是芯片刚启动，振荡器还没校到范围内，也可能读回的是移位寄存器里的旧内容；手册没细说原因，但明确允许重试，所以 n=2 属于正常范围。如果以后 n 经常是几十次，才需要追查。</div>
 <div class="box warn"><b class="t">值得留意的一点</b>0x84 正好是合格范围的上限（0x7C～0x84）。这次合格没问题，但它说明这颗芯片的振荡器偏在一边。以后换板子如果出现 0x85、0x86，代码会一直重试到 128 次然后失败，到时先想到这里。</div>
 <div class="box idea"><b class="t">这次排查里值得记住的做法</b>旧板全是 0 的时候，我们先猜了时序、猜了芯片，真正一锤定音的是换一块新板对比。<b>同一份代码，在两块板上结果不同，问题就在板子上。</b>以后遇到“怎么都不对”的情况，先找一个确定是好的东西来对比。</div>
 </section>

@@ -57,7 +57,7 @@
 #define  TD8_DELAY_US    							(DELAY_OUT(2))  //(2)+-5%
 #define  TD9_DELAY_US    							(DELAY_OUT(55)) //>50
 #define  TD10_DELAY_US   							(DELAY_OUT(128))  	//128+-5%
-#define  TD11_DELAY_US    						(DELAY_OUT(2000))   //2000+-5%
+#define  TD11_DELAY_US    						(DELAY_OUT(2000))   //>1280, 2000 for margin
 #define  TD12_DELAY_US    						(DELAY_OUT(55)) 		//>50
 #endif
 

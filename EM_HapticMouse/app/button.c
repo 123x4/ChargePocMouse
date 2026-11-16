@@ -1156,12 +1156,12 @@ void HallSensor_INIT(void)
 	Hall_SckPowerOffTest();                           /* exam 0C */
 	Hall_PinTest();                                   /* exam 0B */
 	Hall_LoopbackTest(g_hall_chk.echo);               /* exam 0 */
-#endif
 	Hall_CLK_Command_SET(TD11_DELAY_US, TD9_DELAY_US); /* soft reset: td11 >1280us, td9 >50us */
 	CT16B1_DelayUs(2000);
-#if HALL_DIAG_PINS
 	Hall_LoopbackTest(g_hall_chk.echo2);              /* exam 0 again after reset */
 #endif
+	/* Datasheet 9.1 Fig 11: first step after power-on (HALL_EN in InitGPIO)
+	 * is frequency calibration. No soft reset before it. */
 	Hall_osc_calibrate();                             /* exam 1 */
 #if (HALL_EXAM >= 2)
 	if(g_hall_chk.cal_ok)
