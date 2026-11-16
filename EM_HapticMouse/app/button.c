@@ -1064,6 +1064,7 @@ void HALL_Read_Instru_cnt(void)
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
 
+#if (6 == USE_HALL_SENSOR)
 /* Frequency calibration, following GTRY164 datasheet 9.1 Fig 11.
  * Returns 1 when both chips answer 0x7C..0x84, 0 after 128 failed tries. */
 uint8_t Hall_osc_calibrate(void)
@@ -1099,6 +1100,28 @@ uint8_t Hall_osc_calibrate(void)
 
 	return 0;
 }
+#else
+/* GTRY154 (H5): original project code, unchanged by the H6 port.
+ * H5 datasheet 9 Fig: send 30 FREQ_Calibrate commands, ignore the data. */
+uint8_t Hall_osc_calibrate(void)
+{
+	uint16_t i, times = 0;
+
+	for(i = 0; i < 2; i++)
+	{
+		hall_spi_tx[i * 2 + 1] = 0x55;
+	}
+
+	while(times < 30)
+	{
+		HALL_Read_Instru_cnt();
+		times++;
+		nsAPI_SSP_Delay1us(100);
+	}
+
+	return 1;   /* result is not checked here, same as before */
+}
+#endif
 void Hall_read_register(void)
 {
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
