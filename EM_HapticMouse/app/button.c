@@ -24,15 +24,30 @@ typedef struct
   uint8_t cal_rh;      /* high byte from the right-key chip (rx[0]), datasheet: not valid data */
   uint8_t cal_lh;      /* high byte from the left-key chip (rx[2]) */
   uint8_t echo[4];     /* exam 0: loopback pattern read back, expect A5 5A C3 3C */
+  uint8_t echo2[4];    /* exam 0: loopback again after a soft reset */
+  uint8_t miso_pd, miso_pu;   /* exam 0B: MISO pin level with pull-down / pull-up */
+  uint8_t mosi_h, mosi_l;     /* MOSI pin read back while driven high / low */
+  uint8_t sck_h, sck_l;       /* SCK pin read back while driven high / low */
+  uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
 } HallChk_ts;
 
 volatile HallChk_ts g_hall_chk;
 
 static void HallChk_Print(void)
 {
+  InfoLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u",
+          (unsigned)g_hall_chk.miso_pd, (unsigned)g_hall_chk.miso_pu,
+          (unsigned)g_hall_chk.mosi_h, (unsigned)g_hall_chk.mosi_l,
+          (unsigned)g_hall_chk.sck_h, (unsigned)g_hall_chk.sck_l);
+  InfoLog("IOCON MOSI=%02lX MISO=%02lX SCK=%02lX",
+          (unsigned long)g_hall_chk.iocon_mosi, (unsigned long)g_hall_chk.iocon_miso,
+          (unsigned long)g_hall_chk.iocon_sck);
   InfoLog("ECHO %02X %02X %02X %02X (expect A5 5A C3 3C)",
           (unsigned)g_hall_chk.echo[0], (unsigned)g_hall_chk.echo[1],
           (unsigned)g_hall_chk.echo[2], (unsigned)g_hall_chk.echo[3]);
+  InfoLog("ECHO2 %02X %02X %02X %02X (after soft reset)",
+          (unsigned)g_hall_chk.echo2[0], (unsigned)g_hall_chk.echo2[1],
+          (unsigned)g_hall_chk.echo2[2], (unsigned)g_hall_chk.echo2[3]);
   InfoLog("CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X (expect low 7C..84)",
           (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
           (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
@@ -43,7 +58,7 @@ static void HallChk_Print(void)
  * Each chip is a 16-bit shift register (datasheet 11), so 32 clocks push a
  * pattern through both chips and the next 32 clocks bring it back on MISO.
  * Right result means power, SCK, MOSI, MISO and the H1->H2 link all work. */
-static void Hall_LoopbackTest(void)
+static void Hall_LoopbackTest(volatile uint8_t *out)
 {
   hall_spi_tx[0] = 0xA5;
   hall_spi_tx[1] = 0x5A;
@@ -57,10 +72,52 @@ static void Hall_LoopbackTest(void)
   hall_spi_tx[3] = 0;
   SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);   /* push it out on MISO */
 
-  g_hall_chk.echo[0] = hall_spi_rx[0];
-  g_hall_chk.echo[1] = hall_spi_rx[1];
-  g_hall_chk.echo[2] = hall_spi_rx[2];
-  g_hall_chk.echo[3] = hall_spi_rx[3];
+  out[0] = hall_spi_rx[0];
+  out[1] = hall_spi_rx[1];
+  out[2] = hall_spi_rx[2];
+  out[3] = hall_spi_rx[3];
+}
+
+/* Exam 0B: pin check. UM10462 Table 164/165 (PDF p.165): the GPIO PIN register
+ * reads the real pin level regardless of the selected function, except that a
+ * pin in analog mode (IOCON ADMODE bit7 = 0) always reads 0. */
+static void Hall_PinTest(void)
+{
+  uint32_t reg;
+
+  g_hall_chk.iocon_mosi = LPC_IOCON->PIO0_21;
+  g_hall_chk.iocon_miso = LPC_IOCON->PIO0_22;
+  g_hall_chk.iocon_sck  = LPC_IOCON->PIO1_15;
+
+  /* MISO P0.22: keep MISO1 function, only switch the pull resistor (MODE bits 4:3) */
+  reg = LPC_IOCON->PIO0_22 & ~0x18UL;
+  LPC_IOCON->PIO0_22 = reg | 0x08;            /* pull-down */
+  CT16B1_DelayUs(20);
+  g_hall_chk.miso_pd = DrvGPIORead(0, 22);
+  LPC_IOCON->PIO0_22 = reg | 0x10;            /* pull-up, the reset default */
+  CT16B1_DelayUs(20);
+  g_hall_chk.miso_pu = DrvGPIORead(0, 22);
+
+  /* MOSI P0.21: GPIO for a moment, drive and read back, then MOSI1 again */
+  reg = LPC_IOCON->PIO0_21;
+  LPC_IOCON->PIO0_21 = reg & ~0x07UL;
+  DrvGPIOOutput(0, 21, 1);
+  CT16B1_DelayUs(5);
+  g_hall_chk.mosi_h = DrvGPIORead(0, 21);
+  DrvGPIOOutput(0, 21, 0);
+  CT16B1_DelayUs(5);
+  g_hall_chk.mosi_l = DrvGPIORead(0, 21);
+  LPC_IOCON->PIO0_21 = reg;
+
+  /* SCK P1.15: same, the high level lasts only a few us */
+  reg = LPC_IOCON->PIO1_15;
+  LPC_IOCON->PIO1_15 = reg & ~0x07UL;
+  DrvGPIOOutput(1, 15, 1);
+  g_hall_chk.sck_h = DrvGPIORead(1, 15);
+  DrvGPIOOutput(1, 15, 0);
+  CT16B1_DelayUs(10);
+  g_hall_chk.sck_l = DrvGPIORead(1, 15);
+  LPC_IOCON->PIO1_15 = reg;
 }
 
 UINT16 top_baseline[2] = {8000, 8000};
@@ -1015,7 +1072,11 @@ void HallSensor_INIT(void)
 #if (6 == USE_HALL_SENSOR)
 	/* Exams 0 and 1 only. The register table is still the H5 one (H5 addresses),
 	 * so it must not be written to H6 yet. */
-	Hall_LoopbackTest();
+	Hall_PinTest();                                   /* exam 0B */
+	Hall_LoopbackTest(g_hall_chk.echo);               /* exam 0 */
+	Hall_CLK_Command_SET(TD11_DELAY_US, TD9_DELAY_US); /* soft reset: td11 >1280us, td9 >50us */
+	CT16B1_DelayUs(2000);
+	Hall_LoopbackTest(g_hall_chk.echo2);              /* exam 0 again after reset */
 	Hall_osc_calibrate();
 #else
 	Hall_osc_calibrate();
