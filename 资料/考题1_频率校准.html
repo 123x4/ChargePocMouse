@@ -84,7 +84,7 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
 <h2>怎么跑这一关</h2>
 <ol>
   <li><code>git pull</code>，Keil Rebuild，0 Error 后烧录。</li>
-  <li>插 USB，运行 <code>python tools/hid_log.py</code>，只看 <code>EXAM1</code> 那一行。</li>
+  <li><b>先</b>运行 <code>python tools/hid_log.py</code>，看到 waiting 后再插 USB。开机约 2、4、6 秒各打印一次 <code>EXAM1</code>，之后就安静了（其他日志都已关掉）。</li>
   <li>正式考，应该看到：
 <pre>EXAM1 CAL ok=1 n=.. R=00:7C~84 L=00:7C~84 width=128</pre></li>
   <li>对照实验：<code>button.c</code> 里把 <code>HALL_EXAM1_BAD_WIDTH</code> 改成 1，重新烧录，应该看到：
