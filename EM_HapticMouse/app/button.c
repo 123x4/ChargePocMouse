@@ -41,16 +41,16 @@ volatile HallChk_ts g_hall_chk;
 
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
 #define HALL_EXAM             1   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C */
-#define HALL_EXAM1_BAD_WIDTH  0   /* 1 = send a 145us pulse instead of 128us on purpose (control test) */
+#define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal, 145 control test, 124 sweep test */
 #define HALL_DIAG_PINS        0   /* 1 = also run the old pin / loopback / power-off checks */
 #define HALL_EXAM1_TRACE      1   /* 1 = log every calibration reading, and send 8 more after the pass */
 
-#if HALL_EXAM1_BAD_WIDTH && (6 == USE_HALL_SENSOR)
-#define HALL_EXAM1_WIDTH      DELAY_OUT(145)          /* outside 121.6..134.4: chip must ignore it */
-#define HALL_EXAM1_WIDTH_US   145
+#if (6 == USE_HALL_SENSOR)
+#define HALL_EXAM1_WIDTH      DELAY_OUT(HALL_EXAM1_PULSE_US)   /* 128 gives the same value as TD10_DELAY_US */
+#define HALL_EXAM1_WIDTH_US   HALL_EXAM1_PULSE_US
 #else
-#define HALL_EXAM1_WIDTH      HALL_TD_FREQ_CAL        /* td10 128us */
-#define HALL_EXAM1_WIDTH_US   128
+#define HALL_EXAM1_WIDTH      HALL_TD_FREQ_CAL                 /* H5: unchanged */
+#define HALL_EXAM1_WIDTH_US   0
 #endif
 
 #if HALL_EXAM1_TRACE
@@ -72,7 +72,7 @@ static char *HallChk_Hex8(char *p, volatile uint8_t *v, uint8_t n)
 
 static void HallChk_Print(void)
 {
-  ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (expect ok=1 with 128, ok=0 with 145)",
+  ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (expect ok=1 at 128, ok=0 at 145)",
           (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
           (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
           (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l,

@@ -87,9 +87,7 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
   <li><b>先</b>运行 <code>python tools/hid_log.py</code>，看到 waiting 后再插 USB。开机约 2、4、6 秒各打印一次 <code>EXAM1</code>，之后就安静了（其他日志都已关掉）。</li>
   <li>正式考，应该看到：
 <pre>EXAM1 CAL ok=1 n=.. R=00:7C~84 L=00:7C~84 width=128</pre></li>
-  <li>对照实验：<code>button.c</code> 里把 <code>HALL_EXAM1_BAD_WIDTH</code> 改成 1，重新烧录，应该看到：
-<pre>EXAM1 CAL ok=0 n=128 R=00:00 L=00:00 width=145</pre>
-  看完改回 0。</li>
+  <li>对照实验：<code>button.c</code> 里把 <code>HALL_EXAM1_PULSE_US</code> 从 128 改成 145，重新烧录，应该看到 <code>ok=0 n=128 ... width=145</code>。顺便看 seq 是 00 还是 95 附近。看完改回 128。</li>
 </ol>
 <p><b>两次都对，这一关才算过。</b>对照实验证明这道题真的能判出错。如果 145 µs 也显示 ok=1，那 128 µs 的“通过”就不可信。</p>
 <p class="ref">采样值乱跳、右键乱触发是后面几关的事，现在不用管。<br>
