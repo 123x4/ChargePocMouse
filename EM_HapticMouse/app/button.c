@@ -32,6 +32,7 @@ typedef struct
   uint8_t sck_in_pu;          /* SCK as input with only the internal pull-up */
   uint8_t sck_off_h, sck_off_in_pu;   /* same SCK checks with the Hall chips powered off */
   uint8_t rd0c_r, rd0c_l;             /* exam 2: register 0x0C read back */
+  uint8_t rd0c_rx[4];                 /* exam 2: all 4 bytes of the read-back frame */
   uint8_t seq_r[8], seq_l[8];         /* exam 1 trace: low byte of the first 8 tries */
   uint8_t more_r[8], more_l[8];       /* exam 1 trace: 8 extra commands after the pass */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
@@ -40,15 +41,18 @@ typedef struct
 volatile HallChk_ts g_hall_chk;
 
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
-#define HALL_EXAM             1   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C */
+#define HALL_EXAM             2   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C */
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
+#define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_DIAG_PINS        0   /* 1 = also run the old pin / loopback / power-off checks */
-#define HALL_EXAM1_TRACE      1   /* 1 = log every calibration reading, and send 8 more after the pass */
+#define HALL_EXAM1_TRACE      0   /* 1 = log every calibration reading, and send 8 more after the pass */
 
 #if (6 == USE_HALL_SENSOR)
 #define HALL_EXAM1_WIDTH      DELAY_OUT(HALL_EXAM1_PULSE_US)   /* 128 gives the same value as TD10_DELAY_US */
 #define HALL_EXAM1_WIDTH_US   HALL_EXAM1_PULSE_US
+#define HALL_EXAM2_WIDTH      DELAY_OUT(HALL_EXAM2_PULSE_US)   /* 39 gives the same value as TD6_DELAY_US */
 #else
+#define HALL_EXAM2_WIDTH      HALL_TD_WR_REG                   /* H5: unchanged */
 #define HALL_EXAM1_WIDTH      HALL_TD_FREQ_CAL                 /* H5: unchanged */
 #define HALL_EXAM1_WIDTH_US   0
 #endif
@@ -91,8 +95,10 @@ static void HallChk_Print(void)
   }
 #endif
 #if (HALL_EXAM >= 2)
-  ExamLog("EXAM2 RD 0x0C R=%02X L=%02X (expect AA AA)",
-          (unsigned)g_hall_chk.rd0c_r, (unsigned)g_hall_chk.rd0c_l);
+  ExamLog("EXAM2 RD 0x0C rx=%02X %02X %02X %02X width=%u (expect R=AA L=AA)",
+          (unsigned)g_hall_chk.rd0c_rx[0], (unsigned)g_hall_chk.rd0c_rx[1],
+          (unsigned)g_hall_chk.rd0c_rx[2], (unsigned)g_hall_chk.rd0c_rx[3],
+          (unsigned)HALL_EXAM2_PULSE_US);
 #endif
 #if HALL_DIAG_PINS
   ExamLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
@@ -1179,7 +1185,7 @@ void Hall_read_register(void)
 {
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 
-	Hall_CLK_Command_SET(HALL_TD_WR_REG, HALL_TD_WR_WAIT);
+	Hall_CLK_Command_SET(HALL_EXAM2_WIDTH, HALL_TD_WR_WAIT);   /* td6 39us WR_REG */
 	
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
@@ -1246,6 +1252,10 @@ void HallSensor_INIT(void)
 		Hall_ReadReg(0x0C, &l, &r);                   /* exam 2: H6 reset value of 0x0C is 0xAA */
 		g_hall_chk.rd0c_r = r;
 		g_hall_chk.rd0c_l = l;
+		g_hall_chk.rd0c_rx[0] = hall_spi_rx[0];
+		g_hall_chk.rd0c_rx[1] = hall_spi_rx[1];
+		g_hall_chk.rd0c_rx[2] = hall_spi_rx[2];
+		g_hall_chk.rd0c_rx[3] = hall_spi_rx[3];
 	}
 #endif
 #else

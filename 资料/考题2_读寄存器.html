@@ -1,0 +1,166 @@
+<title>考题二 读寄存器</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+<main>
+<header>
+<h1>考题二：读寄存器 0x0C</h1>
+<p class="lede">只考一件事：<b>39 µs 高电平</b>（WR_REG，“读写结束”命令）芯片认不认。读一个已知答案的寄存器来验证。</p>
+</header>
+
+<section class="stage" aria-label="动画">
+  <div class="cases" role="group" aria-label="选择情况">
+    <button data-case="ok" aria-pressed="true">正常：39 µs</button>
+    <button data-case="bad" aria-pressed="false">对照：50 µs（预测）</button>
+  </div>
+  <div class="scroll"><svg id="svg" viewBox="0 0 640 230" role="img" aria-label="MCU 读两颗霍尔芯片的寄存器 0x0C"></svg></div>
+  <div class="say" id="say"></div>
+  <div class="dots" id="dots"><span></span><span></span><span></span><span></span>
+    <div class="ctl"><button id="prev">上一步</button><button id="next">下一步</button><button id="play">暂停</button></div></div>
+</section>
+
+<section>
+<h2>记住三件事</h2>
+<div class="facts">
+  <div class="fact"><span class="big">39 µs</span><p>WR_REG 命令：芯片看到它，才执行刚送进来的读/写请求。手册要求 ±5%。</p></div>
+  <div class="fact"><span class="big">0xAA</span><p>0x0C 上电默认值，二进制 10101010，很难碰巧读对。现在还没写初始化表，所以读到的应该就是它。</p></div>
+  <div class="fact"><span class="big">低 8 位</span><p>读回 16 位，只有低 8 位是值：右键看 rx[1]，左键看 rx[3]。</p></div>
+</div>
+</section>
+
+<section>
+<h2>怎么跑这一关</h2>
+<ol>
+  <li>本地如果还改着考题一的 145 或 124，先改回 128，再 <code>git pull</code>。代码里 <code>HALL_EXAM</code> 已经是 2。</li>
+  <li>Keil Rebuild，0 Error 后烧录。</li>
+  <li><b>先</b>运行 <code>python tools/hid_log.py</code>，再插 USB。每组两行：
+<pre>EXAM1 CAL ok=1 ...                                   ← 前提，必须是 1
+EXAM2 RD 0x0C rx=00 AA 00 AA width=39 (expect R=AA L=AA)</pre></li>
+  <li>对照实验：把 <code>HALL_EXAM2_PULSE_US</code> 从 39 改成 50，重新烧录。预测会看到 <code>rx=0C 55 0C 55 width=50</code>。看完改回 39。</li>
+</ol>
+<p><b>为什么预测是 0C 55：</b>芯片不认 50 µs，就不会把寄存器值装进去。移位寄存器里还是我们刚送进去的读帧 <code>0C 55</code>，第二次 SPI 会把它原样推回来。<br>
+<b>为什么选 50：</b>它在 39 µs 的 ±5% 之外，又不是别的命令（28 µs 是睡眠，128 µs 是校准，不能用）。</p>
+<p>上一关的对照实验推翻过我的预测，这一关也可能。如果 50 µs 也读到 AA，说明芯片对这个命令的宽度比手册宽松，同样是有用的结论，照实发我。</p>
+<p class="ref">手册：H6 §7.4 图 7（PDF 第 10 页）读寄存器步骤；§7.8（第 12 页）td6 = 39 µs ±5%、td5 &gt; 3 µs；§8 寄存器表（第 14 页）0x0C 默认 0xAA。</p>
+</section>
+</main>
+
+<script>
+(function(){
+const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("svg");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(t, a, x){ const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x !== undefined) e.textContent = x; svg.appendChild(e); return e; }
+const CASES = {
+  ok:  { w:39, heard:"认出：读写结束", reg:"00 AA", rx:["00","AA","00","AA"], pass:true },
+  bad: { w:50, heard:"50 µs 不认（预测）", reg:"0C 55", rx:["0C","55","0C","55"], pass:false }
+};
+const SAY = {
+  ok: ["第一次 SPI：把读帧 0C 55 送进两颗芯片。0C 的最高位是 0，表示“读”，后面是地址 0x0C；55 随便填。", "SCK 当 GPIO 拉高 39 µs 再拉低，然后等 5 µs。芯片量到 39，认出这是“读写结束”命令。", "芯片照着刚收到的请求，把 0x0C 的值 0xAA 装进自己的移位寄存器：00 AA。", "第二次 SPI 把它推回来：rx = 00 AA 00 AA。右键 rx[1]、左键 rx[3] 都是 AA，通过。"],
+  bad:["第一次 SPI 一样：把读帧 0C 55 送进去。", "这次拉高 50 µs。超出 39 µs 的 ±5%，也不是别的命令，芯片不认。", "芯片什么也不做，移位寄存器里还是刚送进去的 0C 55。", "第二次 SPI 把原来的帧推回来：rx = 0C 55 0C 55。读到 55 而不是 AA，判失败。这是预测，等实测。"]
+};
+let cs = "ok", step = 0, t = 1, raf = 0, playing = !reduce, timer = 0;
+function draw(){
+  const c = CASES[cs]; svg.textContent = "";
+  el("rect", { x:10, y:20, width:150, height:120, rx:10, fill:"var(--bg)", stroke:"var(--muted)" });
+  el("text", { x:85, y:46, "text-anchor":"middle", "font-weight":"700" }, "MCU");
+  el("text", { x:85, y:70, "text-anchor":"middle", "font-size":"12", fill:"var(--muted)" }, step === 0 ? "发出 tx" : "收到 rx");
+  const shown = step === 0 ? ["0C","55","0C","55"] : (step === 3 && t >= 1 ? c.rx : ["··","··","··","··"]);
+  el("text", { x:85, y:94, "text-anchor":"middle", "font-size":"16", class:"m" }, shown.join(" "));
+  if (step === 3 && t >= 1) el("text", { x:85, y:124, "text-anchor":"middle", "font-size":"14", "font-weight":"700", fill:c.pass ? "var(--ok)" : "var(--bad)" }, c.pass ? "✓ R=AA L=AA" : "✗ 读到 55");
+  const high = step === 1;
+  el("line", { x1:160, y1:60, x2:400, y2:60, stroke:"var(--sck)", "stroke-width":high ? 5 : 2.5 });
+  el("text", { x:280, y:50, "text-anchor":"middle", "font-size":"12", fill:"var(--sck)" }, high ? "SCK = 高（命令）" : "SCK");
+  el("line", { x1:160, y1:100, x2:400, y2:100, stroke:"var(--line)", "stroke-width":2, "stroke-dasharray":"4 4" });
+  el("text", { x:280, y:120, "text-anchor":"middle", "font-size":"11", fill:"var(--muted)" }, step === 0 ? "MOSI：读帧送进去 →" : "← MISO：答案推回来");
+  if (step === 0) el("circle", { cx:160 + 240 * t, cy:100, r:6, fill:"var(--accent)" });
+  if (step === 3) el("circle", { cx:400 - 240 * t, cy:100, r:6, fill:"var(--accent)" });
+  el("rect", { x:400, y:20, width:230, height:120, rx:10, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":2 });
+  el("text", { x:515, y:44, "text-anchor":"middle", "font-weight":"700" }, "H1 左键 + H2 右键");
+  el("text", { x:420, y:72, "font-size":"12", fill:"var(--muted)" }, "移位寄存器");
+  const reg = step === 0 ? (t >= 1 ? "0C 55" : "··") : step === 1 ? "0C 55" : c.reg;
+  el("text", { x:610, y:74, "text-anchor":"end", "font-size":"20", class:"m" }, reg);
+  el("text", { x:420, y:100, "font-size":"12", fill:"var(--muted)" }, "秒表");
+  el("text", { x:610, y:102, "text-anchor":"end", "font-size":"16", class:"m" }, (step === 0 ? 0 : step === 1 ? Math.round(c.w * t) : c.w) + " µs");
+  el("text", { x:515, y:128, "text-anchor":"middle", "font-size":"13", fill:step >= 1 && !(step === 1 && t < 1) ? (c.pass ? "var(--ok)" : "var(--bad)") : "var(--muted)" }, step === 0 ? "等待" : (step === 1 && t < 1 ? "计时中…" : c.heard));
+  // waveform: SPI16 | pulse | wait | SPI32
+  const y0 = 205, y1 = 172, x0 = 20;
+  const a0 = 50, a1 = 200, p1 = a1 + c.w * 3.2, w1 = p1 + 25, b1 = 620;
+  let d = `M${x0} ${y0} H${a0}`;
+  const clk = (s, e, n) => { let q = ""; for (let i = 0; i < n; i++) { const x = s + i * (e - s) / n; q += ` H${x + 2} V${y1} H${x + (e - s) / n * 0.6} V${y0}`; } return q + ` H${e}`; };
+  d += clk(a0, a1 - 20, 16) + ` H${a1} V${y1} H${p1} V${y0} H${w1}` + clk(w1, b1, 16);
+  const cut = [a0 + (a1 - a0) * t, a1 + (p1 - a1) * t, w1, w1 + (b1 - w1) * t][step];
+  const cp = document.createElementNS(NS, "clipPath"); cp.id = "cp"; const r = document.createElementNS(NS, "rect"); r.setAttribute("width", Math.max(cut, 1)); r.setAttribute("height", 230); cp.appendChild(r); svg.appendChild(cp);
+  el("path", { d, fill:"none", stroke:"var(--sck)", "stroke-width":2, "clip-path":"url(#cp)" });
+  el("text", { x:(a0 + a1) / 2, y:165, "text-anchor":"middle", "font-size":"11", fill:"var(--muted)" }, "送读帧");
+  el("text", { x:(a1 + p1) / 2, y:165, "text-anchor":"middle", "font-size":"11", fill:"var(--muted)" }, c.w + " µs");
+  el("text", { x:(w1 + b1) / 2, y:165, "text-anchor":"middle", "font-size":"11", fill:"var(--muted)" }, "读回答案");
+  el("text", { x:x0, y:224, "font-size":"11", "font-weight":"700", fill:"var(--sck)" }, "SCK 波形");
+  document.getElementById("say").innerHTML = `<b class="n">${step + 1}/4</b>` + SAY[cs][step];
+  document.querySelectorAll("#dots > span").forEach((s, i) => s.classList.toggle("on", i === step));
+}
+function run(){
+  cancelAnimationFrame(raf); clearTimeout(timer);
+  if (reduce || step === 2) { t = 1; draw(); if (playing) timer = setTimeout(adv, 2600); return; }
+  const t0 = performance.now(), ms = 1400;
+  const tick = n => { t = Math.min(1, (n - t0) / ms); draw(); if (t < 1) raf = requestAnimationFrame(tick); else if (playing) timer = setTimeout(adv, 2200); };
+  raf = requestAnimationFrame(tick);
+}
+function adv(){ step = (step + 1) % 4; run(); }
+document.querySelectorAll("[data-case]").forEach(b => b.onclick = () => { cs = b.dataset.case; document.querySelectorAll("[data-case]").forEach(x => x.setAttribute("aria-pressed", x === b)); step = 0; run(); });
+document.getElementById("next").onclick = adv;
+document.getElementById("prev").onclick = () => { step = (step + 3) % 4; run(); };
+const pb = document.getElementById("play"); pb.textContent = playing ? "暂停" : "播放";
+pb.onclick = () => { playing = !playing; pb.textContent = playing ? "暂停" : "播放"; if (playing) run(); else clearTimeout(timer); };
+run();
+})();
+</script>
