@@ -32,6 +32,8 @@ typedef struct
   uint8_t sck_in_pu;          /* SCK as input with only the internal pull-up */
   uint8_t sck_off_h, sck_off_in_pu;   /* same SCK checks with the Hall chips powered off */
   uint8_t rd0c_r, rd0c_l;             /* exam 2: register 0x0C read back */
+  uint8_t seq_r[8], seq_l[8];         /* exam 1 trace: low byte of the first 8 tries */
+  uint8_t more_r[8], more_l[8];       /* exam 1 trace: 8 extra commands after the pass */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
 } HallChk_ts;
 
@@ -41,6 +43,7 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_EXAM             1   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C */
 #define HALL_EXAM1_BAD_WIDTH  0   /* 1 = send a 145us pulse instead of 128us on purpose (control test) */
 #define HALL_DIAG_PINS        0   /* 1 = also run the old pin / loopback / power-off checks */
+#define HALL_EXAM1_TRACE      1   /* 1 = log every calibration reading, and send 8 more after the pass */
 
 #if HALL_EXAM1_BAD_WIDTH && (6 == USE_HALL_SENSOR)
 #define HALL_EXAM1_WIDTH      DELAY_OUT(145)          /* outside 121.6..134.4: chip must ignore it */
@@ -50,6 +53,23 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_EXAM1_WIDTH_US   128
 #endif
 
+#if HALL_EXAM1_TRACE
+/* "R=84 83 -- ..  L=.." for up to 8 bytes; slots >= n print as "--". */
+static char *HallChk_Hex8(char *p, volatile uint8_t *v, uint8_t n)
+{
+  static const char hx[] = "0123456789ABCDEF";
+  uint8_t i;
+  for(i = 0; i < 8; i++)
+  {
+    if(i < n) { *p++ = hx[v[i] >> 4]; *p++ = hx[v[i] & 0x0F]; }
+    else      { *p++ = '-'; *p++ = '-'; }
+    *p++ = ' ';
+  }
+  *p = 0;
+  return p;
+}
+#endif
+
 static void HallChk_Print(void)
 {
   ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (expect ok=1 with 128, ok=0 with 145)",
@@ -57,6 +77,19 @@ static void HallChk_Print(void)
           (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
           (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l,
           (unsigned)HALL_EXAM1_WIDTH_US);
+#if HALL_EXAM1_TRACE
+  {
+    char r[25], l[25];
+    uint8_t n = (g_hall_chk.cal_times < 8) ? g_hall_chk.cal_times : 8;
+    HallChk_Hex8(r, g_hall_chk.seq_r, n);
+    HallChk_Hex8(l, g_hall_chk.seq_l, n);
+    ExamLog("EXAM1 seq  R=%s L=%s", r, l);
+    n = g_hall_chk.cal_ok ? 8 : 0;
+    HallChk_Hex8(r, g_hall_chk.more_r, n);
+    HallChk_Hex8(l, g_hall_chk.more_l, n);
+    ExamLog("EXAM1 more R=%s L=%s", r, l);
+  }
+#endif
 #if (HALL_EXAM >= 2)
   ExamLog("EXAM2 RD 0x0C R=%02X L=%02X (expect AA AA)",
           (unsigned)g_hall_chk.rd0c_r, (unsigned)g_hall_chk.rd0c_l);
@@ -1090,11 +1123,29 @@ uint8_t Hall_osc_calibrate(void)
 		g_hall_chk.cal_rh = hall_spi_rx[0];    /* high bytes, only logged */
 		g_hall_chk.cal_lh = hall_spi_rx[2];
 		g_hall_chk.cal_times = times + 1;
+#if HALL_EXAM1_TRACE
+		if(times < 8)
+		{
+			g_hall_chk.seq_r[times] = hall_spi_rx[1];
+			g_hall_chk.seq_l[times] = hall_spi_rx[3];
+		}
+#endif
 
 		if((hall_spi_rx[1] >= 0x7C) && (hall_spi_rx[1] <= 0x84) &&
 		   (hall_spi_rx[3] >= 0x7C) && (hall_spi_rx[3] <= 0x84))
 		{
 			g_hall_chk.cal_ok = 1;
+#if HALL_EXAM1_TRACE
+			{
+				uint8_t k;
+				for(k = 0; k < 8; k++)             /* experiment: does the reading keep moving? */
+				{
+					HALL_Read_Instru_cnt();        /* tx is still all 0 */
+					g_hall_chk.more_r[k] = hall_spi_rx[1];
+					g_hall_chk.more_l[k] = hall_spi_rx[3];
+				}
+			}
+#endif
 			CT16B1_DelayUs(20000);             /* Fig 11: delay 20 ms after success */
 			return 1;
 		}
