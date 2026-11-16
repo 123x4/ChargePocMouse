@@ -87,7 +87,7 @@ static void Hall_LoopbackTest(volatile uint8_t *out)
 
 /* Multimeter check: 1 = drive SCK (PIO1_15, MCU pin 28) high forever and
  * stop here. Set to 0 to run the normal test flow again. */
-#define HALL_SCK_HOLD_HIGH  1
+#define HALL_SCK_HOLD_HIGH  0
 
 static void Hall_SckHoldHigh(void)
 {
