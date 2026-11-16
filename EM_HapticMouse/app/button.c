@@ -21,15 +21,46 @@ typedef struct
   uint8_t cal_times;   /* number of calibration commands sent */
   uint8_t cal_r;       /* last value from the right-key chip (rx[1]) */
   uint8_t cal_l;       /* last value from the left-key chip (rx[3]) */
+  uint8_t cal_rh;      /* high byte from the right-key chip (rx[0]), datasheet: not valid data */
+  uint8_t cal_lh;      /* high byte from the left-key chip (rx[2]) */
+  uint8_t echo[4];     /* exam 0: loopback pattern read back, expect A5 5A C3 3C */
 } HallChk_ts;
 
 volatile HallChk_ts g_hall_chk;
 
 static void HallChk_Print(void)
 {
-  InfoLog("CAL ok=%u n=%u R=%02X L=%02X (expect 7C..84)",
+  InfoLog("ECHO %02X %02X %02X %02X (expect A5 5A C3 3C)",
+          (unsigned)g_hall_chk.echo[0], (unsigned)g_hall_chk.echo[1],
+          (unsigned)g_hall_chk.echo[2], (unsigned)g_hall_chk.echo[3]);
+  InfoLog("CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X (expect low 7C..84)",
           (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
-          (unsigned)g_hall_chk.cal_r, (unsigned)g_hall_chk.cal_l);
+          (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
+          (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l);
+}
+
+/* Exam 0: loopback through the daisy chain, no SCK command pulse involved.
+ * Each chip is a 16-bit shift register (datasheet 11), so 32 clocks push a
+ * pattern through both chips and the next 32 clocks bring it back on MISO.
+ * Right result means power, SCK, MOSI, MISO and the H1->H2 link all work. */
+static void Hall_LoopbackTest(void)
+{
+  hall_spi_tx[0] = 0xA5;
+  hall_spi_tx[1] = 0x5A;
+  hall_spi_tx[2] = 0xC3;
+  hall_spi_tx[3] = 0x3C;
+  SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);   /* shift the pattern in */
+
+  hall_spi_tx[0] = 0;
+  hall_spi_tx[1] = 0;
+  hall_spi_tx[2] = 0;
+  hall_spi_tx[3] = 0;
+  SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);   /* push it out on MISO */
+
+  g_hall_chk.echo[0] = hall_spi_rx[0];
+  g_hall_chk.echo[1] = hall_spi_rx[1];
+  g_hall_chk.echo[2] = hall_spi_rx[2];
+  g_hall_chk.echo[3] = hall_spi_rx[3];
 }
 
 UINT16 top_baseline[2] = {8000, 8000};
@@ -919,6 +950,8 @@ uint8_t Hall_osc_calibrate(void)
 
 		g_hall_chk.cal_r = hall_spi_rx[1];     /* right-key chip, low 8 bits valid */
 		g_hall_chk.cal_l = hall_spi_rx[3];     /* left-key chip */
+		g_hall_chk.cal_rh = hall_spi_rx[0];    /* high bytes, only logged */
+		g_hall_chk.cal_lh = hall_spi_rx[2];
 		g_hall_chk.cal_times = times + 1;
 
 		if((hall_spi_rx[1] >= 0x7C) && (hall_spi_rx[1] <= 0x84) &&
@@ -980,8 +1013,9 @@ void ana_hall2_phy_set_mode(unsigned char length)
 void HallSensor_INIT(void)
 {
 #if (6 == USE_HALL_SENSOR)
-	/* Exam 1 only. The register table is still the H5 one (H5 addresses),
+	/* Exams 0 and 1 only. The register table is still the H5 one (H5 addresses),
 	 * so it must not be written to H6 yet. */
+	Hall_LoopbackTest();
 	Hall_osc_calibrate();
 #else
 	Hall_osc_calibrate();
