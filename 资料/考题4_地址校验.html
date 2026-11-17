@@ -1,0 +1,154 @@
+<title>考题四 地址校验</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+<main>
+<header>
+<h1>考题四：CRCWR 里的“地址那一项”</h1>
+<p class="lede">只考一件事：H6 的校验位必须把<b>地址也算进去</b>。照搬 H5 的老算法（只算数据），换一个地址就会被芯片拒收，而且不报任何错。</p>
+</header>
+
+<section class="stage" aria-label="动画">
+  <div class="cases" role="group" aria-label="选择情况">
+    <button data-case="ok" aria-pressed="true">H6 算法（地址+数据）</button>
+    <button data-case="bad" aria-pressed="false">对照：H5 老算法（只算数据，预测）</button>
+  </div>
+  <div class="scroll"><svg id="svg" viewBox="0 0 640 210" role="img" aria-label="用两种算法写寄存器 0x31"></svg></div>
+  <div class="say" id="say"></div>
+  <div class="dots" id="dots"><span></span><span></span><span></span><span></span>
+    <div class="ctl"><button id="prev">上一步</button><button id="next">下一步</button><button id="play">暂停</button></div></div>
+</section>
+
+<section>
+<h2>记住三件事</h2>
+<div class="facts">
+  <div class="fact"><span class="big">0x31 = 110001</span><p>地址里有 3 个 1，是奇数。考题三的 0x30 是偶数个，两种算法碰巧一样，所以这一关换了地址。</p></div>
+  <div class="fact"><span class="big">F1 vs B1</span><p>写 0x31 = 0x21：H6 算法首字节 F1，H5 算法 B1。只差 bit6 这一位。</p></div>
+  <div class="fact"><span class="big">不报错</span><p>算错的写入芯片直接丢掉，MCU 什么都不知道。只有读回来比对才能发现。</p></div>
+</div>
+</section>
+
+<section>
+<h2>怎么跑这一关</h2>
+<ol>
+  <li>本地先把 <code>HALL_EXAM3_BAD_CRC</code> 改回 0，再 <code>git pull</code>。代码里 <code>HALL_EXAM</code> 已经是 4。</li>
+  <li>Keil Rebuild，烧录。<b>先</b>开 <code>python tools/hid_log.py</code>，再插 USB。</li>
+  <li>看第四行：
+<pre>EXAM4 WR 0x31=21 head=F1 -&gt; R=21 L=21 | =20 head=B1 -&gt; R=20 L=20 crc=h6 (expect 21 21 | 20 20)</pre></li>
+  <li>对照实验：把 <code>HALL_EXAM4_H5_CRC</code> 改成 1，重新烧录。预测：<code>head=B1 -&gt; R=20 L=20 | head=F1 -&gt; R=20 L=20 crc=h5</code>，两次都被拒。看完改回 0。</li>
+</ol>
+<p>两步都符合预测，就证明了：<b>H6 的写入必须用新公式，H5 的那张 <code>bit_crc_write_reg</code> 表不能直接拿来用。</b></p>
+<p class="ref">手册：H6 §7.4 图 6（PDF 第 9～10 页）CRCWR = A5^…^A0^D7^…^D0；H5 §7.4（GTRY154 手册第 8 页）CRCWR = D7^…^D0；寄存器表（H6 第 16 页）0x31 默认 0x20。</p>
+</section>
+</main>
+
+<script>
+(function(){
+const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("svg");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(t, a, x){ const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x !== undefined) e.textContent = x; svg.appendChild(e); return e; }
+const CASES = {
+  ok:  { crc:1, head:"F1", reg:"21", pass:true },
+  bad: { crc:0, head:"B1", reg:"20", pass:false }
+};
+const SAY = {
+  ok: ["H6 算法：地址 0x31 = 110001（3 个 1）+ 数据 0x21 = 00100001（2 个 1）= 5 个，奇数，CRCWR = 1。写帧 = 1 1 110001 + 00100001 = F1 21。", "SPI 送进两颗芯片，再发 39 µs 的 WR_REG。芯片按 H6 公式自己也算一遍：对得上。", "芯片把 0x21 写进 0x31（原来是 0x20）。", "读 0x31：读回 21。再用 H6 算法写回 0x20（首字节 B1）、读回 20，通过。"],
+  bad:["H5 老算法：只数数据 0x21 的 1，有 2 个，偶数，CRCWR = 0。写帧 = B1 21。地址那 3 个 1 被漏掉了。", "SPI 送进去，再发 39 µs。芯片按 H6 公式算出应该是 1，对不上。", "这条写指令无效，0x31 还是默认值 0x20。MCU 不会收到任何报错。", "读 0x31：读回 20，没写进去。这是预测，等实测。"]
+};
+let cs = "ok", step = 0, t = 1, raf = 0, playing = !reduce, timer = 0;
+function bits(v, n){ return v.toString(2).padStart(n, "0"); }
+function draw(){
+  const c = CASES[cs]; svg.textContent = "";
+  // frame bits
+  el("text", { x:20, y:28, "font-size":"12", fill:"var(--muted)" }, "写帧（16 位）");
+  const cells = [{ t:"1", k:"w" }, { t:String(c.crc), k:"c" }].concat(bits(0x31, 6).split("").map(b => ({ t:b, k:"a" }))).concat(bits(0x21, 8).split("").map(b => ({ t:b, k:"d" })));
+  const col = { w:"var(--muted)", c:c.pass ? "var(--ok)" : "var(--bad)", a:"var(--sck)", d:"var(--accent)" };
+  cells.forEach((b, i) => {
+    const x = 20 + i * 30 + (i >= 8 ? 14 : 0);
+    el("rect", { x, y:36, width:26, height:30, rx:4, fill:"var(--panel)", stroke:col[b.k], "stroke-width": b.k === "c" ? 2.5 : 1.2 });
+    el("text", { x:x + 13, y:57, "text-anchor":"middle", class:"m", "font-size":"15", fill:col[b.k] }, b.t);
+  });
+  el("text", { x:20, y:84, "font-size":"11", fill:"var(--muted)" }, "写");
+  el("text", { x:50, y:84, "font-size":"11", fill:col.c }, "CRC");
+  el("text", { x:140, y:84, "font-size":"11", fill:col.a }, "地址 0x31");
+  el("text", { x:330, y:84, "font-size":"11", fill:col.d }, "数据 0x21");
+  el("text", { x:520, y:57, "font-size":"18", class:"m" }, "= " + c.head + " 21");
+  // chips / register
+  el("rect", { x:20, y:104, width:600, height:92, rx:10, fill:"var(--bg)", stroke:"var(--line)" });
+  const checked = step >= 1 && !(step === 1 && t < 1);
+  el("text", { x:40, y:132, "font-size":"13", fill:"var(--muted)" }, "芯片检查校验位");
+  el("text", { x:240, y:132, "font-size":"14", "font-weight":"700", fill:checked ? (c.pass ? "var(--ok)" : "var(--bad)") : "var(--muted)" }, checked ? (c.pass ? "✓ 对得上，执行写入" : "✗ 对不上，丢掉") : (step === 1 ? "发 39 µs 中…" : "—"));
+  el("text", { x:40, y:164, "font-size":"13", fill:"var(--muted)" }, "寄存器 0x31");
+  const regv = step >= 2 ? c.reg : "20";
+  el("text", { x:240, y:166, "font-size":"22", class:"m", fill:step >= 2 ? (c.pass ? "var(--ok)" : "var(--bad)") : "var(--fg)" }, "0x" + regv);
+  el("text", { x:330, y:164, "font-size":"12", fill:"var(--muted)" }, step >= 2 ? (c.pass ? "从 0x20 变成了 0x21" : "还是默认值 0x20") : "上电默认 0x20");
+  if (step === 3) el("text", { x:600, y:186, "text-anchor":"end", "font-size":"14", "font-weight":"700", fill:c.pass ? "var(--ok)" : "var(--bad)" }, "读回 R=" + c.reg + " L=" + c.reg + (c.pass ? " ✓" : " ✗"));
+  document.getElementById("say").innerHTML = `<b class="n">${step + 1}/4</b>` + SAY[cs][step];
+  document.querySelectorAll("#dots > span").forEach((s, i) => s.classList.toggle("on", i === step));
+}
+function run(){
+  cancelAnimationFrame(raf); clearTimeout(timer);
+  if (reduce || step !== 1) { t = 1; draw(); if (playing) timer = setTimeout(adv, 3000); return; }
+  const t0 = performance.now(), ms = 1200;
+  const tick = n => { t = Math.min(1, (n - t0) / ms); draw(); if (t < 1) raf = requestAnimationFrame(tick); else if (playing) timer = setTimeout(adv, 2200); };
+  raf = requestAnimationFrame(tick);
+}
+function adv(){ step = (step + 1) % 4; run(); }
+document.querySelectorAll("[data-case]").forEach(b => b.onclick = () => { cs = b.dataset.case; document.querySelectorAll("[data-case]").forEach(x => x.setAttribute("aria-pressed", x === b)); step = 0; run(); });
+document.getElementById("next").onclick = adv;
+document.getElementById("prev").onclick = () => { step = (step + 3) % 4; run(); };
+const pb = document.getElementById("play"); pb.textContent = playing ? "暂停" : "播放";
+pb.onclick = () => { playing = !playing; pb.textContent = playing ? "暂停" : "播放"; if (playing) run(); else clearTimeout(timer); };
+run();
+})();
+</script>

@@ -35,6 +35,9 @@ typedef struct
   uint8_t rd0c_rx[4];                 /* exam 2: all 4 bytes of the read-back frame */
   uint8_t wr30_r, wr30_l;             /* exam 3: 0x30 read back after writing 0x21 */
   uint8_t wr30b_r, wr30b_l;           /* exam 3: 0x30 read back after writing 0x20 again */
+  uint8_t wr31_r, wr31_l;             /* exam 4: 0x31 read back after writing 0x21 */
+  uint8_t wr31b_r, wr31b_l;           /* exam 4: 0x31 read back after writing 0x20 again */
+  uint8_t wr31_h1, wr31_h2;           /* exam 4: first byte of the two write frames */
   uint8_t seq_r[8], seq_l[8];         /* exam 1 trace: low byte of the first 8 tries */
   uint8_t more_r[8], more_l[8];       /* exam 1 trace: 8 extra commands after the pass */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
@@ -43,10 +46,11 @@ typedef struct
 volatile HallChk_ts g_hall_chk;
 
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
-#define HALL_EXAM             3   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30 */
+#define HALL_EXAM             4   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30, 4 = + write 0x31 */
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
+#define HALL_EXAM4_H5_CRC     0   /* 1 = exam 4 uses the old H5 CRCWR (data parity only), control test */
 #define HALL_DIAG_PINS        0   /* 1 = also run the old pin / loopback / power-off checks */
 #define HALL_EXAM1_TRACE      0   /* 1 = log every calibration reading, and send 8 more after the pass */
 
@@ -108,6 +112,12 @@ static void HallChk_Print(void)
           (unsigned)g_hall_chk.wr30_r, (unsigned)g_hall_chk.wr30_l,
           (unsigned)g_hall_chk.wr30b_r, (unsigned)g_hall_chk.wr30b_l,
           HALL_EXAM3_BAD_CRC ? "bad" : "ok");
+#endif
+#if (HALL_EXAM >= 4)
+  ExamLog("EXAM4 WR 0x31=21 head=%02X -> R=%02X L=%02X | =20 head=%02X -> R=%02X L=%02X crc=%s (expect 21 21 | 20 20)",
+          (unsigned)g_hall_chk.wr31_h1, (unsigned)g_hall_chk.wr31_r, (unsigned)g_hall_chk.wr31_l,
+          (unsigned)g_hall_chk.wr31_h2, (unsigned)g_hall_chk.wr31b_r, (unsigned)g_hall_chk.wr31b_l,
+          HALL_EXAM4_H5_CRC ? "h5" : "h6");
 #endif
 #if HALL_DIAG_PINS
   ExamLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
@@ -1238,16 +1248,36 @@ static uint8_t Hall_CrcWr(uint8_t addr, uint8_t data)
 	return p;
 }
 
-static void Hall_WriteReg(uint8_t addr, uint8_t data)
+/* Build the write frame with the given CRCWR bit and send it. Returns the first byte. */
+static uint8_t Hall_WriteRegCrc(uint8_t addr, uint8_t data, uint8_t crc)
 {
-	uint8_t head = 0x80 | (uint8_t)(Hall_CrcWr(addr, data) << 6) | (addr & 0x3F);
+	uint8_t head = 0x80 | (uint8_t)((crc & 1) << 6) | (addr & 0x3F);
 
 	hall_spi_tx[0] = head;
 	hall_spi_tx[1] = data;
 	hall_spi_tx[2] = head;
 	hall_spi_tx[3] = data;
 	Hall_write_register();                        /* SSP 4 bytes, then td6 39us + td5 */
+	return head;
 }
+
+static void Hall_WriteReg(uint8_t addr, uint8_t data)
+{
+	(void)Hall_WriteRegCrc(addr, data, Hall_CrcWr(addr, data));
+}
+
+#if (HALL_EXAM >= 4)
+/* Exam 4 CRC: H6 rule (address + data), or the old H5 rule (data only) for the control test. */
+static uint8_t Hall_Exam4Crc(uint8_t addr, uint8_t data)
+{
+#if HALL_EXAM4_H5_CRC
+	(void)addr;
+	return (uint8_t)(bit_crc_write_reg[data] >> SB);   /* H5 table: data parity at bit6 */
+#else
+	return Hall_CrcWr(addr, data);
+#endif
+}
+#endif
 #endif
 
 void ana_hall2_phy_set_mode(unsigned char length)
@@ -1310,6 +1340,22 @@ void HallSensor_INIT(void)
 		Hall_ReadReg(0x30, &l, &r);
 		g_hall_chk.wr30b_r = r;
 		g_hall_chk.wr30b_l = l;
+	}
+#endif
+#if (HALL_EXAM >= 4)
+	if((0x21 == g_hall_chk.wr30_r) && (0x21 == g_hall_chk.wr30_l) &&
+	   (0x20 == g_hall_chk.wr30b_r) && (0x20 == g_hall_chk.wr30b_l))
+	{
+		uint8_t l, r;
+		/* exam 4: 0x31 = 110001 has an odd number of 1s, so the H6 and H5 CRC rules differ */
+		g_hall_chk.wr31_h1 = Hall_WriteRegCrc(0x31, 0x21, Hall_Exam4Crc(0x31, 0x21));
+		Hall_ReadReg(0x31, &l, &r);
+		g_hall_chk.wr31_r = r;
+		g_hall_chk.wr31_l = l;
+		g_hall_chk.wr31_h2 = Hall_WriteRegCrc(0x31, 0x20, Hall_Exam4Crc(0x31, 0x20));   /* default value */
+		Hall_ReadReg(0x31, &l, &r);
+		g_hall_chk.wr31b_r = r;
+		g_hall_chk.wr31b_l = l;
 	}
 #endif
 #else

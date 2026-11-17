@@ -61,7 +61,7 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
 <section class="stage" aria-label="动画">
   <div class="cases" role="group" aria-label="选择情况">
     <button data-case="ok" aria-pressed="true">正常：CRC 正确</button>
-    <button data-case="bad" aria-pressed="false">对照：CRC 故意取反（预测）</button>
+    <button data-case="bad" aria-pressed="false">对照：CRC 故意取反（实测）</button>
   </div>
   <div class="scroll"><svg id="svg" viewBox="0 0 640 210" role="img" aria-label="MCU 写寄存器 0x30 再读回"></svg></div>
   <div class="say" id="say"></div>
@@ -89,6 +89,7 @@ EXAM2 RD 0x0C rx=00 AA 00 AA ...
 EXAM3 WR 0x30=21 -&gt; R=21 L=21 | =20 -&gt; R=20 L=20 crc=ok (expect 21 21 | 20 20)</pre></li>
   <li>对照实验：把 <code>HALL_EXAM3_BAD_CRC</code> 改成 1，重新烧录。预测：<code>R=20 L=20 | R=20 L=20 crc=bad</code>，两次写都被拒，读回的都是默认值。看完改回 0。</li>
 </ol>
+<div class="fact" style="border-color:var(--ok)"><b>实测结果：本关通过。</b><p>CRC 正确：<code>21 21 | 20 20</code>；CRC 取反：<code>20 20 | 20 20</code>，和预测一致。芯片确实检查 CRCWR，算错就丢掉这次写入。</p></div>
 <div class="fact" style="border-color:var(--sck)"><b>这一关验证不了的东西</b>
 <p>CRCWR 要把<b>地址和数据</b>一起算（手册公式），而原来 H5 的表只算数据。0x30 = 110000 的 1 是偶数个，两种算法在这里结果一样。所以这一关只能证明“芯片会检查校验位、我们算的对”，<b>证明不了“地址那一项算没算进去”</b>。
 这要留给考题四：例如写 0x2F = 0x14，新算法得到首字节 0xEF，H5 的算法会得到 0xAF，按手册芯片应该只接受前者。</p></div>
