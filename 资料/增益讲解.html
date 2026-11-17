@@ -1,0 +1,179 @@
+<title>增益讲解</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:640px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--grid);font-weight:600}
+.knobs{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center}
+.knobs label{font-size:.88rem;color:var(--muted)}
+.knobs input[type=range]{width:100%}
+.read{display:flex;flex-wrap:wrap;gap:18px;font-family:var(--font-mono);font-size:14px}
+.read b{color:var(--accent)}
+.src{font-size:.8rem;color:var(--muted)}
+</style>
+<main>
+<header>
+<h1>增益：霍尔信号的“音量旋钮”</h1>
+<p class="lede">磁铁靠近，霍尔片只产生几十微伏的电压，ADC 直接读几乎看不出变化。芯片先用放大器把它放大很多倍，再变成 0～16383 的数字。放大多少倍，就是<b>增益</b>。</p>
+</header>
+
+<section class="stage" aria-label="增益演示">
+  <div class="knobs">
+    <label for="depth">按键深度</label><input id="depth" type="range" min="0" max="100" value="100">
+    <label>LNA</label><div class="cases" id="lna"></div>
+    <label for="pga">PGA</label><input id="pga" type="range" min="0" max="9" value="8">
+  </div>
+  <div class="scroll"><svg id="svg" viewBox="0 0 680 230" role="img" aria-label="磁铁、放大器和 ADC 数值"></svg></div>
+  <div class="read" id="read"></div>
+  <div class="say" id="say"></div>
+  <p class="ref" style="margin:0">示意模型：灵敏度是虚构的，只为看出趋势，不代表真实读数。</p>
+</section>
+
+<section>
+<h2>记住三件事</h2>
+<div class="facts">
+  <div class="fact"><span class="big">LNA × PGA</span><p>H6 的增益在 0x0B：高 4 位选 LNA（16/24/48/96x），低 4 位选 PGA（13.2～24x），两级相乘。</p></div>
+  <div class="fact"><span class="big">太小 / 太大</span><p>太小：按下去数值只动一点，分不清。太大：顶到 0 或 16383 就不动了，同样分不清。</p></div>
+  <div class="fact"><span class="big">0x29 0x2A 跟着走</span><p>换 LNA 档位，0x29、0x2A 必须一起换（24x 时是 60、28），否则模拟电路配置不匹配。</p></div>
+</div>
+</section>
+
+<section>
+<h2>三种做法对比</h2>
+<div class="scroll"><table>
+<tr><th style="width:12%"></th><th>杰哥的 H5（现在的鼠标）</th><th>XENO（H6 键盘）</th><th>我们 H6 鼠标可选</th></tr>
+<tr><td>增益设在哪</td><td>初始化表写死：0x14 = 0x35（LNA 64x）、0x16 = 0x04（PGA 18x）≈ 1152 倍</td><td>每个键一个值，存外部 Flash；Flash 空时用默认 0x88（LNA 24x × PGA 22.8x ≈ 547 倍）</td><td>先固定 0x88（同 XENO 默认），0x29 = 60、0x2A = 28</td></tr>
+<tr><td>几颗芯片几个值</td><td>两颗同一个值</td><td>每颗单独</td><td>两颗同一个值</td></tr>
+<tr><td>谁来定这个值</td><td>写代码时按板型定（编译时选）</td><td>产线 PC 工具通过 USB 下发，可全键统一或单键设置，写入 Flash</td><td>写代码时定，实测后再调</td></tr>
+<tr><td>开机怎么写进芯片</td><td><code>ana_hall2_phy_set_mode()</code> 按表写</td><td><code>hall_gain_load_final_table()</code> 读 Flash → <code>h6_hal_write_gain_config0_table()</code> 一次写 0x0B + 0x29 + 0x2A</td><td>按表写，三个寄存器放在一起</td></tr>
+<tr><td>出处</td><td class="src">button.c 507–510；my_board.h 37–38（_PWM 推出 GT_LINA_T1A_H5）</td><td class="src">mfg_mode.c 1391、1535–1605；mfg_mode.h 34；h6_hal.c 945–975、984</td><td class="src">—</td></tr>
+</table></div>
+<p>另外两条线索：H5 工程 <code>my_hallkey_func.c</code> 257–262 行有一段被注释掉的“读数低于 1000 就自动减增益”，说明以前试过自动调、后来没用；厂家 H5 例程 <code>ana_hall2_phy.c</code> 195、197 行用的是 32x × 13.2x。</p>
+<div class="fact" style="border-color:var(--sck)"><b>H5 的 1152 倍和 H6 的 547 倍不能直接比</b><p>两颗芯片的霍尔片灵敏度、放大链路都不同，倍数只能在同一颗芯片里比较。H6 该用多少，只能在 H6 板子上量出来。</p></div>
+</section>
+
+<section>
+<h2>对“问题 2”的建议</h2>
+<p>鼠标只有两个键，逐颗校准要配产线工具和 Flash 存储，成本不小。建议第一版<b>固定 0x88</b>（XENO 的默认值），开始采样后看两件事：</p>
+<ol>
+  <li>没按时读数离 0 和 16383 都有足够距离（没顶死）；</li>
+  <li>按到底和没按的差值足够大，两颗芯片差得不多。</li>
+</ol>
+<p>两条都满足就不用逐颗校准；不满足再调档位或考虑校准。最终由杰哥定。</p>
+<p class="ref">手册：H6 寄存器表 0x09 bit5、0x0B（PDF 第 13 页），0x29 / 0x2A（第 15 页）；H5 0x14 / 0x16（GTRY154 手册第 12 页）；ADC 0～16383、无磁场约 8192（GTRY154 §12，第 16 页）。</p>
+</section>
+</main>
+
+<script>
+(function(){
+const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("svg");
+function el(t, a, x){ const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x !== undefined) e.textContent = x; svg.appendChild(e); return e; }
+const LNA = [{ g:16, code:8, b5:0 }, { g:24, code:8, b5:1 }, { g:48, code:9, b5:1 }, { g:96, code:10, b5:1 }];
+const PGA = [13.2, 14.4, 15.6, 16.8, 18.0, 19.2, 20.4, 21.6, 22.8, 24.0];
+const TRIM = { 16:["4E","32"], 24:["60","28"], 48:["A0","40"], 96:["F0","60"] };
+let li = 1;
+const lbox = document.getElementById("lna");
+LNA.forEach((l, i) => { const b = document.createElement("button"); b.textContent = l.g + "x"; b.setAttribute("aria-pressed", i === li); b.onclick = () => { li = i; [...lbox.children].forEach((x, k) => x.setAttribute("aria-pressed", k === li)); draw(); }; lbox.appendChild(b); });
+const K = 1.0;                       // fictional counts per (gain x field unit)
+const field = d => 2.2 + 7.3 * Math.pow(d / 100, 1.6);   // fictional field, rest..full press
+const adc = (gain, d) => 8192 - K * gain * field(d);
+const clamp = v => Math.max(0, Math.min(16383, v));
+const hx = v => v.toString(16).toUpperCase().padStart(2, "0");
+function draw(){
+  svg.textContent = "";
+  const d = +document.getElementById("depth").value, pi = +document.getElementById("pga").value;
+  const L = LNA[li], gain = L.g * PGA[pi];
+  const raw = adc(gain, d), rest = adc(gain, 0), full = adc(gain, 100);
+  // magnet + sensor
+  const my = 30 + (d / 100) * 64;
+  el("rect", { x:30, y:my, width:60, height:24, rx:4, fill:"var(--b0, #c2410c)" });
+  el("text", { x:60, y:my + 16, "text-anchor":"middle", "font-size":"12", fill:"#fff" }, "磁铁");
+  el("rect", { x:40, y:120, width:40, height:16, rx:3, fill:"var(--muted)" });
+  el("text", { x:60, y:154, "text-anchor":"middle", "font-size":"11", fill:"var(--muted)" }, "霍尔片");
+  el("text", { x:60, y:172, "text-anchor":"middle", "font-size":"11", class:"m" }, (field(d) * 6).toFixed(0) + " µV");
+  // arrow + amp
+  el("line", { x1:100, y1:128, x2:150, y2:128, stroke:"var(--muted)", "stroke-width":2 });
+  el("path", { d:"M150 88 L150 168 L230 128 Z", fill:"var(--accent-soft)", stroke:"var(--accent)", "stroke-width":2 });
+  el("text", { x:178, y:124, "text-anchor":"middle", "font-size":"12", fill:"var(--accent)" }, "放大");
+  el("text", { x:178, y:142, "text-anchor":"middle", "font-size":"13", class:"m", fill:"var(--accent)" }, "×" + gain.toFixed(0));
+  el("line", { x1:230, y1:128, x2:270, y2:128, stroke:"var(--muted)", "stroke-width":2 });
+  // ADC bar
+  const x0 = 280, w = 380, X = v => x0 + w * clamp(v) / 16383;
+  el("text", { x:x0, y:40, "font-size":"12", fill:"var(--muted)" }, "ADC 读数（14 位，0～16383）");
+  el("rect", { x:x0, y:96, width:w, height:64, rx:6, fill:"var(--grid)", stroke:"var(--line)" });
+  el("line", { x1:X(8192), x2:X(8192), y1:90, y2:166, stroke:"var(--muted)", "stroke-dasharray":"3 3" });
+  el("text", { x:X(8192), y:184, "text-anchor":"middle", "font-size":"10", fill:"var(--muted)" }, "8192 无磁场");
+  [0, 16383].forEach(v => el("text", { x:X(v), y:184, "text-anchor":"middle", "font-size":"10", fill:"var(--muted)" }, v));
+  const clipped = raw < 0 || raw > 16383;
+  el("rect", { x:Math.min(X(raw), X(8192)), y:110, width:Math.abs(X(8192) - X(raw)), height:36, fill:clipped ? "var(--bad)" : "var(--accent)", opacity:.85 });
+  el("line", { x1:X(rest), x2:X(rest), y1:90, y2:166, stroke:"var(--sck)", "stroke-width":2 });
+  el("text", { x:X(rest), y:84, "text-anchor":"middle", "font-size":"10", fill:"var(--sck)" }, "没按");
+  el("line", { x1:X(full), x2:X(full), y1:90, y2:166, stroke:full < 0 ? "var(--bad)" : "var(--ok)", "stroke-width":2 });
+  el("text", { x:X(full), y:72, "text-anchor":"middle", "font-size":"10", fill:full < 0 ? "var(--bad)" : "var(--ok)" }, full < 0 ? "按到底（顶死）" : "按到底");
+  el("text", { x:x0 + w, y:212, "text-anchor":"end", "font-size":"14", class:"m", fill:clipped ? "var(--bad)" : "var(--fg)" }, "当前 " + Math.round(clamp(raw)) + (clipped ? "  已顶死" : ""));
+  const delta = clamp(rest) - clamp(full);
+  const reg0b = (L.code << 4) | pi;
+  document.getElementById("read").innerHTML = `<span>0x09 bit5 = <b>${L.b5}</b></span><span>0x0B = <b>0x${hx(reg0b)}</b></span><span>0x29/0x2A = <b>${TRIM[L.g][0]}/${TRIM[L.g][1]}</b></span><span>总增益 ≈ <b>${gain.toFixed(0)}</b></span><span>按到底 − 没按 = <b>${Math.round(delta)}</b></span>`;
+  let say;
+  if (full < 0 && rest >= 0) say = "增益太大：还没按到底，读数就顶到 0 不动了。后半段行程 MCU 看不到任何变化。";
+  else if (rest < 0) say = "增益大到连“没按”都顶死了，按键完全失灵。";
+  else if (delta < 2500) say = "增益偏小：从没按到按到底只变了一点，稍有噪声就分不清按没按。";
+  else say = "这个增益合适：没按和按到底都在量程里，中间有足够大的变化量。0x88（24x × 22.8x）就是 XENO 的默认值。";
+  document.getElementById("say").innerHTML = say;
+}
+document.getElementById("depth").oninput = draw;
+document.getElementById("pga").oninput = draw;
+draw();
+})();
+</script>
