@@ -1,0 +1,184 @@
+<title>XENO 产线校准</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:640px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--grid);font-weight:600}
+.knobs{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center}
+.knobs label{font-size:.88rem;color:var(--muted)}
+.knobs input[type=range]{width:100%}
+.read{display:flex;flex-wrap:wrap;gap:18px;font-family:var(--font-mono);font-size:14px}
+.read b{color:var(--accent)}
+.src{font-size:.8rem;color:var(--muted)}
+
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:640px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--grid);font-weight:600}
+td.m{font-family:var(--font-mono);white-space:nowrap}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.88rem}
+.flow span{border:1px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--panel)}
+.flow i{color:var(--muted);font-style:normal}
+</style>
+<main>
+<header>
+<h1>XENO 的增益、行程表和产线校准</h1>
+<p class="lede">霍尔键盘每个键的磁铁强弱、装配高度都不完全一样，同一款结构的“磁场-行程”关系也不是直线。XENO 用三样东西把这些差异抹平：<b>行程表</b>（设计时测一次，所有键共用）、<b>增益</b>和<b>上下基线</b>（产线逐键测，存进 Flash）。上位机协议就是产线测试工具下达这些操作的通道。</p>
+</header>
+
+<section>
+<h2>先看全景</h2>
+<div class="flow">
+  <span>研发：测试人员用位移台测一颗键</span><i>→</i><span>行程表 400 点，编进固件</span>
+</div>
+<div class="flow" style="margin-top:6px">
+  <span>产线 PC 工具</span><i>⇄ USB 厂商报文 04 xx …</i><span>每块键盘：写增益、测上/下基线、不平衡校准</span><i>→</i><span>存外部 Flash</span>
+</div>
+<div class="flow" style="margin-top:6px">
+  <span>用户开机</span><i>→</i><span>从 Flash 读增益、基线、校准值写进 H6</span><i>→</i><span>原始值 → 查行程表 → 0～4096 行程 → AP / RT 判键</span>
+</div>
+<p class="ref">另一个关键背景：XENO 的主控是 G.TECH 自家芯片，带一个硬件霍尔扫描外设 HASP，能自动轮询整条链、硬件查行程表（LINETB，8192 项）、硬件维护基线（BASLTOP/BASLBOT）。我们的 LPC11U35 没有这个外设，这些事全靠软件（hasp_regmap.h 第 84～89 行）。</p>
+</section>
+
+<section class="stage" aria-label="行程表">
+  <h2 style="margin:0">一、分段值–行程表：为什么要测</h2>
+  <p style="margin:0">磁场随距离不是均匀变化的：磁铁离霍尔片越近，每压一点数值变得越多。测试人员用位移台把键从 0 压到底，分成 <b>400 个等距的行程点</b>，每个点记下原始值比没按时多了多少，就得到这张表（h6_hw_tab.c 第 348 行 <code>Hall_Linearization_table[400]</code>，0 → 6682）。“400 个等距行程点”是按展开函数的算法推断的，具体步距（比如每点 0.01 mm）代码里没写，可以问测试人员。</p>
+  <label for="trv" class="ref">拖动行程（等距的第 i 个点）</label>
+  <input id="trv" type="range" min="0" max="398" value="200" style="width:100%">
+  <div class="scroll"><svg id="lin" viewBox="0 0 680 260" style="min-width:600px" role="img" aria-label="行程与原始值变化量的关系曲线"></svg></div>
+  <div class="read" id="linread"></div>
+  <div class="say" id="linsay"></div>
+</section>
+<div class="facts" style="margin-top:-12px">
+  <div class="fact"><span class="big">表怎么用</span><p>开机时 <code>h6_hal_hasp_linetab_build()</code>（h6_hal.c 第 550 行）把 400 点展开成 8192 项：下标是原始变化量，值是 0～4096 的线性行程。之后每次采样硬件直接查表，得到 Seg4096。</p></div>
+  <div class="fact"><span class="big">一张表管全部</span><p>表只测一次、所有键共用，描述的是“这种轴体 + 磁铁结构”的曲线形状。每个键的差异（磁铁强弱、高度）靠下面的增益和基线去补。</p></div>
+  <div class="fact"><span class="big">H5 鼠标也有</span><p>杰哥代码里的 <code>nodeCaliTable[256]</code>（my_misc.c 第 46 行）是同一个思路，只是 256 点、输出 0～100，而且是软件查表。</p></div>
+</div>
+
+<section>
+<h2>二、写增益（命令 0x20）</h2>
+<p>每个键磁铁强弱不同，同样压到底，可能有的键原始值变 7000，有的只变 4000（数字是举例）。增益就是把它们拉到差不多的幅度，让行程表对每个键都适用、分辨率一致。</p>
+<ul>
+  <li>产线工具读每个键的原始值，挑一个合适的 0x0B 值，用 <code>04 20 …</code> 下发：可以全键统一（包类型 01 FF），也可以逐键（mfg_mode.c 第 1535～1605 行）。</li>
+  <li>固件把它写进 H6（0x0B 和配套的 0x29、0x2A 一起写），并存到外部 Flash 0x1000。</li>
+  <li>开机 <code>hall_gain_load_final_table()</code> 读 Flash；空的或某项是 0xFF 就用默认 0x88。</li>
+</ul>
+</section>
+
+<section>
+<h2>三、校准命令（0x10 + 子命令）</h2>
+<div class="scroll"><table>
+<tr><th>报文</th><th>名字</th><th>产线在做什么</th><th>固件做什么</th><th>存到</th></tr>
+<tr><td class="m">04 10 D2</td><td>松开采样</td><td>所有键不按</td><td>读每个键原始值作为 <b>top 基线</b>，写进 H6 的 0x2D/0x2E（芯片内部基线初值）；连续采样求平均和噪声，回报给 PC</td><td>暂存 RAM</td></tr>
+<tr><td class="m">04 10 E2</td><td>保存 top</td><td>PC 判合格后下发</td><td>把 top 写进 Flash</td><td class="m">0x5000</td></tr>
+<tr><td class="m">04 10 D1</td><td>按下采样</td><td>治具把键压到底</td><td>读每个键原始值作为 <b>bottom 基线</b>，同样回报平均值和噪声</td><td>暂存 RAM</td></tr>
+<tr><td class="m">04 10 E1</td><td>保存 bottom</td><td>PC 判合格后下发</td><td>写进 Flash；开机时用“保存值 − 600”作 bottom（不低于 3000）</td><td class="m">0x6000</td></tr>
+<tr><td class="m">04 10 D4</td><td>不平衡校准</td><td>所有键不按</td><td>逐颗调 H6 的 0x36/0x37 微调值，让霍尔片零磁场输出居中；回报每颗成功/失败</td><td class="m">0x7000</td></tr>
+<tr><td class="m">04 17/18/19 …</td><td>读参数</td><td>看数据</td><td>按类型回报：原始值、Seg255、Seg4096、TBL、BBL、增益、自检结果</td><td>—</td></tr>
+</table></div>
+<p class="ref">出处：mfg_mode.h 第 30～110 行（命令和子命令定义、Flash 地址）；mfg_mode.c 第 516 行 TestAPP_set_factory_cali()、第 678/721 行保存函数、第 1697 行 TestMode_cali_Data() 分发；h6_hal.c 第 90 行 bottom 余量。注意：0x36/0x37 在我们手上的 GTRY164 V1.9 手册寄存器表里查不到。</p>
+</section>
+
+<section>
+<h2>四、和杰哥的 H5 鼠标对比</h2>
+<div class="scroll"><table>
+<tr><th></th><th>H5 鼠标（现在）</th><th>XENO 键盘</th></tr>
+<tr><td>行程线性化</td><td>软件查 <code>nodeCaliTable[256]</code> → 0～100</td><td>研发测 400 点表 → 硬件查 8192 项 → 0～4096</td></tr>
+<tr><td>增益</td><td>代码写死，两键一样</td><td>产线逐键定，存 Flash</td></tr>
+<tr><td>top 基线</td><td>每次开机前 600 ms 自己学</td><td>产线测好存 Flash，开机写进芯片</td></tr>
+<tr><td>bottom 基线</td><td>用户按下时慢慢往外扩（第一次按得不够深，行程会偏）</td><td>产线压到底测好，开机就有</td></tr>
+<tr><td>芯片零点</td><td>不处理</td><td>不平衡校准 0x36/0x37</td></tr>
+<tr><td>需要上位机 / 治具</td><td>不需要</td><td>需要产线工具和压键治具</td></tr>
+</table></div>
+</section>
+
+<section>
+<h2>对我们 H6 鼠标的意义</h2>
+<ol>
+  <li><b>行程表</b>：鼠标的磁铁结构和键盘不同，XENO 的 400 点表不能直接用；H5 的 256 点表是 H5 板测的，换了芯片和增益也要复测。要不要做、谁来测，需要杰哥定。</li>
+  <li><b>产线校准</b>：只有两个键，H5 那套“开机自学 top、按下扩 bottom”一直在用。要不要加产线校准，取决于有没有产线工具、一致性要求多高。</li>
+  <li><b>最小起步</b>：先按 H5 的方式跑通 H6 采样，量出没按/按到底/噪声，再看哪里不够用、需要借鉴 XENO 的哪一块。</li>
+</ol>
+</section>
+</main>
+
+<script>
+(function(){
+const T = [0, 2, 4, 7, 11, 15, 20, 24, 27, 33, 36, 40, 45, 49, 55, 58, 62, 67, 71, 76, 80, 85, 89, 93, 98, 104, 107, 113, 118, 122, 127, 131, 136, 142, 145, 151, 156, 160, 165, 171, 176, 180, 185, 191, 196, 200, 206, 211, 216, 222, 227, 233, 238, 244, 249, 255, 260, 266, 271, 276, 282, 287, 293, 298, 304, 309, 315, 322, 327, 333, 338, 344, 349, 356, 362, 367, 373, 380, 386, 393, 398, 404, 411, 416, 424, 429, 435, 442, 447, 455, 460, 467, 473, 480, 486, 493, 500, 506, 513, 520, 526, 533, 540, 546, 553, 560, 567, 573, 580, 587, 595, 602, 609, 615, 622, 629, 637, 644, 651, 658, 666, 673, 680, 689, 697, 704, 711, 718, 726, 733, 740, 749, 757, 764, 773, 780, 789, 797, 806, 813, 822, 829, 837, 846, 855, 862, 871, 880, 889, 897, 906, 915, 922, 931, 940, 949, 957, 966, 975, 984, 993, 1002, 1011, 1020, 1029, 1038, 1048, 1058, 1068, 1077, 1088, 1097, 1106, 1117, 1126, 1135, 1146, 1155, 1166, 1175, 1186, 1195, 1206, 1217, 1228, 1237, 1248, 1258, 1269, 1280, 1291, 1302, 1313, 1324, 1335, 1346, 1357, 1368, 1379, 1389, 1402, 1413, 1424, 1437, 1448, 1459, 1471, 1484, 1495, 1506, 1519, 1531, 1544, 1557, 1569, 1580, 1593, 1606, 1619, 1631, 1644, 1657, 1669, 1682, 1697, 1709, 1724, 1737, 1749, 1764, 1777, 1790, 1804, 1819, 1833, 1848, 1860, 1877, 1890, 1906, 1920, 1935, 1951, 1966, 1980, 1995, 2011, 2026, 2042, 2059, 2073, 2090, 2104, 2122, 2137, 2153, 2170, 2186, 2204, 2221, 2239, 2253, 2271, 2290, 2306, 2324, 2342, 2361, 2379, 2397, 2415, 2433, 2451, 2471, 2490, 2508, 2528, 2546, 2568, 2588, 2606, 2626, 2648, 2668, 2688, 2708, 2730, 2752, 2773, 2793, 2817, 2837, 2861, 2881, 2904, 2928, 2950, 2973, 2999, 3021, 3046, 3070, 3095, 3119, 3144, 3170, 3195, 3223, 3250, 3275, 3303, 3330, 3357, 3386, 3414, 3443, 3472, 3499, 3530, 3561, 3590, 3621, 3652, 3684, 3715, 3746, 3779, 3812, 3843, 3877, 3912, 3946, 3981, 4015, 4050, 4086, 4121, 4159, 4194, 4232, 4268, 4305, 4343, 4381, 4419, 4457, 4496, 4534, 4574, 4616, 4656, 4694, 4736, 4776, 4817, 4857, 4898, 4939, 4981, 5023, 5063, 5105, 5147, 5190, 5232, 5276, 5321, 5361, 5405, 5447, 5490, 5534, 5579, 5625, 5669, 5714, 5758, 5805, 5850, 5896, 5941, 5989, 6034, 6080, 6125, 6172, 6218, 6263, 6311, 6358, 6405, 6452, 6502, 6534, 6563, 6592, 6622, 6652, 6682];
+const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("lin");
+function el(t, a, x){ const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x !== undefined) e.textContent = x; svg.appendChild(e); return e; }
+const MAX = T[T.length - 1], N = T.length - 1;
+const X = i => 60 + i / N * 580, Y = v => 220 - v / MAX * 190;
+function draw(){
+  const i = +document.getElementById("trv").value, raw = T[i];
+  svg.textContent = "";
+  [0, 2000, 4000, 6000].forEach(v => { el("line", { x1:60, x2:640, y1:Y(v), y2:Y(v), stroke:"var(--grid)" }); el("text", { x:54, y:Y(v) + 4, "text-anchor":"end", "font-size":"10", fill:"var(--muted)" }, v); });
+  [0, 100, 200, 300, 398].forEach(k => el("text", { x:X(k), y:238, "text-anchor":"middle", "font-size":"10", fill:"var(--muted)" }, k));
+  el("text", { x:350, y:254, "text-anchor":"middle", "font-size":"11", fill:"var(--muted)" }, "行程点 i（等距，0 = 没按，398 = 接近到底）");
+  el("text", { x:14, y:24, "font-size":"11", fill:"var(--muted)" }, "原始值变化量");
+  el("line", { x1:X(0), y1:Y(0), x2:X(N), y2:Y(MAX), stroke:"var(--line)", "stroke-dasharray":"4 4" });
+  el("text", { x:X(N) - 4, y:Y(MAX) + 16, "text-anchor":"end", "font-size":"10", fill:"var(--muted)" }, "如果是直线");
+  el("path", { d:T.map((v, k) => (k ? "L" : "M") + X(k).toFixed(1) + " " + Y(v).toFixed(1)).join(" "), fill:"none", stroke:"var(--accent)", "stroke-width":2.2 });
+  el("line", { x1:X(i), x2:X(i), y1:Y(0), y2:Y(raw), stroke:"var(--sck)", "stroke-dasharray":"3 3" });
+  el("line", { x1:60, x2:X(i), y1:Y(raw), y2:Y(raw), stroke:"var(--sck)", "stroke-dasharray":"3 3" });
+  el("circle", { cx:X(i), cy:Y(raw), r:5, fill:"var(--sck)" });
+  const travel = i / N * 100, naive = raw / MAX * 100;
+  document.getElementById("linread").innerHTML = `<span>真实行程 <b>${travel.toFixed(0)}%</b></span><span>原始变化 <b>${raw}</b></span><span>不查表直接按比例 <b>${naive.toFixed(0)}%</b></span><span>查表后 <b>${travel.toFixed(0)}%</b></span>`;
+  document.getElementById("linsay").innerHTML = Math.abs(travel - naive) > 10
+    ? `压到一半行程附近时，原始值只走了全程的 ${naive.toFixed(0)}%。不查表的话，用户设“压到 50% 触发”，实际要压得更深才触发；查表后两者一致。`
+    : "这一段曲线比较接近直线，查不查表差别不大；差别主要在行程的前中段。";
+}
+document.getElementById("trv").oninput = draw;
+draw();
+})();
+</script>
