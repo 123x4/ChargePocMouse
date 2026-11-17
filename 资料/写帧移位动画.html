@@ -1,0 +1,168 @@
+<title>写帧移位动画</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+:root{--b0:#c2410c;--b1:#b7791f;--b2:#1d68c9;--b3:#2c7a4b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--b0:#ff8a4c;--b1:#f2c14e;--b2:#5ea4ff;--b3:#6fd096}}
+:root[data-theme="dark"]{--b0:#ff8a4c;--b1:#f2c14e;--b2:#5ea4ff;--b3:#6fd096}
+.rig{display:flex;align-items:stretch;gap:6px;min-width:740px}
+.box{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel)}
+.box h3{margin:0 0 6px;font-size:.85rem;font-weight:700}
+.mcu{width:128px}
+.q{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.q div{text-align:center;border-radius:6px;padding:3px 0;font-family:var(--font-mono);font-size:13px;border:2px solid transparent}
+.q div.cur{border-color:var(--fg)}
+.q div.done{opacity:.3}
+.q small{display:block;font-size:10px;color:var(--muted)}
+.chip{flex:1}
+.cells{display:grid;grid-template-columns:repeat(16,1fr);gap:2px}
+.c{height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:#fff;background:var(--grid);transition:background .15s}
+.c.old{color:var(--muted)}
+.bytes{display:grid;grid-template-columns:1fr 1fr;margin-top:4px;font-family:var(--font-mono);font-size:13px;text-align:center}
+.arrow{align-self:center;color:var(--muted);font-family:var(--font-mono);font-size:11px;text-align:center;width:40px}
+.arrow b{display:block;font-size:16px;color:var(--fg)}
+.out{width:92px}
+.out .bits{font-family:var(--font-mono);font-size:12px;word-break:break-all;color:var(--muted)}
+.stat{display:flex;flex-wrap:wrap;gap:16px;font-family:var(--font-mono);font-size:14px}
+.stat b{color:var(--accent)}
+.ctl2{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl2 label{font-size:.85rem;color:var(--muted)}
+.latch{font-weight:700}
+</style>
+<main>
+<header>
+<h1>四个字节怎么走进两颗芯片</h1>
+<p class="lede"><code>hall_spi_tx[0..3]</code> 按 tx[0]→tx[3] 的顺序、每字节高位先出，一共 32 个时钟。每来一个时钟，整条链所有位往前（图里往左）挪一格。最先发出去的 tx[0] 走得最远，最后停在 H2。</p>
+</header>
+
+<section class="stage">
+  <div class="cases" role="group" aria-label="数据">
+    <button data-mode="real" aria-pressed="true">实际数据 B0 21 B0 21</button>
+    <button data-mode="mark" aria-pressed="false">换成 11 22 33 44 看顺序</button>
+  </div>
+  <div class="scroll"><div class="rig">
+    <div class="box out"><h3>从 MISO 挤出的旧内容</h3><div class="bits" id="miso"></div></div>
+    <div class="arrow"><b>←</b>MISO</div>
+    <div class="box chip"><h3>H2 右键芯片（远端）</h3><div class="cells" id="h2"></div><div class="bytes" id="h2b"></div></div>
+    <div class="arrow"><b>←</b>SDO→SDI</div>
+    <div class="box chip"><h3>H1 左键芯片（近端）</h3><div class="cells" id="h1"></div><div class="bytes" id="h1b"></div></div>
+    <div class="arrow"><b>←</b>MOSI</div>
+    <div class="box mcu"><h3>MCU tx（SSP 依次发）</h3><div class="q" id="q"></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">正在发：</div><div id="curbit" class="m" style="font-size:13px"></div></div>
+  </div></div>
+  <p class="ref" style="margin:0">每颗芯片的格子左边是高位（出口），右边是低位（入口）。新位从右边进，整条链每个时钟往左挪一格。</p>
+  <div class="stat"><span>时钟 <b id="clk">0</b> / 32</span><span id="phase"></span></div>
+  <div class="say" id="say"></div>
+  <div class="ctl2">
+    <button id="b1">+1 个时钟</button><button id="b8">+8 个时钟（1 字节）</button>
+    <button id="play" class="primary">播放</button><button id="reset">从头开始</button>
+    <label for="spd">速度</label><input id="spd" type="range" min="40" max="600" value="260" style="width:120px">
+  </div>
+</section>
+
+<section>
+<h2>看完记住</h2>
+<div class="facts">
+  <div class="fact"><span class="big">先发 → 最远</span><p>tx[0] 第一个进链，被后面 24 位一路推着走，最后落在 H2 的高字节。</p></div>
+  <div class="fact"><span class="big">H2 = tx[0] tx[1]</span><p>H1 = tx[2] tx[3]。读回时顺序一样：rx[0..1] 是 H2（右键），rx[2..3] 是 H1（左键）。</p></div>
+  <div class="fact"><span class="big">39 µs 才生效</span><p>32 个时钟只是把数据摆到位。之后 SCK 高 39 µs，两颗芯片同时检查 CRCWR 并写入。</p></div>
+</div>
+<p class="ref">“换成 11 22 33 44”只是为了看清位置，实际写寄存器时四个字节是 head, data, head, data。</p>
+</section>
+</main>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const COL = ["var(--b0)", "var(--b1)", "var(--b2)", "var(--b3)"];
+let mode = "real", clk = 0, timer = 0, playing = false;
+const tx = () => mode === "real" ? [0xB0, 0x21, 0xB0, 0x21] : [0x11, 0x22, 0x33, 0x44];
+const hx = v => v.toString(16).toUpperCase().padStart(2, "0");
+const OLDREG = 0x0C55;                       // left over from the last read frame
+const oldAt = p => (OLDREG >> (p % 16)) & 1;   // chain position p: 0 = H1 LSB (entry) ... 31 = H2 MSB (exit)
+function stream(){ const s = []; tx().forEach((b, k) => { for (let i = 7; i >= 0; i--) s.push({ v:(b >> i) & 1, k }); }); return s; }
+function render(){
+  const s = stream();
+  const at = p => { const n = clk - 1 - p; return n >= 0 ? s[n] : { v:oldAt(p - clk), old:true }; };
+  const cell = d => `<div class="c ${d.old ? "old" : ""}" style="${d.old ? "" : "background:" + COL[d.k]}">${d.v}</div>`;
+  const row = (hi, lo) => { let h = ""; for (let p = hi; p >= lo; p--) h += cell(at(p)); return h; };
+  const byte = (hi) => { let v = 0; for (let p = hi; p > hi - 8; p--) { const d = at(p); if (d.old) return "··"; v = v * 2 + d.v; } return hx(v); };
+  $("h2").innerHTML = row(31, 16); $("h1").innerHTML = row(15, 0);
+  $("h2b").innerHTML = `<span>高 ${byte(31)}</span><span>低 ${byte(23)}</span>`;
+  $("h1b").innerHTML = `<span>高 ${byte(15)}</span><span>低 ${byte(7)}</span>`;
+  const cur = clk < 32 ? Math.floor(clk / 8) : -1;
+  $("q").innerHTML = tx().map((b, k) => `<div class="${k === cur ? "cur" : ""} ${clk >= (k + 1) * 8 ? "done" : ""}" style="background:${COL[k]};color:#fff">${hx(b)}<small style="color:#fff">tx[${k}]</small></div>`).join("");
+  $("curbit").textContent = clk < 32 ? `tx[${cur}] 的 bit${7 - clk % 8} = ${s[clk].v}` : "发完";
+  let m = ""; for (let n = 0; n < clk; n++) m += oldAt(31 - n);
+  $("miso").textContent = m || "—";
+  $("clk").textContent = clk;
+  $("phase").innerHTML = clk < 32 ? "SSP 移位中" : `<span class="latch" style="color:var(--ok)">移位完成 → 接着 SCK 高 39 µs：两颗芯片执行写入</span>`;
+  let say;
+  if (clk === 0) say = "链里还是上一次读操作留下的 0C55（灰色）。点“+1 个时钟”，看 tx[0] 的最高位从右边进入 H1。";
+  else if (clk < 8) say = "tx[0] 正在一位一位进入 H1。每个新时钟，链里所有位都往左让一格，H2 最左边那一位从 MISO 挤出去。";
+  else if (clk < 16) say = "tx[0] 已整个进了 H1，tx[1] 跟在后面。此时 H1 = tx[0] tx[1]，但这不是终点，后面还有 16 个时钟。";
+  else if (clk < 24) say = "tx[2] 开始进入，把 tx[0] 从 H1 的出口推进 H2 的入口（H1 的 SDO 连着 H2 的 SDI）。";
+  else if (clk < 32) say = "tx[3] 进来，tx[0]、tx[1] 被推到 H2。挤出去的旧内容被 MCU 收进 rx，写操作不看它。";
+  else say = mode === "real" ? "到位：H2 = B0 21，H1 = B0 21。两颗芯片拿到同一个写请求（写 0x30 = 0x21）。下一步 SCK 高 39 µs，芯片核对 CRCWR 后写入。" : "到位：H2 = 11 22（tx[0] tx[1]），H1 = 33 44（tx[2] tx[3]）。先发的走得最远。";
+  $("say").innerHTML = `<b class="n">${clk}/32</b>` + say;
+}
+function stop(){ playing = false; clearTimeout(timer); $("play").textContent = "播放"; }
+function tick(){ if (!playing) return; if (clk >= 32) { stop(); return; } clk++; render(); timer = setTimeout(tick, +$("spd").max + +$("spd").min - +$("spd").value); }
+$("b1").onclick = () => { stop(); if (clk < 32) clk++; render(); };
+$("b8").onclick = () => { stop(); clk = Math.min(32, Math.floor(clk / 8) * 8 + 8); render(); };
+$("reset").onclick = () => { stop(); clk = 0; render(); };
+$("play").onclick = () => { if (playing) { stop(); return; } if (clk >= 32) clk = 0; playing = true; $("play").textContent = "暂停"; tick(); };
+document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { mode = b.dataset.mode; document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", x === b)); render(); });
+render();
+})();
+</script>
