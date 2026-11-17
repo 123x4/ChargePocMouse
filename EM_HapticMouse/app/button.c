@@ -38,6 +38,8 @@ typedef struct
   uint8_t wr31_r, wr31_l;             /* exam 4: 0x31 read back after writing 0x21 */
   uint8_t wr31b_r, wr31b_l;           /* exam 4: 0x31 read back after writing 0x20 again */
   uint8_t wr31_h1, wr31_h2;           /* exam 4: first byte of the two write frames */
+  uint8_t tbl_ok_n, tbl_bad_n;        /* exam 5: init table entries read back equal / different */
+  uint8_t tbl_bad_addr, tbl_bad_r, tbl_bad_l;   /* exam 5: first entry that read back different */
   uint8_t seq_r[8], seq_l[8];         /* exam 1 trace: low byte of the first 8 tries */
   uint8_t more_r[8], more_l[8];       /* exam 1 trace: 8 extra commands after the pass */
   uint32_t iocon_mosi, iocon_miso, iocon_sck;   /* raw IOCON values (FUNC, MODE, ADMODE) */
@@ -46,7 +48,7 @@ typedef struct
 volatile HallChk_ts g_hall_chk;
 
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
-#define HALL_EXAM             4   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30, 4 = + write 0x31 */
+#define HALL_EXAM             5   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30, 4 = + write 0x31, 5 = + init table and sampling */
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
@@ -62,6 +64,36 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_EXAM2_WIDTH      HALL_TD_WR_REG                   /* H5: unchanged */
 #define HALL_EXAM1_WIDTH      HALL_TD_FREQ_CAL                 /* H5: unchanged */
 #define HALL_EXAM1_WIDTH_US   0
+#endif
+
+#if (6 == USE_HALL_SENSOR)
+/* Exam 5: H6 init table, copied from the XENO reference code (h6_hal.c), except
+ * 0x09 (no LED current on the mouse) and 0x33 (chip baseline left off so the
+ * samples are raw ADC values for the existing MCU baseline algorithm).
+ * Written in this order; 0x33 must be last. */
+static const uint8_t h6_init_table[][2] = {
+  {0x0C, 0x83},   /* fixed value, datasheet p14; XENO L1221 */
+  {0x26, 0x0A},   /* fixed value, p15; XENO L1224 */
+  {0x27, 0x05},   /* fixed value, p15; XENO L1225 */
+  {0x28, 0x04},   /* fixed value, p15; XENO L1226 */
+  {0x13, 0x7F},   /* XENO "typical mode" L1228, not in datasheet */
+  {0x15, 0x05},   /* XENO L1229, not in datasheet */
+  {0x16, 0x02},   /* XENO L1230, not in datasheet */
+  {0x18, 0x03},   /* XENO L1231, not in datasheet */
+  {0x1C, 0xFF},   /* XENO L1232, not in datasheet */
+  {0x1E, 0x80},   /* XENO L1233, not in datasheet */
+  {0x20, 0x80},   /* XENO L1234, not in datasheet */
+  {0x25, 0x29},   /* XENO L1235, not in datasheet */
+  {0x09, 0x20},   /* bit5=1 -> LNA 24x, LED current 0 (XENO 0x25 adds LED current) p13 */
+  {0x0B, 0x88},   /* LNA 24x, PGA 22.8x = XENO default gain POWER_ON_W_GAIN, p13 */
+  {0x29, 0x60},   /* LNA 24x pair value, p15; XENO L962 */
+  {0x2A, 0x28},   /* LNA 24x pair value, p15; XENO L963 */
+  {0x0F, 0x07},   /* sample interval 7 x 4us = 28us, p14; XENO L1285 */
+  {0x10, 0x20},   /* interval high bits 0, fixed [7:4]=2, p14; XENO L1286 */
+  {0x2F, 0x14},   /* fixed value, p16; XENO L1340 */
+  {0x33, 0x80},   /* LAST: continuous conversion, BASL_EN off (XENO writes 0x84), p17 */
+};
+#define H6_INIT_TABLE_N   (sizeof(h6_init_table) / sizeof(h6_init_table[0]))
 #endif
 
 #if HALL_EXAM1_TRACE
@@ -118,6 +150,19 @@ static void HallChk_Print(void)
           (unsigned)g_hall_chk.wr31_h1, (unsigned)g_hall_chk.wr31_r, (unsigned)g_hall_chk.wr31_l,
           (unsigned)g_hall_chk.wr31_h2, (unsigned)g_hall_chk.wr31b_r, (unsigned)g_hall_chk.wr31b_l,
           HALL_EXAM4_H5_CRC ? "h5" : "h6");
+#endif
+#if ((6 == USE_HALL_SENSOR) && (HALL_EXAM >= 5))
+  if(g_hall_chk.tbl_bad_n)
+  {
+    ExamLog("EXAM5 TBL ok=%u/%u bad=%u first_bad=0x%02X R=%02X L=%02X",
+            (unsigned)g_hall_chk.tbl_ok_n, (unsigned)H6_INIT_TABLE_N, (unsigned)g_hall_chk.tbl_bad_n,
+            (unsigned)g_hall_chk.tbl_bad_addr, (unsigned)g_hall_chk.tbl_bad_r, (unsigned)g_hall_chk.tbl_bad_l);
+  }
+  else
+  {
+    ExamLog("EXAM5 TBL ok=%u/%u bad=0 (expect all ok)",
+            (unsigned)g_hall_chk.tbl_ok_n, (unsigned)H6_INIT_TABLE_N);
+  }
 #endif
 #if HALL_DIAG_PINS
   ExamLog("PIN MISO pd=%u pu=%u MOSI h=%u l=%u SCK h=%u l=%u in_pu=%u",
@@ -588,6 +633,44 @@ UINT32 LR_GetState(void)
   #else
 	hall_get_sample();
   #endif
+
+#if ((6 == USE_HALL_SENSOR) && (HALL_EXAM >= 5))
+  {
+    /* Exam 5: check every sample (2-bit CRC + 14-bit data, datasheet 7.2) and
+     * print raw / min / max / ok / err per chip every 500 ms. k=0 right, k=1 left. */
+    static uint16_t s_raw[2], s_min[2] = {0xFFFF, 0xFFFF}, s_max[2];
+    static uint16_t s_ok[2], s_err[2], s_prt;
+    uint8_t k;
+    for(k = 0; k < 2; k++)
+    {
+      uint8_t  hi = hall_spi_rx[2 * k];
+      uint8_t  lo = hall_spi_rx[2 * k + 1];
+      uint16_t v  = ((uint16_t)(hi & 0x3F) << 8) | lo;
+      if(((hi & 0xC0) == (bit_error[hi & 0x3F] ^ bit_error[lo])) && (v != 0))
+      {
+        s_ok[k]++;
+        s_raw[k] = v;
+        if(v < s_min[k]) { s_min[k] = v; }
+        if(v > s_max[k]) { s_max[k] = v; }
+      }
+      else
+      {
+        s_err[k]++;                   /* CRC wrong, or all zero (passes CRC but means no data) */
+      }
+    }
+    if(++s_prt >= 500)
+    {
+      s_prt = 0;
+      ExamLog("EXAM5 R raw=%u min=%u max=%u ok=%u err=%u | L raw=%u min=%u max=%u ok=%u err=%u",
+              (unsigned)s_raw[0], (unsigned)s_min[0], (unsigned)s_max[0], (unsigned)s_ok[0], (unsigned)s_err[0],
+              (unsigned)s_raw[1], (unsigned)s_min[1], (unsigned)s_max[1], (unsigned)s_ok[1], (unsigned)s_err[1]);
+      for(k = 0; k < 2; k++)
+      {
+        s_min[k] = 0xFFFF; s_max[k] = 0; s_ok[k] = 0; s_err[k] = 0;
+      }
+    }
+  }
+#endif
 
   {
     static uint16_t prt = 0;
@@ -1356,6 +1439,37 @@ void HallSensor_INIT(void)
 		Hall_ReadReg(0x31, &l, &r);
 		g_hall_chk.wr31b_r = r;
 		g_hall_chk.wr31b_l = l;
+	}
+#endif
+#if (HALL_EXAM >= 5)
+	if(g_hall_chk.cal_ok && (0xAA == g_hall_chk.rd0c_r) && (0xAA == g_hall_chk.rd0c_l))
+	{
+		uint8_t i, l, r;
+		for(i = 0; i < H6_INIT_TABLE_N; i++)          /* exam 5: write the init table */
+		{
+			Hall_WriteReg(h6_init_table[i][0], h6_init_table[i][1]);
+		}
+		CT16B1_DelayUs(100);                          /* p17: wait >50us after switching conversion mode */
+		g_hall_chk.tbl_ok_n = 0;
+		g_hall_chk.tbl_bad_n = 0;
+		for(i = 0; i < H6_INIT_TABLE_N; i++)          /* read every entry back; do not stop on a mismatch */
+		{
+			Hall_ReadReg(h6_init_table[i][0], &l, &r);
+			if((l == h6_init_table[i][1]) && (r == h6_init_table[i][1]))
+			{
+				g_hall_chk.tbl_ok_n++;
+			}
+			else
+			{
+				if(0 == g_hall_chk.tbl_bad_n)
+				{
+					g_hall_chk.tbl_bad_addr = h6_init_table[i][0];
+					g_hall_chk.tbl_bad_r = r;
+					g_hall_chk.tbl_bad_l = l;
+				}
+				g_hall_chk.tbl_bad_n++;
+			}
+		}
 	}
 #endif
 #else
