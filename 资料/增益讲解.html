@@ -169,7 +169,8 @@ function draw(){
   if (full < 0 && rest >= 0) say = "增益太大：还没按到底，读数就顶到 0 不动了。后半段行程 MCU 看不到任何变化。";
   else if (rest < 0) say = "增益大到连“没按”都顶死了，按键完全失灵。";
   else if (delta < 2500) say = "增益偏小：从没按到按到底只变了一点，稍有噪声就分不清按没按。";
-  else say = "这个增益合适：没按和按到底都在量程里，中间有足够大的变化量。0x88（24x × 22.8x）就是 XENO 的默认值。";
+  else say = "这个增益合适：没按和按到底都在量程里，中间有足够大的变化量。" + (li === 1 && pi === 8 ? "这就是 XENO 的默认值 0x88（24x × 22.8x）。" : "");
+  if (li === 0) say += " 注意：16x 和 24x 的 0x0B 高 4 位都是 8，靠 0x09 的 bit5 区分（0 = 16x，1 = 24x）。";
   document.getElementById("say").innerHTML = say;
 }
 document.getElementById("depth").oninput = draw;
