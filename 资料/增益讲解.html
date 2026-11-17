@@ -97,9 +97,10 @@ th{background:var(--grid);font-weight:600}
 <tr><td>几颗芯片几个值</td><td>两颗同一个值</td><td>每颗单独</td><td>两颗同一个值</td></tr>
 <tr><td>谁来定这个值</td><td>写代码时按板型定（编译时选）</td><td>产线 PC 工具通过 USB 下发，可全键统一或单键设置，写入 Flash</td><td>写代码时定，实测后再调</td></tr>
 <tr><td>开机怎么写进芯片</td><td><code>ana_hall2_phy_set_mode()</code> 按表写</td><td><code>hall_gain_load_final_table()</code> 读 Flash → <code>h6_hal_write_gain_config0_table()</code> 一次写 0x0B + 0x29 + 0x2A</td><td>按表写，三个寄存器放在一起</td></tr>
-<tr><td>出处</td><td class="src">button.c 507–510；my_board.h 37–38（_PWM 推出 GT_LINA_T1A_H5）</td><td class="src">mfg_mode.c 1391、1535–1605；mfg_mode.h 34；h6_hal.c 945–975、984</td><td class="src">—</td></tr>
+<tr><td>出处</td><td class="src">button.c 507–510；my_board.h 37–38（_PWM 推出 GT_LINA_T1A_H5）</td><td class="src">mfg_mode.c 1391、1535–1605；mfg_mode.h 34；h6_hal.c 945–975（16x 配套值与手册不同，见下方）、984</td><td class="src">—</td></tr>
 </table></div>
 <p>另外两条线索：H5 工程 <code>my_hallkey_func.c</code> 257–262 行有一段被注释掉的“读数低于 1000 就自动减增益”，说明以前试过自动调、后来没用；厂家 H5 例程 <code>ana_hall2_phy.c</code> 195、197 行用的是 32x × 13.2x。</p>
+<div class="fact" style="border-color:var(--bad)"><b>0x29 / 0x2A 的配套值：手册和 XENO 在 16x 上不一致</b><p>手册（PDF 第 15 页）：16x → 50/20，24x → 60/28，48x → A0/40，96x → F0/60。XENO（h6_hal.c 第 945–975 行）在 16x 时写的是 4E/32，其余三档和手册一致。本页按手册显示。我们打算用 24x，不受影响；如果以后用 16x，要先问清楚以哪个为准。</p></div>
 <div class="fact" style="border-color:var(--sck)"><b>H5 的 1152 倍和 H6 的 547 倍不能直接比</b><p>两颗芯片的霍尔片灵敏度、放大链路都不同，倍数只能在同一颗芯片里比较。H6 该用多少，只能在 H6 板子上量出来。</p></div>
 </section>
 
@@ -121,7 +122,7 @@ const NS = "http://www.w3.org/2000/svg", svg = document.getElementById("svg");
 function el(t, a, x){ const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x !== undefined) e.textContent = x; svg.appendChild(e); return e; }
 const LNA = [{ g:16, code:8, b5:0 }, { g:24, code:8, b5:1 }, { g:48, code:9, b5:1 }, { g:96, code:10, b5:1 }];
 const PGA = [13.2, 14.4, 15.6, 16.8, 18.0, 19.2, 20.4, 21.6, 22.8, 24.0];
-const TRIM = { 16:["4E","32"], 24:["60","28"], 48:["A0","40"], 96:["F0","60"] };
+const TRIM = { 16:["50","20"], 24:["60","28"], 48:["A0","40"], 96:["F0","60"] };   // datasheet p15
 let li = 1;
 const lbox = document.getElementById("lna");
 LNA.forEach((l, i) => { const b = document.createElement("button"); b.textContent = l.g + "x"; b.setAttribute("aria-pressed", i === li); b.onclick = () => { li = i; [...lbox.children].forEach((x, k) => x.setAttribute("aria-pressed", k === li)); draw(); }; lbox.appendChild(b); });
