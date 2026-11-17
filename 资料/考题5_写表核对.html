@@ -1,0 +1,196 @@
+<title>考题五 写表核对</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+.code{font-family:var(--font-mono);font-size:12.5px;line-height:1.6;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 0;overflow-x:auto;min-width:0}
+.code div{white-space:pre;padding:0 12px}
+.code div.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.code .cm{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.regs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.reg{border:1px solid var(--line);border-radius:7px;padding:4px;font-family:var(--font-mono);font-size:11.5px;text-align:center;background:var(--panel);transition:background .2s}
+.reg b{display:block;font-size:12.5px}
+.reg.w{background:var(--accent-soft);border-color:var(--accent)}
+.reg.ok{background:var(--ok-soft);border-color:var(--ok)}
+.reg.bad{background:var(--bad-soft);border-color:var(--bad)}
+.reg.cur{outline:2px solid var(--fg)}
+.vars{font-family:var(--font-mono);font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;background:var(--bg);border-radius:8px;padding:8px 12px;margin-top:8px}
+.vars span:nth-child(odd){color:var(--muted)}
+.logline{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;white-space:pre-wrap;min-height:2.4em}
+.ctl2{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ctl2 label{font-size:.85rem;color:var(--muted)}
+</style>
+<main>
+<header>
+<h1>考题五：写初始化表，再逐项读回核对</h1>
+<p class="lede">这段代码在 <code>HallSensor_INIT()</code> 里（button.c 约 1443～1475 行），开机只跑一次：先把 20 项配置全部写进两颗 H6，再一项一项读回来，和表里的值比，数出对了几项、错了几项，记下第一个错的。</p>
+</header>
+
+<section class="stage">
+  <div class="cases" role="group" aria-label="情况">
+    <button data-case="ok" aria-pressed="true">全部一致</button>
+    <button data-case="bad" aria-pressed="false">示例：有两项不一致</button>
+  </div>
+  <div class="grid2">
+    <div class="code" id="code"></div>
+    <div>
+      <div class="regs" id="regs"></div>
+      <div class="vars" id="vars"></div>
+    </div>
+  </div>
+  <div class="say" id="say"></div>
+  <div class="logline" id="log"></div>
+  <div class="ctl2">
+    <button id="prev">上一步</button><button id="next" class="primary">下一步</button><button id="play">播放</button><button id="reset">从头开始</button>
+    <span class="m" id="cnt" style="font-size:13px;color:var(--muted)"></span>
+  </div>
+  <p class="ref" style="margin:0">“有两项不一致”是假设的例子（0x13 读回 7E，0x1C 读回 7F），用来看计数怎么变；实际结果以你板子上的日志为准。</p>
+</section>
+
+<section>
+<h2>记住三件事</h2>
+<div class="facts">
+  <div class="fact"><span class="big">先写完，再读回</span><p>0x33 写成 0x80 后芯片才进入连续采样，所以必须整张表写完、0x33 最后写。读回统一放后面，既核对每项，也顺便确认整个写入过程没出岔子。</p></div>
+  <div class="fact"><span class="big">只记第一个错的</span><p>日志一行放不下 20 项。第一个错的地址和读回值最能说明问题，<code>tbl_bad_n</code> 告诉你一共错了几个。</p></div>
+  <div class="fact"><span class="big">错了也不停</span><p>0x13～0x25 是照抄 XENO 的，手册里查不到，读回不一定等于写入（可能有只写位或保留位）。所以不在第一个错处中断，把整张表都核对完。</p></div>
+</div>
+</section>
+
+<section>
+<h2>几个细节</h2>
+<ul>
+  <li><b>进入条件</b>：<code>cal_ok</code> 是考题一的结果，<code>rd0c_r / rd0c_l == 0xAA</code> 是考题二的结果。通信都没确认好就写表，写进去的可能是错的，读回比较也没有意义。</li>
+  <li><b><code>H6_INIT_TABLE_N</code></b> 是 <code>sizeof(表) / sizeof(一行)</code> 自动算出来的 20。以后表里加一行、删一行，循环自动跟着变，不用改这段代码。</li>
+  <li><b><code>uint8_t i</code></b>：最大 255，表只有 20 项，够用。</li>
+  <li><b>L 和 R 都要对</b>：两颗芯片写的是同一个值，任何一颗不对都算这一项错。记录时 R、L 都存，能看出是哪颗芯片的问题。</li>
+  <li><b>两个计数器先清零</b>：<code>g_hall_chk</code> 是全局变量，开机本来就是 0；显式清零是为了以后如果重新初始化（比如再调一次 <code>HallSensor_INIT()</code>），计数不会接着上一次累加。</li>
+</ul>
+</section>
+
+<section>
+<h2>日志怎么读</h2>
+<pre>EXAM5 TBL ok=20/20 bad=0 (expect all ok)                    ← 全部写对
+EXAM5 TBL ok=18/20 bad=2 first_bad=0x13 R=7E L=7E           ← 错了 2 项，第一个是 0x13，两颗都读回 7E</pre>
+<p>如果出现第二种，先看 first_bad 是不是手册里查得到的寄存器：查得到的（比如 0x0B、0x33）说明写入真有问题；查不到的（0x13～0x25）可能只是这个寄存器读回规则不同，要问厂家。</p>
+</section>
+</main>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const TBL = [[0x0C,0x83],[0x26,0x0A],[0x27,0x05],[0x28,0x04],[0x13,0x7F],[0x15,0x05],[0x16,0x02],[0x18,0x03],[0x1C,0xFF],[0x1E,0x80],[0x20,0x80],[0x25,0x29],[0x09,0x20],[0x0B,0x88],[0x29,0x60],[0x2A,0x28],[0x0F,0x07],[0x10,0x20],[0x2F,0x14],[0x33,0x80]];
+const BADRD = { 0x13:0x7E, 0x1C:0x7F };
+const hx = v => v.toString(16).toUpperCase().padStart(2, "0");
+const CODE = [
+ ["cond","if(g_hall_chk.cal_ok && (0xAA == rd0c_r) && (0xAA == rd0c_l))"],
+ ["","{"],
+ ["","  uint8_t i, l, r;"],
+ ["wfor","  for(i = 0; i < H6_INIT_TABLE_N; i++)   /* write the table */"],
+ ["wr","    Hall_WriteReg(h6_init_table[i][0], h6_init_table[i][1]);"],
+ ["dly","  CT16B1_DelayUs(100);                   /* >50us after mode change */"],
+ ["clr","  tbl_ok_n = 0;  tbl_bad_n = 0;"],
+ ["rfor","  for(i = 0; i < H6_INIT_TABLE_N; i++)   /* read back, do not stop */"],
+ ["rd","    Hall_ReadReg(h6_init_table[i][0], &l, &r);"],
+ ["cmp","    if((l == table[i][1]) && (r == table[i][1]))"],
+ ["ok","      tbl_ok_n++;"],
+ ["else","    else {"],
+ ["first","      if(0 == tbl_bad_n) { bad_addr = addr; bad_r = r; bad_l = l; }"],
+ ["badn","      tbl_bad_n++;"],
+ ["","    }"],
+ ["","}"],
+ ["prt","/* later, every boot print: EXAM5 TBL ok=.. bad=.. */"]
+];
+const cbox = $("code");
+CODE.forEach(([k, t]) => { const d = document.createElement("div"); d.dataset.k = k; const i = t.indexOf("/*"); if (i >= 0) { d.textContent = t.slice(0, i); const s = document.createElement("span"); s.className = "cm"; s.textContent = t.slice(i); d.appendChild(s); } else d.textContent = t; cbox.appendChild(d); });
+let cs = "ok", ev = [], pos = 0, timer = 0;
+function build(){
+  ev = [{ k:["cond"], s:"进入条件：考题一校准通过、考题二两颗芯片 0x0C 都读到 AA，说明通信可靠，才开始写表。" }];
+  TBL.forEach((t, i) => ev.push({ k:["wfor","wr"], wi:i, s:`写第 ${i + 1} 项：0x${hx(t[0])} = 0x${hx(t[1])}。每次调用 Hall_WriteReg()：算 CRCWR → SPI 推 4 字节 → 39 µs 执行键。` + (i === 19 ? " 这是最后一项 0x33，写完芯片切到连续采样。" : "") }));
+  ev.push({ k:["dly"], s:"等 100 µs：手册第 17 页要求切换转换模式后至少等 50 µs 再读数据，留一倍余量。" });
+  ev.push({ k:["clr"], s:"两个计数器清零，准备开始核对。" });
+  let okn = 0, badn = 0, first = null;
+  TBL.forEach((t, i) => {
+    const rd = cs === "bad" && BADRD[t[0]] !== undefined ? BADRD[t[0]] : t[1];
+    const good = rd === t[1];
+    if (good) okn++; else { if (!first) first = { a:t[0], r:rd }; badn++; }
+    ev.push({ k:["rfor","rd","cmp", good ? "ok" : (badn === 1 ? "first" : "badn")], ri:i, good, okn, badn, first:first ? { ...first } : null,
+      s: good ? `读回 0x${hx(t[0])}：R=${hx(rd)} L=${hx(rd)}，等于表里的 ${hx(t[1])}，ok 计数 +1。`
+              : (badn === 1 ? `读回 0x${hx(t[0])}：R=${hx(rd)} L=${hx(rd)}，表里是 ${hx(t[1])}，不一致。这是第一个错的，记下地址和读回值，bad 计数 +1，<b>不中断，继续下一项</b>。`
+                            : `读回 0x${hx(t[0])}：又不一致。因为已经记过第一个了，这次只把 bad 计数 +1，first_bad 不变。`) });
+  });
+  ev.push({ k:["prt"], done:true, okn, badn, first, s:"核对结束。结果存在 g_hall_chk 里，开机后约 2、4、6 秒由 HallChk_Print() 打印出来。" });
+}
+function render(){
+  const e = ev[pos];
+  cbox.querySelectorAll("div").forEach(d => d.classList.toggle("on", e.k.includes(d.dataset.k)));
+  // register states up to pos
+  const st = TBL.map(() => ""); let okn = 0, badn = 0, first = null, i = "—";
+  for (let p = 0; p <= pos; p++) { const x = ev[p]; if (x.wi !== undefined) st[x.wi] = "w"; if (x.ri !== undefined) { st[x.ri] = x.good ? "ok" : "bad"; okn = x.okn; badn = x.badn; first = x.first; } if (x.done) { okn = x.okn; badn = x.badn; first = x.first; } }
+  if (e.wi !== undefined) i = e.wi; if (e.ri !== undefined) i = e.ri;
+  $("regs").innerHTML = TBL.map((t, k) => `<div class="reg ${st[k]} ${(k === e.wi || k === e.ri) ? "cur" : ""}"><b>${hx(t[0])}</b>${hx(t[1])}</div>`).join("");
+  const readPhase = pos >= ev.findIndex(x => x.k.includes("clr"));
+  $("vars").innerHTML = `<span>i</span><span>${i}</span><span>tbl_ok_n</span><span>${readPhase ? okn : "—"}</span><span>tbl_bad_n</span><span>${readPhase ? badn : "—"}</span><span>tbl_bad_addr</span><span>${first ? "0x" + hx(first.a) : "—"}</span><span>tbl_bad_r / l</span><span>${first ? hx(first.r) + " / " + hx(first.r) : "—"}</span>`;
+  $("say").innerHTML = `<b class="n">${pos + 1}/${ev.length}</b>` + e.s;
+  $("log").textContent = e.done ? (e.badn ? `EXAM5 TBL ok=${e.okn}/20 bad=${e.badn} first_bad=0x${hx(e.first.a)} R=${hx(e.first.r)} L=${hx(e.first.r)}` : `EXAM5 TBL ok=${e.okn}/20 bad=0 (expect all ok)`) : "（日志在核对结束后打印）";
+  $("cnt").textContent = `${pos + 1} / ${ev.length}`;
+}
+function stop(){ clearInterval(timer); timer = 0; $("play").textContent = "播放"; }
+$("next").onclick = () => { stop(); if (pos < ev.length - 1) pos++; render(); };
+$("prev").onclick = () => { stop(); if (pos > 0) pos--; render(); };
+$("reset").onclick = () => { stop(); pos = 0; render(); };
+$("play").onclick = () => { if (timer) { stop(); return; } if (pos >= ev.length - 1) pos = 0; $("play").textContent = "暂停"; timer = setInterval(() => { if (pos >= ev.length - 1) { stop(); return; } pos++; render(); }, 650); };
+document.querySelectorAll("[data-case]").forEach(b => b.onclick = () => { stop(); cs = b.dataset.case; document.querySelectorAll("[data-case]").forEach(x => x.setAttribute("aria-pressed", x === b)); build(); pos = 0; render(); });
+build(); render();
+})();
+</script>
