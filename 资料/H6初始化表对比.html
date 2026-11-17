@@ -1,0 +1,110 @@
+<title>H6 初始化表对比</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column. One animation that plays the whole exam for three cases, three key facts, then how to run it. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --sck:#b97400; --ok:#2c7a4b; --ok-soft:#e1f2e7; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --sck:#f2b33d; --ok:#6fd096; --ok-soft:#173022; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;padding-block:28px 64px;display:grid;gap:28px}
+h1{font-size:1.6rem;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px}
+.lede{color:var(--muted);margin:4px 0 0}
+code,.m{font-family:var(--font-mono);font-variant-ligatures:none}
+code{font-size:.86em;background:var(--grid);padding:1px 5px;border-radius:4px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-size:.92rem;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;min-width:0}
+svg{display:block;width:100%;min-width:560px}
+svg text{font-family:var(--font-body);fill:var(--fg)}
+.say{font-size:1.05rem;min-height:3.4em;padding:8px 12px;border-radius:10px;background:var(--bg)}
+.say b.n{font-family:var(--font-mono);color:var(--accent);margin-right:6px}
+.dots{display:flex;gap:6px;align-items:center}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--accent)}
+.dots .ctl{margin-left:auto;display:flex;gap:6px}
+.dots .ctl button{padding:3px 12px;font-size:.85rem}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.fact .big{font-family:var(--font-mono);font-size:1.4rem;color:var(--accent);display:block}
+.fact p{margin:2px 0 0;font-size:.92rem;color:var(--muted)}
+ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ref{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:820px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--grid);font-weight:600;position:sticky;top:0}
+td.m{font-family:var(--font-mono)}
+tr.grp td{background:var(--bg);font-weight:700;color:var(--accent)}
+td.diff{background:var(--hl,#fff1c2)}
+td.ask{color:var(--muted);font-style:italic;min-width:80px}
+.src{font-size:.78rem;color:var(--muted)}
+ol.q li{margin:8px 0}
+</style>
+<main>
+<header>
+<h1>H6 初始化表对比</h1>
+<p class="lede">鼠标 H6 移植已经验证完频率校准、读寄存器、写寄存器（含 CRCWR 地址项）。下一步要写初始化表让芯片开始采样，但两套来源的值不一致，需要定一套。黄色格子是两边不同、需要决定的地方。</p>
+</header>
+<section>
+<div class="scroll"><table>
+<colgroup><col style="width:9%"><col style="width:13%"><col style="width:7%"><col style="width:9%"><col style="width:13%"><col style="width:31%"><col style="width:11%"><col style="width:7%"></colgroup>
+<tr><th>地址</th><th>手册名称</th><th>手册默认</th><th>我们的 15 项表</th><th>XENO 厂家代码</th><th>说明</th><th>出处（手册页 / h6_hal.c 行）</th><th>决定</th></tr>
+<tr class="grp"><td colspan="8">① 固定值：手册规定，两边一致</td></tr>
+<tr><td class="m">0x0C</td><td>Test_Reg0</td><td class="m">AA</td><td class="m">83</td><td class="m">83</td><td>手册：Write fix value 0x83</td><td class="src">p14 / L1221</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x26</td><td>Test_Reg1</td><td class="m">0A</td><td class="m">0A</td><td class="m">0A</td><td>固定值，默认已等于要写的值</td><td class="src">p15 / L1224</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x27</td><td>Test_Reg2</td><td class="m">05</td><td class="m">05</td><td class="m">05</td><td>同上</td><td class="src">p15 / L1225</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x28</td><td>Test_Reg3</td><td class="m">04</td><td class="m">04</td><td class="m">04</td><td>同上</td><td class="src">p15 / L1226</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x2F</td><td>Test_Reg4</td><td class="m">14</td><td class="m">14</td><td class="m">14</td><td>同上（XENO 填基线时临时改成 02，用完改回 14）</td><td class="src">p16 / L1334、L1340</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x34</td><td>Test_Reg5</td><td class="m">03</td><td class="m">03</td><td class="m">—</td><td>同上；XENO 未写</td><td class="src">p17</td><td class="ask">待定</td></tr>
+<tr class="grp"><td colspan="8">② 两边都写了，但值不同</td></tr>
+<tr><td class="m">0x09</td><td>LED_IMAX</td><td class="m">20</td><td class="m diff">20</td><td class="m diff">25</td><td>bit5=1 是 LNA 24x 的前提；低位是 LED 电流。XENO 键盘带 RGB 才设 LED 电流，我们板上没有 LED</td><td class="src">p13 / L1178</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x0B</td><td>Gain_Config0</td><td class="m">15</td><td class="m diff">85</td><td class="m diff">逐颗从 Flash 增益表算</td><td>增益。我们固定为 LNA 24x、PGA 19.2x；XENO 每颗芯片单独校准</td><td class="src">p13 / L1000</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x29</td><td>Gain_Config1</td><td class="m">40</td><td class="m diff">60</td><td class="m diff">随 0x0B 算</td><td>手册：LNA 24x 时写 0x60</td><td class="src">p15 / L1003</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x2A</td><td>Gain_Config2</td><td class="m">32</td><td class="m diff">28</td><td class="m diff">随 0x0B 算</td><td>手册：LNA 24x 时写 0x28</td><td class="src">p15 / L1006</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x0F</td><td>Sample_Interval_L</td><td class="m">20</td><td class="m diff">1F</td><td class="m diff">07</td><td>采样间隔 = 值 × 4 µs。我们 31×4 = 124 µs，XENO 7×4 = 28 µs（最小值），默认 32×4 = 128 µs</td><td class="src">p14 / L1285、L1320</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x33</td><td>Work_Mode</td><td class="m">00</td><td class="m diff">80</td><td class="m diff">84</td><td>bit7 = 连续采样（两边都开）；bit2 = 芯片内部基线 BASL_EN（只有 XENO 开）</td><td class="src">p17 / L1300</td><td class="ask">待定</td></tr>
+<tr class="grp"><td colspan="8">③ 值相同，且等于手册默认值</td></tr>
+<tr><td class="m">0x10</td><td>Sample_Interval_H</td><td class="m">20</td><td class="m">20</td><td class="m">20</td><td>高 4 位 = 0；XENO 只在校准恢复时写</td><td class="src">p14 / L1286</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x32</td><td>Key_Type</td><td class="m">41</td><td class="m">41</td><td class="m">41</td><td>XENO 写 0x01 | (KEY_DOWN_INCREASES=1)<<6 = 0x41，与默认相同</td><td class="src">p16 / L1325</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x35</td><td>SDO_Drive_Current</td><td class="m">27</td><td class="m">27</td><td class="m">—</td><td>默认值：[2:0]=111，SDO 驱动 12 mA</td><td class="src">p17</td><td class="ask">待定</td></tr>
+<tr class="grp"><td colspan="8">④ 只有 XENO 写了</td></tr>
+<tr><td class="m">0x13 0x15 0x16 0x18 0x1C 0x1E 0x20 0x25</td><td>手册寄存器表里没有</td><td class="m">—</td><td class="m diff">—</td><td class="m diff">7F 05 02 03 FF 80 80 29</td><td>XENO“典型模式” h6_hal_type_mode()。另有两套低功耗模式值（L1243、L1260）。手册查不到用途</td><td class="src">— / L1219–1235</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x1B</td><td>SCK_Idle_Time</td><td class="m">07</td><td class="m">—</td><td class="m">01</td><td>SCK 空闲超时触发中断模式用</td><td class="src">p15 / L1321</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x2B 0x2C</td><td>Press_Key_Threshold</td><td class="m">DC 1E</td><td class="m">—</td><td class="m">03 40</td><td>按键阈值，中断模式用</td><td class="src">p15 / L1322–1323</td><td class="ask">待定</td></tr>
+<tr><td class="m">0x2D 0x2E</td><td>Baseline_Initial_Value</td><td class="m">—</td><td class="m">—</td><td class="m">从 Flash 读</td><td>芯片内部基线初值，配合 0x33 bit2</td><td class="src">p15–16 / L1326</td><td class="ask">待定</td></tr>
+</table></div>
+<p class="ref">手册 = GTRY164 V1.9 寄存器表（PDF 第 13～17 页）。XENO = 资料/GT_SS_XENO_APP_20260916/src/h6/h6_hal.c，主要在 h6_hal_reg_set_mode()（第 1308 行）、h6_hal_type_mode()（第 1219 行）、offset_cali_reg_recovery()（第 1280 行）。“我们的 15 项表”是之前按手册整理的方案，还没写进固件。</p>
+</section>
+<section>
+<h2>需要定的 4 个问题</h2>
+<ol class="q">
+<li><b>采样间隔（0x0F）：</b>124 µs、28 µs 还是默认 128 µs？鼠标按键只需要毫秒级响应，间隔越短功耗越高。</li>
+<li><b>增益（0x0B / 0x29 / 0x2A）：</b>固定 LNA 24x（手册标的典型值），还是像 XENO 一样每颗芯片校准后存 Flash？</li>
+<li><b>手册里查不到的 0x13～0x25：</b>要不要照抄 XENO 的“典型模式”值？能否向 G.TECH 要这些寄存器的说明？</li>
+<li><b>芯片内部基线（0x33 bit2）：</b>开不开？现在鼠标的按键判断是 MCU 自己算基线（ProcessRecvSampleRawData），开了芯片基线需要配合改这部分。</li>
+</ol>
+<p>建议：第一版只开连续采样，其他尽量用默认或手册典型值，先确认采样数据能读出来、按键时会变化，再按需要调。</p>
+</section>
+</main>

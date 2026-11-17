@@ -61,7 +61,7 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
 <section class="stage" aria-label="动画">
   <div class="cases" role="group" aria-label="选择情况">
     <button data-case="ok" aria-pressed="true">H6 算法（地址+数据）</button>
-    <button data-case="bad" aria-pressed="false">对照：H5 老算法（只算数据，预测）</button>
+    <button data-case="bad" aria-pressed="false">对照：H5 老算法（只算数据，实测）</button>
   </div>
   <div class="scroll"><svg id="svg" viewBox="0 0 640 210" role="img" aria-label="用两种算法写寄存器 0x31"></svg></div>
   <div class="say" id="say"></div>
@@ -87,6 +87,7 @@ pre{font-family:var(--font-mono);font-size:12.5px;background:var(--panel);border
 <pre>EXAM4 WR 0x31=21 head=F1 -&gt; R=21 L=21 | =20 head=B1 -&gt; R=20 L=20 crc=h6 (expect 21 21 | 20 20)</pre></li>
   <li>对照实验：把 <code>HALL_EXAM4_H5_CRC</code> 改成 1，重新烧录。预测：<code>head=B1 -&gt; R=20 L=20 | head=F1 -&gt; R=20 L=20 crc=h5</code>，两次都被拒。看完改回 0。</li>
 </ol>
+<div class="fact" style="border-color:var(--ok)"><b>实测结果：本关通过。</b><p>H6 算法：<code>head=F1 → 21 21 | head=B1 → 20 20</code>；H5 算法：<code>head=B1 → 20 20 | head=F1 → 20 20</code>，和预测一致。</p></div>
 <p>两步都符合预测，就证明了：<b>H6 的写入必须用新公式，H5 的那张 <code>bit_crc_write_reg</code> 表不能直接拿来用。</b></p>
 <p class="ref">手册：H6 §7.4 图 6（PDF 第 9～10 页）CRCWR = A5^…^A0^D7^…^D0；H5 §7.4（GTRY154 手册第 8 页）CRCWR = D7^…^D0；寄存器表（H6 第 16 页）0x31 默认 0x20。</p>
 </section>
