@@ -86,8 +86,8 @@ static const uint8_t h6_init_table[][2] = {
   {0x25, 0x29},   /* XENO L1235, not in datasheet */
   {0x09, 0x20},   /* bit5=1 -> LNA 24x, LED current 0 (XENO 0x25 adds LED current) p13 */
   {0x0B, 0x88},   /* LNA 24x, PGA 22.8x = XENO default gain POWER_ON_W_GAIN, p13 */
-  {0x29, 0x60},   /* LNA 24x pair value, p15; XENO L962 */
-  {0x2A, 0x28},   /* LNA 24x pair value, p15; XENO L963 */
+  {0x29, 0x60},   /* LNA 24x pair value, p15; XENO L958 */
+  {0x2A, 0x28},   /* LNA 24x pair value, p15; XENO L959 */
   {0x0F, 0x07},   /* sample interval 7 x 4us = 28us, p14; XENO L1285 */
   {0x10, 0x20},   /* interval high bits 0, fixed [7:4]=2, p14; XENO L1286 */
   {0x2F, 0x14},   /* fixed value, p16; XENO L1340 */
