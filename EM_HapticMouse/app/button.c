@@ -53,7 +53,7 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_FREQ_CAL_TRIM_US 0   /* added to the pulse after a logic-analyzer check: trim = 128 - measured_us */
 #define HALL_SCOPE_MODE       0   /* scope mode, no exams: 1 = repeat 128us calibration, 2 = repeat 5us sample command, every ~2 ms */
 #define HALL_SCOPE_SECONDS    20  /* scope mode stops after about this long, then the normal flow (and firmware update) runs */
-#define HALL_CONVERT_TRIM_US  0   /* added to the 5us sample command (1us steps) after a logic-analyzer check */
+#define HALL_CONVERT_FINE_LOOPS 3 /* sample command: fine delay loops added to a 3us timer delay; tune with scope mode 2, target 5.0us */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
 #define HALL_EXAM4_H5_CRC     0   /* 1 = exam 4 uses the old H5 CRCWR (data parity only), control test */
@@ -1197,10 +1197,47 @@ void Hall_CLK_Command_SET(unsigned short high_delay, unsigned short low_delay)
 }
 
 
+#if (6 == USE_HALL_SENSOR)
+/* Short busy loop for sub-microsecond trimming. volatile keeps the compiler
+ * from removing it; the real length per loop is measured with a logic analyzer. */
+static void Hall_FineDelay(uint8_t loops)
+{
+	volatile uint8_t n = loops;
+	while(n)
+	{
+		__NOP();
+		n--;
+	}
+}
+
+/* HAL_CONVERT (td1 = 5us +/-5%, datasheet p12). Same steps as Hall_CLK_Command_SET(),
+ * but CT16B1_DelayUs only has 1us steps: DelayUs(4) measured 5.29us (too long),
+ * DelayUs(3) is about 4.29us (too short). So use DelayUs(3) plus a fine loop. */
+static void Hall_Convert_Command(void)
+{
+	uint32_t reg;
+
+	NVIC_DisableIRQ(USB_IRQn);
+	reg = LPC_IOCON->PIO1_15;
+	reg &= ~0x07;
+	LPC_IOCON->PIO1_15 = reg;                      /* SCK pin as GPIO */
+	DrvGPIOOutput(1, 15, 1);
+	CT16B1_DelayUs(3);                             /* coarse: about 4.29us with overhead */
+	Hall_FineDelay(HALL_CONVERT_FINE_LOOPS);       /* fine: bring the pulse to about 5.0us */
+	DrvGPIOOutput(1, 15, 0);
+	CT16B1_DelayUs(HALL_TD_CONVERT_WAIT);          /* td2 */
+	reg = LPC_IOCON->PIO1_15;
+	reg &= ~0x07;
+	reg |= 0x03;
+	LPC_IOCON->PIO1_15 = reg;                      /* back to SSP1 SCK */
+	NVIC_EnableIRQ(USB_IRQn);
+}
+#endif
+
 void hall_get_sample(void)
 {
 #if (6 == USE_HALL_SENSOR)
-	Hall_CLK_Command_SET(HALL_TD_CONVERT + (HALL_CONVERT_TRIM_US), HALL_TD_CONVERT_WAIT);   /* td1 5us +/-5% */
+	Hall_Convert_Command();                        /* td1 5us +/-5%, trimmed */
 #else
 	Hall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);
 #endif
