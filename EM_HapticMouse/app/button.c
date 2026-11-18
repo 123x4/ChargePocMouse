@@ -53,7 +53,8 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_FREQ_CAL_TRIM_US 0   /* added to the pulse after a logic-analyzer check: trim = 128 - measured_us */
 #define HALL_SCOPE_MODE       0   /* scope mode, no exams: 1 = repeat 128us calibration, 2 = repeat 5us sample command, every ~2 ms */
 #define HALL_SCOPE_SECONDS    20  /* scope mode stops after about this long, then the normal flow (and firmware update) runs */
-#define HALL_CONVERT_FINE_LOOPS 3 /* sample command: fine delay loops added to a 3us timer delay; tune with scope mode 2, target 5.0us */
+#define HALL_CONVERT_FINE_LOOPS 0 /* sample command fine loops: measured 0=4.87us, 1=5.25, 2=5.62, 3=6.00 (0.375us/loop) */
+#define HALL_CONVERT_NOPS     6   /* 0..12 extra NOPs after the loops, about 0.02-0.03us each; target 5.0us, check with scope mode 2 */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
 #define HALL_EXAM4_H5_CRC     0   /* 1 = exam 4 uses the old H5 CRCWR (data parity only), control test */
@@ -1224,6 +1225,43 @@ static void Hall_Convert_Command(uint8_t loops)
 	DrvGPIOOutput(1, 15, 1);
 	CT16B1_DelayUs(3);                             /* coarse: about 4.29us with overhead */
 	Hall_FineDelay(loops);                         /* fine: bring the pulse to about 5.0us */
+	/* finest step: HALL_CONVERT_NOPS single-cycle instructions, unrolled at compile time */
+#if (HALL_CONVERT_NOPS > 0)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 1)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 2)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 3)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 4)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 5)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 6)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 7)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 8)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 9)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 10)
+	__NOP();
+#endif
+#if (HALL_CONVERT_NOPS > 11)
+	__NOP();
+#endif
 	DrvGPIOOutput(1, 15, 0);
 	CT16B1_DelayUs(HALL_TD_CONVERT_WAIT);          /* td2 */
 	reg = LPC_IOCON->PIO1_15;
@@ -1444,8 +1482,7 @@ void HallSensor_INIT(void)
 #if (1 == HALL_SCOPE_MODE)
 		HALL_Read_Instru_cnt();                    /* ~128us high, td12 low, 32 SPI clocks */
 #else
-		Hall_Convert_Command((uint8_t)(n & 3));    /* ~5us HAL_CONVERT with 0,1,2,3 fine loops in turn; changes no register */
-		SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
+		hall_get_sample();                         /* same path as normal sampling: ~5us HAL_CONVERT; changes no register */
 #endif
 		CT16B1_DelayUs(2000);                      /* idle gap between bursts */
 		wwdt_feed();
