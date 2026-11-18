@@ -50,6 +50,8 @@ volatile HallChk_ts g_hall_chk;
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
 #define HALL_EXAM             5   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30, 4 = + write 0x31, 5 = + init table and sampling */
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
+#define HALL_FREQ_CAL_TRIM_US 0   /* added to the pulse after a logic-analyzer check: trim = 128 - measured_us */
+#define HALL_SCOPE_FREQ_CAL   0   /* 1 = scope mode: repeat the calibration command every ~2 ms forever, no exams */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
 #define HALL_EXAM4_H5_CRC     0   /* 1 = exam 4 uses the old H5 CRCWR (data parity only), control test */
@@ -57,7 +59,7 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_EXAM1_TRACE      0   /* 1 = log every calibration reading, and send 8 more after the pass */
 
 #if (6 == USE_HALL_SENSOR)
-#define HALL_EXAM1_WIDTH      DELAY_OUT(HALL_EXAM1_PULSE_US)   /* 128 gives the same value as TD10_DELAY_US */
+#define HALL_EXAM1_WIDTH      (DELAY_OUT(HALL_EXAM1_PULSE_US) + (HALL_FREQ_CAL_TRIM_US))   /* 128, trim 0 = TD10_DELAY_US */
 #define HALL_EXAM1_WIDTH_US   HALL_EXAM1_PULSE_US
 #define HALL_EXAM2_WIDTH      DELAY_OUT(HALL_EXAM2_PULSE_US)   /* 39 gives the same value as TD6_DELAY_US */
 #else
@@ -115,11 +117,11 @@ static char *HallChk_Hex8(char *p, volatile uint8_t *v, uint8_t n)
 
 static void HallChk_Print(void)
 {
-  ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u (ok=1: chips converged to 7C..84)",
+  ExamLog("EXAM1 CAL ok=%u n=%u R=%02X:%02X L=%02X:%02X width=%u trim=%d (ok=1: chips converged to 7C..84)",
           (unsigned)g_hall_chk.cal_ok, (unsigned)g_hall_chk.cal_times,
           (unsigned)g_hall_chk.cal_rh, (unsigned)g_hall_chk.cal_r,
           (unsigned)g_hall_chk.cal_lh, (unsigned)g_hall_chk.cal_l,
-          (unsigned)HALL_EXAM1_WIDTH_US);
+          (unsigned)HALL_EXAM1_WIDTH_US, (int)HALL_FREQ_CAL_TRIM_US);
 #if HALL_EXAM1_TRACE
   {
     char r[25], l[25];
@@ -1382,6 +1384,21 @@ void ana_hall2_phy_set_mode(unsigned char length)
 void HallSensor_INIT(void)
 {
 #if (6 == USE_HALL_SENSOR)
+#if HALL_SCOPE_FREQ_CAL
+	/* Scope mode: send exactly the same calibration command as Hall_osc_calibrate()
+	 * (same function, same overhead) every ~2 ms, so a logic analyzer on SCK can
+	 * measure the real high-pulse width. Never returns. */
+	while(1)
+	{
+		hall_spi_tx[0] = 0;
+		hall_spi_tx[1] = 0;
+		hall_spi_tx[2] = 0;
+		hall_spi_tx[3] = 0;
+		HALL_Read_Instru_cnt();                    /* ~128us high, td12 low, 32 SPI clocks */
+		CT16B1_DelayUs(2000);                      /* idle gap between bursts */
+		wwdt_feed();
+	}
+#endif
 	/* Runs exam 1 .. HALL_EXAM (switches near g_hall_chk). The register table is
 	 * still the H5 one (H5 addresses), so it must not be written to H6 yet. */
 #if HALL_DIAG_PINS
