@@ -1213,7 +1213,7 @@ static void Hall_FineDelay(uint8_t loops)
 /* HAL_CONVERT (td1 = 5us +/-5%, datasheet p12). Same steps as Hall_CLK_Command_SET(),
  * but CT16B1_DelayUs only has 1us steps: DelayUs(4) measured 5.29us (too long),
  * DelayUs(3) is about 4.29us (too short). So use DelayUs(3) plus a fine loop. */
-static void Hall_Convert_Command(void)
+static void Hall_Convert_Command(uint8_t loops)
 {
 	uint32_t reg;
 
@@ -1223,7 +1223,7 @@ static void Hall_Convert_Command(void)
 	LPC_IOCON->PIO1_15 = reg;                      /* SCK pin as GPIO */
 	DrvGPIOOutput(1, 15, 1);
 	CT16B1_DelayUs(3);                             /* coarse: about 4.29us with overhead */
-	Hall_FineDelay(HALL_CONVERT_FINE_LOOPS);       /* fine: bring the pulse to about 5.0us */
+	Hall_FineDelay(loops);                         /* fine: bring the pulse to about 5.0us */
 	DrvGPIOOutput(1, 15, 0);
 	CT16B1_DelayUs(HALL_TD_CONVERT_WAIT);          /* td2 */
 	reg = LPC_IOCON->PIO1_15;
@@ -1237,7 +1237,7 @@ static void Hall_Convert_Command(void)
 void hall_get_sample(void)
 {
 #if (6 == USE_HALL_SENSOR)
-	Hall_Convert_Command();                        /* td1 5us +/-5%, trimmed */
+	Hall_Convert_Command(HALL_CONVERT_FINE_LOOPS); /* td1 5us +/-5%, trimmed */
 #else
 	Hall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);
 #endif
@@ -1444,7 +1444,8 @@ void HallSensor_INIT(void)
 #if (1 == HALL_SCOPE_MODE)
 		HALL_Read_Instru_cnt();                    /* ~128us high, td12 low, 32 SPI clocks */
 #else
-		hall_get_sample();                         /* ~5us HAL_CONVERT, td2 low, 32 SPI clocks; changes no register */
+		Hall_Convert_Command((uint8_t)(n & 3));    /* ~5us HAL_CONVERT with 0,1,2,3 fine loops in turn; changes no register */
+		SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 #endif
 		CT16B1_DelayUs(2000);                      /* idle gap between bursts */
 		wwdt_feed();
