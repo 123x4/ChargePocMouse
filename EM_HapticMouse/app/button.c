@@ -52,6 +52,7 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
 #define HALL_FREQ_CAL_TRIM_US 0   /* added to the pulse after a logic-analyzer check: trim = 128 - measured_us */
 #define HALL_SCOPE_MODE       0   /* scope mode, no exams: 1 = repeat 128us calibration, 2 = repeat 5us sample command, every ~2 ms */
+#define HALL_SCOPE_SECONDS    20  /* scope mode stops after about this long, then the normal flow (and firmware update) runs */
 #define HALL_CONVERT_TRIM_US  0   /* added to the 5us sample command (1us steps) after a logic-analyzer check */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
@@ -1392,8 +1393,12 @@ void HallSensor_INIT(void)
 #if HALL_SCOPE_MODE
 	/* Scope mode: send exactly the same command as the real code (same function,
 	 * same overhead) every ~2 ms, so a logic analyzer on SCK can measure the real
-	 * high-pulse width. Never returns. */
-	while(1)
+	 * high-pulse width. It stops after about HALL_SCOPE_SECONDS and then falls
+	 * through to the normal flow, because the firmware-update command is only
+	 * handled by PC_Communicate() in the main loop. */
+	{
+	uint16_t n;
+	for(n = 0; n < (uint16_t)(HALL_SCOPE_SECONDS * 500U); n++)   /* one burst is about 2 ms */
 	{
 		hall_spi_tx[0] = 0;
 		hall_spi_tx[1] = 0;
@@ -1407,6 +1412,8 @@ void HallSensor_INIT(void)
 		CT16B1_DelayUs(2000);                      /* idle gap between bursts */
 		wwdt_feed();
 	}
+	}
+	/* The chip only received calibration / sample commands; the exams below start again from calibration. */
 #endif
 	/* Runs exam 1 .. HALL_EXAM (switches near g_hall_chk). The register table is
 	 * still the H5 one (H5 addresses), so it must not be written to H6 yet. */
