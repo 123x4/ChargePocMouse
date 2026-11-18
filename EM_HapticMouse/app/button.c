@@ -51,7 +51,8 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_EXAM             5   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30, 4 = + write 0x31, 5 = + init table and sampling */
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
 #define HALL_FREQ_CAL_TRIM_US 0   /* added to the pulse after a logic-analyzer check: trim = 128 - measured_us */
-#define HALL_SCOPE_FREQ_CAL   0   /* 1 = scope mode: repeat the calibration command every ~2 ms forever, no exams */
+#define HALL_SCOPE_MODE       0   /* scope mode, no exams: 1 = repeat 128us calibration, 2 = repeat 5us sample command, every ~2 ms */
+#define HALL_CONVERT_TRIM_US  0   /* added to the 5us sample command (1us steps) after a logic-analyzer check */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
 #define HALL_EXAM4_H5_CRC     0   /* 1 = exam 4 uses the old H5 CRCWR (data parity only), control test */
@@ -1197,7 +1198,11 @@ void Hall_CLK_Command_SET(unsigned short high_delay, unsigned short low_delay)
 
 void hall_get_sample(void)
 {
+#if (6 == USE_HALL_SENSOR)
+	Hall_CLK_Command_SET(HALL_TD_CONVERT + (HALL_CONVERT_TRIM_US), HALL_TD_CONVERT_WAIT);   /* td1 5us +/-5% */
+#else
 	Hall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);
+#endif
 
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
@@ -1384,17 +1389,21 @@ void ana_hall2_phy_set_mode(unsigned char length)
 void HallSensor_INIT(void)
 {
 #if (6 == USE_HALL_SENSOR)
-#if HALL_SCOPE_FREQ_CAL
-	/* Scope mode: send exactly the same calibration command as Hall_osc_calibrate()
-	 * (same function, same overhead) every ~2 ms, so a logic analyzer on SCK can
-	 * measure the real high-pulse width. Never returns. */
+#if HALL_SCOPE_MODE
+	/* Scope mode: send exactly the same command as the real code (same function,
+	 * same overhead) every ~2 ms, so a logic analyzer on SCK can measure the real
+	 * high-pulse width. Never returns. */
 	while(1)
 	{
 		hall_spi_tx[0] = 0;
 		hall_spi_tx[1] = 0;
 		hall_spi_tx[2] = 0;
 		hall_spi_tx[3] = 0;
+#if (1 == HALL_SCOPE_MODE)
 		HALL_Read_Instru_cnt();                    /* ~128us high, td12 low, 32 SPI clocks */
+#else
+		hall_get_sample();                         /* ~5us HAL_CONVERT, td2 low, 32 SPI clocks; changes no register */
+#endif
 		CT16B1_DelayUs(2000);                      /* idle gap between bursts */
 		wwdt_feed();
 	}
