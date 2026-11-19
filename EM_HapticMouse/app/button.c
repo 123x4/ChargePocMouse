@@ -54,7 +54,7 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_SCOPE_MODE       0   /* scope mode, no exams: 1 = repeat 128us calibration, 2 = repeat 5us sample command, every ~2 ms */
 #define HALL_SCOPE_SECONDS    20  /* scope mode stops after about this long, then the normal flow (and firmware update) runs */
 #define HALL_CONVERT_FINE_LOOPS 0 /* sample command fine loops: measured 0=4.87us, 1=5.25, 2=5.62, 3=6.00 (0.375us/loop) */
-#define HALL_CONVERT_NOPS     6   /* 0..12 extra NOPs after the loops, about 0.02-0.03us each; target 5.0us, check with scope mode 2 */
+#define HALL_CONVERT_NOPS     6   /* 0..12 extra NOPs; measured: 0 loops + 6 NOPs = 5.00us (about 0.022us per NOP) */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
 #define HALL_EXAM4_H5_CRC     0   /* 1 = exam 4 uses the old H5 CRCWR (data parity only), control test */
