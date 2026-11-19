@@ -50,10 +50,11 @@ volatile HallChk_ts g_hall_chk;
 /* ---- H6 exam switches: change, rebuild, flash, read the log ---- */
 #define HALL_EXAM             5   /* exams run in init: 1 = freq calibrate, 2 = + read reg 0x0C, 3 = + write 0x30, 4 = + write 0x31, 5 = + init table and sampling */
 #define HALL_EXAM1_PULSE_US   128 /* calibration pulse: 128 normal; other values = experiment */
-#define HALL_FREQ_CAL_TRIM_US 0   /* added to the pulse after a logic-analyzer check: trim = 128 - measured_us */
-#define HALL_SCOPE_MODE       0   /* scope mode, no exams: 1 = repeat 128us calibration, 2 = repeat 5us sample command, every ~2 ms */
+#define HALL_FREQ_CAL_TRIM_US 0   /* whole-us trim of the calibration pulse (the sub-us part is the shared fine loops + NOPs) */
+#define HALL_SCOPE_MODE       0   /* scope mode, no exams: 1 = repeat 128us calibration, 2 = repeat 5us sample, 3 = alternate both; every ~2 ms */
 #define HALL_SCOPE_SECONDS    20  /* scope mode stops after about this long, then the normal flow (and firmware update) runs */
-#define HALL_CONVERT_FINE_LOOPS 0 /* sample command fine loops: measured 0=4.87us, 1=5.25, 2=5.62, 3=6.00 (0.375us/loop) */
+#define HALL_CONVERT_COARSE_US 3  /* 5us sample pulse = DelayUs(3) + fine part below */
+#define HALL_CONVERT_FINE_LOOPS 0 /* fine part, shared by the 5us and 128us pulses. loops: measured 0=4.87us, 1=5.25, 2=5.62, 3=6.00 (0.375us/loop) */
 #define HALL_CONVERT_NOPS     6   /* 0..12 extra NOPs; measured: 0 loops + 6 NOPs = 5.00us (about 0.022us per NOP) */
 #define HALL_EXAM2_PULSE_US   39  /* WR_REG pulse: 39 normal; 50 control test */
 #define HALL_EXAM3_BAD_CRC    0   /* 1 = flip CRCWR on purpose (control test): writes must be ignored */
@@ -62,7 +63,7 @@ volatile HallChk_ts g_hall_chk;
 #define HALL_EXAM1_TRACE      0   /* 1 = log every calibration reading, and send 8 more after the pass */
 
 #if (6 == USE_HALL_SENSOR)
-#define HALL_EXAM1_WIDTH      (DELAY_OUT(HALL_EXAM1_PULSE_US) + (HALL_FREQ_CAL_TRIM_US))   /* 128, trim 0 = TD10_DELAY_US */
+#define HALL_EXAM1_COARSE_US  (HALL_EXAM1_PULSE_US - 2 + (HALL_FREQ_CAL_TRIM_US))   /* same build-up as the 5us pulse: DelayUs(n) + fine part = n + 2.0us */
 #define HALL_EXAM1_WIDTH_US   HALL_EXAM1_PULSE_US
 #define HALL_EXAM2_WIDTH      DELAY_OUT(HALL_EXAM2_PULSE_US)   /* 39 gives the same value as TD6_DELAY_US */
 #else
@@ -1211,10 +1212,12 @@ static void Hall_FineDelay(uint8_t loops)
 	}
 }
 
-/* HAL_CONVERT (td1 = 5us +/-5%, datasheet p12). Same steps as Hall_CLK_Command_SET(),
- * but CT16B1_DelayUs only has 1us steps: DelayUs(4) measured 5.29us (too long),
- * DelayUs(3) is about 4.29us (too short). So use DelayUs(3) plus a fine loop. */
-static void Hall_Convert_Command(uint8_t loops)
+/* One SCK command pulse for H6, used for both HAL_CONVERT (td1 5us) and
+ * FREQ_Calibrate (td10 128us). CT16B1_DelayUs only has 1us steps, so the pulse is
+ * DelayUs(coarse_us) + Hall_FineDelay + unrolled NOPs. Measured with this layout:
+ * DelayUs(3) + 0 loops + 6 NOPs = 5.00us, i.e. high time = coarse_us + 2.0us.
+ * Steps: 1 us per coarse_us, 0.375us per fine loop, about 0.022us per NOP. */
+static void Hall_SckPulse(uint16_t coarse_us, uint16_t wait_us)
 {
 	uint32_t reg;
 
@@ -1223,8 +1226,8 @@ static void Hall_Convert_Command(uint8_t loops)
 	reg &= ~0x07;
 	LPC_IOCON->PIO1_15 = reg;                      /* SCK pin as GPIO */
 	DrvGPIOOutput(1, 15, 1);
-	CT16B1_DelayUs(3);                             /* coarse: about 4.29us with overhead */
-	Hall_FineDelay(loops);                         /* fine: bring the pulse to about 5.0us */
+	CT16B1_DelayUs(coarse_us);                     /* coarse, 1us steps */
+	Hall_FineDelay(HALL_CONVERT_FINE_LOOPS);       /* fine, 0.375us steps */
 	/* finest step: HALL_CONVERT_NOPS single-cycle instructions, unrolled at compile time */
 #if (HALL_CONVERT_NOPS > 0)
 	__NOP();
@@ -1263,7 +1266,7 @@ static void Hall_Convert_Command(uint8_t loops)
 	__NOP();
 #endif
 	DrvGPIOOutput(1, 15, 0);
-	CT16B1_DelayUs(HALL_TD_CONVERT_WAIT);          /* td2 */
+	CT16B1_DelayUs(wait_us);                       /* td2 / td12 */
 	reg = LPC_IOCON->PIO1_15;
 	reg &= ~0x07;
 	reg |= 0x03;
@@ -1275,7 +1278,7 @@ static void Hall_Convert_Command(uint8_t loops)
 void hall_get_sample(void)
 {
 #if (6 == USE_HALL_SENSOR)
-	Hall_Convert_Command(HALL_CONVERT_FINE_LOOPS); /* td1 5us +/-5%, trimmed */
+	Hall_SckPulse(HALL_CONVERT_COARSE_US, HALL_TD_CONVERT_WAIT);   /* td1 5us +/-5%, measured 5.00us */
 #else
 	Hall_CLK_Command_SET(HALL_TD_CONVERT, HALL_TD_CONVERT_WAIT);
 #endif
@@ -1285,7 +1288,11 @@ void hall_get_sample(void)
 
 void HALL_Read_Instru_cnt(void)
 {
-	Hall_CLK_Command_SET(HALL_EXAM1_WIDTH, HALL_TD_FREQ_WAIT);   /* normally td10 128us */
+#if (6 == USE_HALL_SENSOR)
+	Hall_SckPulse(HALL_EXAM1_COARSE_US, HALL_TD_FREQ_WAIT);      /* td10 128us, same trimmed pulse as the 5us one */
+#else
+	Hall_CLK_Command_SET(HALL_EXAM1_WIDTH, HALL_TD_FREQ_WAIT);   /* H5: unchanged */
+#endif
 
 	SSP_Send_Receive(hall_spi_tx, hall_spi_rx, 4);
 }
@@ -1481,6 +1488,11 @@ void HallSensor_INIT(void)
 		hall_spi_tx[3] = 0;
 #if (1 == HALL_SCOPE_MODE)
 		HALL_Read_Instru_cnt();                    /* ~128us high, td12 low, 32 SPI clocks */
+#elif (3 == HALL_SCOPE_MODE)
+		if(n & 1)
+			hall_get_sample();                     /* odd bursts: 5us */
+		else
+			HALL_Read_Instru_cnt();                /* even bursts: 128us */
 #else
 		hall_get_sample();                         /* same path as normal sampling: ~5us HAL_CONVERT; changes no register */
 #endif
