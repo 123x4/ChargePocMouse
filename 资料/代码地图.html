@@ -1,0 +1,180 @@
+<title>EM_HapticMouse 代码地图</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one short column, same family as the exam lectures. Two step-through animations (power-up, one click's journey), one layer table, three self-test questions. */
+:root{
+  --bg:#f2f4f3; --panel:#fff; --fg:#17201e; --muted:#5a6663; --line:#d5dbd9; --grid:#e8ecea;
+  --accent:#0d7a70; --accent-soft:#d7eeeb; --hall:#b97400; --hall-soft:#fbefd9; --off:#9aa5a2;
+  --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --hall:#f2b33d; --hall-soft:#33270f; --off:#5d6a67; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1416; --panel:#161d20; --fg:#e2eae7; --muted:#9aa8a4; --line:#2b3539; --grid:#1f282b;
+  --accent:#3cc6b5; --accent-soft:#16312e; --hall:#f2b33d; --hall-soft:#33270f; --off:#5d6a67; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.7 var(--font-body);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font-size:1.6rem;margin:0;text-wrap:balance}
+h2{font-size:1.15rem;margin:0 0 10px;text-wrap:balance}
+p{margin:0}
+.lead{color:var(--muted)}
+code,.mono{font-family:var(--font-mono);font-size:.86em}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-size:.9rem;border:1px solid var(--accent);background:var(--accent-soft);color:var(--fg);border-radius:6px;padding:4px 12px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.steps li{border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:.85rem;line-height:1.35;transition:background .25s,border-color .25s;min-width:0}
+.steps li small{display:block;color:var(--muted);font-family:var(--font-mono);font-size:.72rem;word-break:break-all}
+.steps li.done{border-color:var(--accent)}
+.steps li.now{background:var(--accent-soft);border-color:var(--accent)}
+.steps li.hall{border-color:var(--hall)}
+.steps li.hall.now{background:var(--hall-soft)}
+.cap{min-height:3.4em;border-left:3px solid var(--accent);padding-left:10px;font-size:.95rem}
+.cap.hallcap{border-color:var(--hall)}
+.path{display:flex;flex-direction:column;gap:4px}
+.hop{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;opacity:.35;transition:opacity .25s}
+.hop.on{opacity:1}
+.hop .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);margin-top:5px}
+.hop.on .dot{background:var(--accent)}
+.hop.h .dot{border-color:var(--hall)}
+.hop.h.on .dot{background:var(--hall)}
+.hop b{font-weight:600}
+.hop span{display:block;color:var(--muted);font-size:.85rem}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{border-bottom:1px solid var(--grid);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td:first-child{white-space:nowrap;font-weight:500}
+.off{color:var(--off)}
+.hl{color:var(--hall);font-weight:600}
+ul.facts{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+details{border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+summary{cursor:pointer;font-weight:500}
+details p{margin-top:8px;color:var(--fg)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<main>
+<header>
+  <h1>EM_HapticMouse 代码地图</h1>
+  <p class="lead">先建立一张地图：上电做了什么，主循环每一圈做什么，一次按键在代码里走了哪条路，霍尔代码在哪里。橙色是霍尔相关部分。</p>
+</header>
+
+<section aria-labelledby="s1">
+  <h2 id="s1">1. 上电：main() 只调用两个函数</h2>
+  <p><code>src/Main.c</code> 的 <code>main()</code> 先调用 <code>Device_Init()</code> 做一次性初始化，再调用 <code>Device_Active()</code> 进入死循环。两个函数都在 <code>src/device.c</code>。</p>
+  <div class="ctrl"><button id="b1">播放初始化</button><button id="r1">重置</button></div>
+  <ol class="steps" id="init"></ol>
+  <p class="cap" id="c1">点"播放初始化"，按实际顺序走一遍 Device_Init()（device.c:415）。</p>
+</section>
+
+<section aria-labelledby="s2">
+  <h2 id="s2">2. 主循环：一次左键按下的旅程</h2>
+  <p>主循环 <code>Device_Active()</code>（device.c:496）每圈依次调用 Scan → Pack → Report → 喂狗 → 上位机命令 → 休眠检查 → 电磁铁任务 → 日志。按键扫描每 1 ms 才做一次，节拍来自定时器中断。</p>
+  <div class="ctrl"><button id="b2">下一步</button><button id="r2">重置</button></div>
+  <div class="path" id="path"></div>
+  <p class="cap" id="c2">点"下一步"，跟着一次左键按下从定时器走到 USB。</p>
+</section>
+
+<section aria-labelledby="s3">
+  <h2 id="s3">3. 目录分层：参与编译的文件</h2>
+  <p>以 Keil 工程 <code>Sample.uvprojx</code> 为准。目录里有不少文件<strong>不参与编译</strong>，读代码时可以先跳过。</p>
+  <div class="tw"><table>
+    <thead><tr><th>层</th><th>文件</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td>启动与芯片驱动</td><td class="mono">startup_LPC11Uxx.s, OSC, GPIO, Timer, SPI, I2C, ADC, UART, WWDT, IAP_CMD, my_pwm</td><td>时钟、引脚、定时器、SPI、看门狗、写 Flash。和具体功能无关。</td></tr>
+      <tr><td>USB 协议栈</td><td class="mono">usb, usbcore, usbhw, usbdesc, usbuser, hiduser</td><td>枚举、端点收发。<code>USB_IRQHandler</code> 在 usbhw.c:1333。</td></tr>
+      <tr><td>调度中心</td><td class="mono">Main, device</td><td>初始化顺序和主循环，事件标志 <code>deviceEvent</code>。</td></tr>
+      <tr><td class="hl">按键与霍尔</td><td class="mono hl">app/button.c</td><td>H6/H5 驱动、考题、<code>LR_GetState</code> 判断按下/松开。</td></tr>
+      <tr><td>其它输入</td><td class="mono">PAW3950（光学）, app/scroll, app/optical_3325</td><td>移动和滚轮。</td></tr>
+      <tr><td>震感</td><td class="mono">my_electromagnet, my_waveform, TI_DRV8833</td><td>按下/松开时驱动线圈。</td></tr>
+      <tr><td>功能与配置</td><td class="mono">app/custom, macro, keydef, suspend</td><td>按键映射、宏、休眠、升级入口 <code>Bootloadable_Load</code>（custom.c:76）。</td></tr>
+      <tr><td>上位机与存储</td><td class="mono">pc_communicate, my_protocol, my_protocol_mouse, gtech_flash, operation_flash, eeprom</td><td>处理上位机命令，参数存 Flash。</td></tr>
+      <tr><td>调试</td><td class="mono">my_debug, my_tick, my_queue, my_misc, my_adc</td><td>HID 日志、毫秒计时、队列。</td></tr>
+      <tr><td>灯效</td><td class="mono">Led_Effect_Gruop_Code/ 下 8 个</td><td>灯光效果。</td></tr>
+      <tr><td class="off">不参与编译</td><td class="mono off">app: Fingerprint, LedControl, led, led_driver, optical, optical_3389*, SROM_*；src: APP_74LVC595A, my_hallkey_func, my_i2c, wnDrv_wI2C；灯效目录另 10 个</td><td class="off">历史遗留或其它项目的文件。</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="facts">
+    <li><b>板型由宏选择</b>：<code>inc/my_board.h:26</code> 定义了 <code>GT_LINA_T1A_H5_PWM</code>，第 37 行再由它定义出 <code>GT_LINA_T1A_H5</code>。代码里 <code>#if defined(GT_LINA_T1A_H5)</code> 的分支才是我们这块板子走的路。</li>
+    <li><b>霍尔芯片型号</b>：<code>inc/button.h:16</code> 的 <code>USE_HALL_SENSOR 6</code> 选 H6，改成 5 就是 H5。</li>
+    <li><b>中断很少</b>：只有定时器 1 ms 节拍、USB 中断和 GPIO 中断。其它工作都在主循环里按顺序做，中断只负责置标志和计数。</li>
+  </ul>
+</section>
+
+<section aria-labelledby="s4">
+  <h2 id="s4">4. 自测：去代码里找答案</h2>
+  <p>先自己在代码里找，再展开核对。</p>
+  <details><summary>① 霍尔多久采样一次？靠什么定时？</summary>
+    <p>每 1 ms 一次。<code>TIMER16_0_IRQHandler</code>（Timer.c:65）每毫秒把 <code>one_ms_cycle</code> 减到 0（Timer.c:78）。<code>Device_Scan</code>（device.c:883）看到它是 0，就置回 1 并扫描一次按键，按键扫描里调用 <code>LR_GetState</code> → <code>hall_get_sample</code>（button.c:640）。</p></details>
+  <details><summary>② 为什么在 HallSensor_INIT 里写死循环，升级程序就用不了？</summary>
+    <p>升级命令由 <code>PC_Communicate()</code>（pc_communicate.c:882）处理，它在主循环里（device.c:520）。<code>HallSensor_INIT</code> 在 <code>Device_Init</code> 里，比主循环早。初始化卡住，主循环就永远不开始，升级命令也就没人处理。这就是之前示波模式要限时 20 秒的原因。</p></details>
+  <details><summary>③ 左键按下时，电磁铁震动是在哪个函数里触发的？</summary>
+    <p>在 <code>Button_Scan</code>（button.c:948）里。它发现左键状态从松开变成按下，就调用 <code>Ele_LeftKeyPressProcess()</code>（button.c:982）。真正驱动线圈的波形由主循环里的 <code>Ele_PollingTask</code>（my_electromagnet.c:983）推进。所以"震动"在扫描时决定，在电磁铁任务里执行。</p></details>
+</section>
+</main>
+
+<script>
+(function(){
+  var init=[
+    ["看门狗","wwdt_config",0,"先开看门狗。之后任何地方卡太久都会复位。"],
+    ["系统时钟","InitSystemOSC",0,"把 CPU 时钟配好，后面所有延时都依赖它。"],
+    ["GPIO","InitGPIO",0,"配置引脚方向。"],
+    ["电磁铁","Ele_Init",0,"初始化震感线圈的驱动。"],
+    ["USB 时钟","InitUSBOSC",0,"USB 需要单独的 48 MHz 时钟。"],
+    ["参数与日志","Param_Init / MyDebug_Init",0,"加载默认参数，准备 HID 日志。"],
+    ["SPI1","InitSPI1Master",1,"霍尔用的 SPI。GT_LINA_T1A_H5 分支只开 SPI1。"],
+    ["1 ms 节拍","InitCT16B0",0,"定时器每毫秒中断一次，主循环里的扫描靠它定时。"],
+    ["USB","nsAPI_USB_Init",0,"USB 开始工作，电脑能识别到设备。"],
+    ["指针初始化","Flash / PC / Custom",0,"Flash、上位机通信、自定义功能的函数指针。"],
+    ["等 500 ms","TimerDelayMsec(500)",0,"等电源和外设稳定。"],
+    ["霍尔初始化","HallSensor_INIT",1,"我们的考题 1～5 都在这里：频率校准、读写寄存器、写配置表。此时主循环还没开始，所以这里不能卡住。"],
+    ["读配置","Profile / Custom_Init",0,"读用户保存的按键映射等设置。"],
+    ["欠压复位","BODCTRL",0,"电压低于约 2.63 V 时复位。"],
+    ["光学传感器","PAW3950_Init",0,"初始化移动传感器。之后 Device_Init 返回，进入主循环。"]
+  ];
+  var ol=document.getElementById('init'),c1=document.getElementById('c1'),i1=-1,t1=null;
+  init.forEach(function(s){var li=document.createElement('li');if(s[2])li.className='hall';li.innerHTML=s[0]+'<small>'+s[1]+'</small>';ol.appendChild(li);});
+  var lis=ol.children;
+  function show1(k){
+    for(var j=0;j<lis.length;j++){lis[j].classList.toggle('done',j<k);lis[j].classList.toggle('now',j===k);}
+    if(k>=0&&k<init.length){c1.textContent=(k+1)+'/'+init.length+'  '+init[k][0]+'：'+init[k][3];c1.classList.toggle('hallcap',!!init[k][2]);}
+  }
+  function stop1(){if(t1){clearInterval(t1);t1=null;}}
+  document.getElementById('b1').onclick=function(){
+    stop1();if(i1>=init.length-1)i1=-1;
+    t1=setInterval(function(){i1++;show1(i1);if(i1>=init.length-1)stop1();},1100);
+  };
+  document.getElementById('r1').onclick=function(){stop1();i1=-1;show1(-1);c1.textContent='点"播放初始化"，按实际顺序走一遍 Device_Init()（device.c:415）。';c1.classList.remove('hallcap');};
+
+  var hops=[
+    ["定时器中断","TIMER16_0_IRQHandler · Timer.c:65",0,"每 1 ms 进一次中断，把 one_ms_cycle 减到 0。中断只做计数，不做扫描。"],
+    ["Device_Scan","device.c:878",0,"主循环第一步。看到 one_ms_cycle 为 0，置回 1，开始这一毫秒的扫描。"],
+    ["Device_Button_Scan → Button_Scan","device.c:952 → button.c:948",0,"按键扫描入口，比较这次和上次的按键状态。"],
+    ["LR_GetState","button.c:605",1,"左右键的状态从霍尔数据算出来，没有机械开关。"],
+    ["hall_get_sample","button.c:1278",1,"SCK 拉高 5 µs 发采样命令，再用 SPI 读回两颗芯片的数据。我们刚校准的就是这个脉冲。"],
+    ["Ele_LeftKeyPressProcess","button.c:982",0,"Button_Scan 发现左键刚按下，立刻安排一次震动。"],
+    ["DEVICE_POST_EVENT(BUTTON_EVENT)","device.c:965",0,"在 deviceEvent 里置一个标志，告诉后面的步骤：按键有变化。"],
+    ["Device_Pack","device.c:540",0,"看到 BUTTON_EVENT，按用户的按键映射（Custom_HandleKey）组装鼠标报文。"],
+    ["Device_Report","device.c:671",0,"通过 USB 端点把报文发给电脑，电脑收到“左键按下”。"],
+    ["Ele_PollingTask","my_electromagnet.c:983",0,"同一圈稍后，电磁铁任务按波形驱动线圈，手指感到“咔哒”。"]
+  ];
+  var path=document.getElementById('path'),c2=document.getElementById('c2'),i2=-1;
+  hops.forEach(function(h){var d=document.createElement('div');d.className='hop'+(h[2]?' h':'');d.innerHTML='<i class="dot"></i><div><b>'+h[0]+'</b><span class="mono">'+h[1]+'</span></div>';path.appendChild(d);});
+  var hs=path.children;
+  function show2(k){
+    for(var j=0;j<hs.length;j++)hs[j].classList.toggle('on',j<=k);
+    if(k>=0){c2.textContent=(k+1)+'/'+hops.length+'  '+hops[k][3];c2.classList.toggle('hallcap',!!hops[k][2]);}
+  }
+  document.getElementById('b2').onclick=function(){i2=(i2>=hops.length-1)?0:i2+1;show2(i2);};
+  document.getElementById('r2').onclick=function(){i2=-1;show2(-1);c2.textContent='点"下一步"，跟着一次左键按下从定时器走到 USB。';c2.classList.remove('hallcap');};
+  for(var j=0;j<hs.length;j++)hs[j].classList.add('on');
+})();
+</script>
